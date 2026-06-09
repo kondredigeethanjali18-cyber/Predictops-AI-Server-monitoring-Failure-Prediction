@@ -1,0 +1,13 @@
+Feature,Importance
+memory_used_mb,0.4178730526753377
+memory_usage_percent,0.3407756604482412
+network_total,0.07126042917113895
+cpu_usage_percent,0.049385761997034705
+cpu_memory_ratio,0.03536517101709622
+cpu_change,0.029130651914908542
+latency_per_process,0.02064775812026355
+request_latency_ms,0.016009786241465745
+memory_change,0.013055071008527019
+active_processes,0.0033409180883830704
+disk_usage_percent,0.003155739317603453
+error_count,0.0
