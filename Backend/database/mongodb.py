@@ -1,6 +1,8 @@
 from pymongo import MongoClient
 
-client = MongoClient("mongodb://localhost:27017/")
+client = MongoClient(
+    "mongodb+srv://Predictops_user:Geethanjali12345@clusterpredictop.iabajyw.mongodb.net/?appName=Clusterpredictop"
+)
 
 db = client["predictops"]
 

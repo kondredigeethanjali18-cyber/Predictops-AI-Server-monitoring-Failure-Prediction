@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Servers</h1>
+
+<table id="serversTable">
+
+    <thead>
+        <tr>
+            <th>Server</th>
+            <th>Prediction</th>
+            <th>Confidence</th>
+            <th>CPU</th>
+            <th>Memory</th>
+            <th>Disk</th>
+        </tr>
+    </thead>
+
+    <tbody id="serverTableBody">
+    </tbody>
+
+</table>
+
+<div class="pagination">
+
+    <button id="prevBtn">
+        Previous
+    </button>
+
+    <span id="pageNumber">
+        1
+    </span>
+
+    <button id="nextBtn">
+        Next
+    </button>
+
+</div>
+
+<script src="/static/js/servers.js"></script>
+
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Dashboard</h1>
+
+<div class="cards">
+
+    <div class="card">
+        <h3>Total Servers</h3>
+        <div class="metric" id="totalServers">0</div>
+    </div>
+
+    <div class="card">
+        <h3>Healthy</h3>
+        <div class="metric" id="healthyServers">0</div>
+    </div>
+
+    <div class="card">
+        <h3>Warning</h3>
+        <div class="metric" id="warningServers">0</div>
+    </div>
+
+    <div class="card">
+        <h3>Critical</h3>
+        <div class="metric" id="criticalServers">0</div>
+    </div>
+
+</div>
+
+<script src="/static/js/dashboard.js"></script>
+
+{% endblock %}

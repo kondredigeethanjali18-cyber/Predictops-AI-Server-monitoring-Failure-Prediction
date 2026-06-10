@@ -2,6 +2,7 @@ from kafka import KafkaConsumer
 import json
 
 from Backend.database.mongodb import metrics_collection
+from Backend.services.prediction_service import predict_metric
 
 consumer = KafkaConsumer(
     "cpu-metrics",
@@ -18,4 +19,7 @@ for message in consumer:
 
     metrics_collection.insert_one(metric)
 
-    print("Saved to MongoDB:", metric)
+    prediction = predict_metric(metric)
+
+    print("Saved Metric:", metric)
+    print("Prediction:", prediction)
