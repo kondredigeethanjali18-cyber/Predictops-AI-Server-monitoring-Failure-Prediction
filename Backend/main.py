@@ -23,11 +23,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount(
-    "/static",
-    StaticFiles(directory="Backend/static"),
-    name="static"
-)
 
 app.include_router(
     dashboard_api_router
@@ -56,8 +51,13 @@ app.include_router(dashboard_router)
 app.include_router(metrics_router)
 
 @app.get("/")
-def dashboard():
-    return "Dashboard Route Working"
+def landing(request: Request):
+
+    return templates.TemplateResponse(
+        request=request,
+        name="landing.html",
+        context={}
+    )
 
 @app.get("/dashboard")
 def dashboard(request: Request):
@@ -110,5 +110,14 @@ def analytics(request: Request):
     return templates.TemplateResponse(
         request=request,
         name="analytics.html",
+        context={}
+    )
+
+@app.get("/trends")
+def trends(request: Request):
+
+    return templates.TemplateResponse(
+        request=request,
+        name="trends.html",
         context={}
     )

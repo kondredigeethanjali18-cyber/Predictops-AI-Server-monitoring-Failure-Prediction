@@ -1,0 +1,80 @@
+body{
+    margin:0;
+    font-family:Segoe UI;
+    background:#0f172a;
+    color:white;
+}
+
+.hero{
+    text-align:center;
+    padding:50px 40px;
+}
+
+.hero h1{
+    font-size:60px;
+}
+
+.hero button{
+    padding:15px 40px;
+    font-size:18px;
+}
+
+.stats{
+    display:flex;
+    justify-content:center;
+    gap:25px;
+    margin-top:20px;
+    margin-bottom:40px;
+}
+
+.stat-card{
+    background:#1e293b;
+    color:white;
+    width:160px;
+    padding:20px;
+    border-radius:12px;
+    text-align:center;
+}
+
+
+.features{
+    display:flex;
+    justify-content:center;
+    gap:30px;
+    margin-bottom:50px;
+}
+
+
+
+.feature-card{
+
+    width:250px;
+    padding:20px;
+
+    background:#1e293b;
+
+    border-radius:12px;
+
+    text-align:center;
+}
+
+.stat-card,
+.feature-card{
+
+    transition:0.3s;
+
+}
+
+.stat-card:hover,
+.feature-card:hover{
+
+    transform:translateY(-5px);
+
+}
+
+.stat-card,
+.feature-card{
+    background:#1e293b;
+    color:white;
+    border-radius:12px;
+}

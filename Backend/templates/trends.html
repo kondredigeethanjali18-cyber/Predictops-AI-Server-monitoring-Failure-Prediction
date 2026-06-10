@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Performance Trends</h1>
+
+<div class="card">
+
+    <h3>
+        CPU Trend
+    </h3>
+
+    <div class="chart-container">
+        <canvas id="cpuChart"></canvas>
+    </div>
+
+</div>
+
+<br>
+
+<div class="card">
+
+    <h3>
+        Memory Trend
+    </h3>
+
+    <div class="chart-container">
+        <canvas id="memoryChart"></canvas>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="/static/js/trends.js"></script>
+
+{% endblock %}

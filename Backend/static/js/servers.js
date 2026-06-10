@@ -79,6 +79,63 @@ document
     }
 });
 
+document
+.getElementById("exportBtn")
+.addEventListener("click",()=>{
+
+    let csv =
+        "Server,CPU,Memory,Disk\n";
+
+    servers.forEach(server=>{
+
+        csv +=
+            `${server.server_name},
+            ${server.cpu_usage_percent},
+            ${server.memory_usage_percent},
+            ${server.disk_usage_percent}\n`;
+    });
+
+    const blob =
+        new Blob(
+            [csv],
+            {
+                type:"text/csv"
+            }
+        );
+
+    const url =
+        URL.createObjectURL(blob);
+
+    const a =
+        document.createElement("a");
+
+    a.href=url;
+
+    a.download=
+        "server_report.csv";
+
+    a.click();
+});
+
+document
+.getElementById("searchBox")
+.addEventListener("input",e=>{
+
+    const text =
+        e.target.value
+        .toLowerCase();
+
+    const filtered =
+        servers.filter(
+            s=>
+            s.server_name
+            .toLowerCase()
+            .includes(text)
+        );
+
+    renderTable(filtered);
+});
+
 loadServers();
 
 setInterval(
