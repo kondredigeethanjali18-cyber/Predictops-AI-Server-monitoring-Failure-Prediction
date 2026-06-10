@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Analytics</h1>
+
+<div class="cards">
+
+    <div class="card">
+        <canvas id="cpuChart"></canvas>
+    </div>
+
+    <div class="card">
+        <canvas id="memoryChart"></canvas>
+    </div>
+
+</div>
+
+<div class="card">
+
+    <canvas id="predictionChart"></canvas>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="/static/js/analytics.js"></script>
+
+{% endblock %}

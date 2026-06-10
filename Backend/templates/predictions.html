@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Predictions</h1>
+
+<table>
+
+    <thead>
+        <tr>
+            <th>Server</th>
+            <th>Prediction</th>
+            <th>Confidence</th>
+            <th>CPU</th>
+            <th>Memory</th>
+            <th>Disk</th>
+            <th>Time</th>
+        </tr>
+    </thead>
+
+    <tbody id="predictionTableBody">
+
+    </tbody>
+
+</table>
+
+<script src="/static/js/predictions.js"></script>
+
+{% endblock %}

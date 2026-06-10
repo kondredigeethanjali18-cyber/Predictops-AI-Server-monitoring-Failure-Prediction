@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Alerts</h1>
+
+<table>
+
+    <thead>
+        <tr>
+            <th>Server</th>
+            <th>Prediction</th>
+            <th>Confidence</th>
+            <th>Possible Causes</th>
+        </tr>
+    </thead>
+
+    <tbody id="alertsTableBody">
+
+    </tbody>
+
+</table>
+
+<script src="/static/js/alerts.js"></script>
+
+{% endblock %}
