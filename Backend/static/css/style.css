@@ -79,3 +79,17 @@ button{
     padding:8px 15px;
     cursor:pointer;
 }
+
+.chart-small{
+    height:350px;
+}
+
+.chart-large{
+    height:450px;
+}
+
+.chart-container{
+    height:300px;
+    position:relative;
+}
+
