@@ -2,14 +2,43 @@
 
 {% block content %}
 
-<h1>Analytics</h1>
+<div class="dashboard-header">
+
+    <h1>Analytics</h1>
+
+    <p>
+        Infrastructure utilization and anomaly analysis
+    </p>
+
+</div>
+
+<div class="cards">
+
+    <div class="card total-card">
+        <h3>Total Predictions</h3>
+        <div class="metric" id="totalPredictions">0</div>
+    </div>
+
+    <div class="card healthy-card">
+        <h3>Normal Predictions</h3>
+        <div class="metric" id="normalPredictions">0</div>
+    </div>
+
+    <div class="card critical-card">
+        <h3>Anomaly Predictions</h3>
+        <div class="metric" id="anomalyPredictions">0</div>
+    </div>
+
+</div>
+
+<br>
 
 <div class="cards">
 
     <div class="card chart-small">
 
         <h3>
-            Top 5 CPU Utilization Servers
+            ⚡ Top 5 CPU Utilization Servers
         </h3>
 
         <div class="chart-container">
@@ -37,7 +66,7 @@
 <div class="card chart-large">
 
     <h3>
-        Anomaly Distribution
+        🚨 Anomaly Distribution
     </h3>
 
     <div class="chart-container">

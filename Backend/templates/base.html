@@ -1,12 +1,17 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
 
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>PredictOps AI</title>
 
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+
     <link rel="stylesheet"
-          href="/static/css/dashboard.css">
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
 </head>
 
@@ -14,31 +19,72 @@
 
 <div class="container">
 
-    <div class="sidebar">
+    <!-- Sidebar -->
 
-        <h2>🚀 PredictOps AI</h2>
+    <aside class="sidebar">
 
-        <a href="/dashboard">Dashboard</a>
+        <div class="logo">
 
-        <a href="/servers">Servers</a>
+            <h2>🚀 PredictOps AI</h2>
 
-        <a href="/predictions">Predictions</a>
+            <p>Server Monitoring Platform</p>
 
-        <a href="/alerts">Alerts</a>
+        </div>
 
-        <a href="/insights">AI Insights</a>
+        <nav>
 
-        <a href="/analytics">Analytics</a>
-        <a href="/trends"><li>Performance Trends</li></a>
+            <a href="/dashboard">
+                <i class="fas fa-chart-line"></i>
+                Dashboard
+            </a>
 
-    </div>
+            <a href="/servers">
+                <i class="fas fa-server"></i>
+                Servers
+            </a>
 
-    <div class="content">
+            <a href="/predictions">
+                <i class="fas fa-brain"></i>
+                Predictions
+            </a>
+
+            <a href="/alerts">
+                <i class="fas fa-triangle-exclamation"></i>
+                Alerts
+            </a>
+
+            <a href="/insights">
+                <i class="fas fa-lightbulb"></i>
+                AI Insights
+            </a>
+
+            <a href="/analytics">
+                <i class="fas fa-chart-pie"></i>
+                Analytics
+            </a>
+
+            <a href="/trends">
+                <i class="fas fa-arrow-trend-up"></i>
+                Performance Trends
+            </a>
+
+        </nav>
+
+    </aside>
+
+    <!-- Main Content -->
+
+    <main class="content">
 
         {% block content %}
         {% endblock %}
 
-    </div>
+    </main>
+
+    <footer class="footer">
+    PredictOps AI v1.0 |
+    FastAPI + MongoDB + Machine Learning
+</footer>
 
 </div>
 

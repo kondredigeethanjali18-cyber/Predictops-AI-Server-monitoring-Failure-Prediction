@@ -2,13 +2,33 @@
 
 {% block content %}
 
-<h1>Performance Trends</h1>
+<div class="dashboard-header">
 
-<div class="card">
+    <h1>Performance Trends</h1>
 
-    <h3>
-        CPU Trend
-    </h3>
+    <p>
+        Real-time infrastructure performance monitoring
+    </p>
+
+</div>
+
+<div class="cards">
+
+    <div class="card total-card">
+        <h3>Current CPU</h3>
+        <div class="metric" id="currentCPU">0%</div>
+    </div>
+
+    <div class="card healthy-card">
+        <h3>Current Memory</h3>
+        <div class="metric" id="currentMemory">0%</div>
+    </div>
+
+</div>
+
+<div class="card chart-large">
+
+    <h3>⚡ CPU Usage Trend</h3>
 
     <div class="chart-container">
         <canvas id="cpuChart"></canvas>
@@ -18,11 +38,9 @@
 
 <br>
 
-<div class="card">
+<div class="card chart-large">
 
-    <h3>
-        Memory Trend
-    </h3>
+    <h3> Memory Usage Trend</h3>
 
     <div class="chart-container">
         <canvas id="memoryChart"></canvas>
