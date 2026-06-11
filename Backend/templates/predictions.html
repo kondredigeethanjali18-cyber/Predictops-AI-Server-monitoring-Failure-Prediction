@@ -4,6 +4,22 @@
 
 <h1>Predictions</h1>
 
+<select id="predictionFilter">
+
+    <option value="all">
+        All Predictions
+    </option>
+
+    <option value="NORMAL">
+        Normal
+    </option>
+
+    <option value="ANOMALY">
+        Anomaly
+    </option>
+
+</select>
+
 <table>
 
     <thead>
@@ -23,6 +39,22 @@
     </tbody>
 
 </table>
+
+<div class="pagination">
+
+    <button id="prevPredictionBtn">
+        Previous
+    </button>
+
+    <span id="predictionPageNumber">
+        1
+    </span>
+
+    <button id="nextPredictionBtn">
+        Next
+    </button>
+
+</div>
 
 <script src="/static/js/predictions.js"></script>
 

@@ -4,25 +4,12 @@
 
 <h1>Servers</h1>
 
-<select>
-
-<option>All Servers</option>
-
-<option>Healthy</option>
-
-<option>Warning</option>
-
-<option>Critical</option>
-
-</select>
 
 <table id="serversTable">
 
     <thead>
         <tr>
             <th>Server</th>
-            <th>Prediction</th>
-            <th>Confidence</th>
             <th>CPU</th>
             <th>Memory</th>
             <th>Disk</th>
@@ -50,14 +37,14 @@
 
 </div>
 
-<button id="exportBtn">
-Export CSV
-</button>
+    <button id="exportBtn">
+        Export CSV
+    </button>
 
-<input
-type="text"
-id="searchBox"
-placeholder="Search Server">
+    <input
+        type="text"
+        id="searchBox"
+        placeholder="Search Server">
 
 <script src="/static/js/servers.js"></script>
 

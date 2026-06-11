@@ -64,10 +64,11 @@ body{
 }
 
 .stat-card{
-    background:white;
+    background:#e5e7eb;
+    border-radius:16px;
     text-align:center;
     padding:15px;
-    border-radius:16px;
+    
 }
 
 .stat-card h2{
@@ -117,4 +118,7 @@ body{
     .features{
         grid-template-columns:1fr;
     }
+}
+.card{
+    background:#e5e7eb;
 }
