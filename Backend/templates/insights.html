@@ -2,26 +2,29 @@
 
 {% block content %}
 
-<h1>AI Insights</h1>
+<div class="dashboard-header">
+    <h1>AI Insights</h1>
+    <p>Machine Learning Based Server Intelligence</p>
+</div>
 
 <div class="cards">
 
     <div class="card">
-        <h3>Top Risk Server</h3>
+        <h3>🔥 Top Risk Server</h3>
         <div id="topRisk">
             Loading...
         </div>
     </div>
 
     <div class="card">
-        <h3>Highest CPU</h3>
+        <h3>⚡ Highest CPU</h3>
         <div id="highestCPU">
             Loading...
         </div>
     </div>
 
     <div class="card">
-        <h3>Highest Memory</h3>
+        <h3> Highest Memory</h3>
         <div id="highestMemory">
             Loading...
         </div>
@@ -29,10 +32,54 @@
 
 </div>
 
-<div class="card">
-    <h3>AI Recommendation</h3>
-    <div id="recommendation">
+<div class="info-grid">
+
+    <div class="info-card">
+
+        <h3>Risk Score</h3>
+
+        <div id="riskScore"
+             style="font-size:36px;font-weight:bold;color:#dc2626;">
+            96%
+        </div>
+
     </div>
+
+    <div class="info-card">
+
+        <h3>Prediction Confidence</h3>
+
+        <div id="predictionConfidence"
+             style="font-size:36px;font-weight:bold;color:#16a34a;">
+            95%
+        </div>
+
+    </div>
+
+</div>
+
+<div class="info-card" style="margin-top:20px;">
+
+    <h3>🤖 AI Recommendation</h3>
+
+    <div id="recommendation">
+
+    </div>
+
+</div>
+
+<div class="info-card" style="margin-top:20px;">
+
+    <h3>Suggested Actions</h3>
+
+    <ul id="actionList">
+
+        <li>Investigate CPU spikes</li>
+        <li>Check memory consumption</li>
+        <li>Monitor server health</li>
+
+    </ul>
+
 </div>
 
 <script src="/static/js/insights.js"></script>

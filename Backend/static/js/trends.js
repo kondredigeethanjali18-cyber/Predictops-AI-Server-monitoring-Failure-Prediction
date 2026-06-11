@@ -37,6 +37,10 @@ async function loadMetrics() {
         data.memory_usage_percent
     );
 
+    document.getElementById("currentCPU").innerText =data.cpu_usage_percent + "%";
+
+    document.getElementById("currentMemory").innerText =data.memory_usage_percent + "%";
+
     if(cpuLabels.length > 20){
 
         cpuLabels.shift();
@@ -61,6 +65,7 @@ async function loadMetrics() {
                             label:"CPU %",
                             data:cpuValues,
                             borderColor:"#ef4444",
+                            borderwidth:3,
                             fill:false,
                             tension:0.3
                         }]
@@ -92,6 +97,7 @@ async function loadMetrics() {
                             label:"Memory %",
                             data:memoryValues,
                             borderColor:"#3b82f6",
+                            borderwidth:3,
                             fill:false,
                             tension:0.3
                         }]

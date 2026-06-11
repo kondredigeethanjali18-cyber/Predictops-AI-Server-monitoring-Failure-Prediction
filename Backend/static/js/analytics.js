@@ -53,6 +53,13 @@ const memoryData =
     let normalCount = 0;
     let anomalyCount = 0;
 
+    document.getElementById(
+    "totalPredictions").innerText = data.length;
+
+    document.getElementById("normalPredictions").innerText = normalCount;
+
+    document.getElementById("anomalyPredictions").innerText = anomalyCount;
+
     data.forEach(item => {
 
         if(item.prediction === "NORMAL"){
@@ -148,11 +155,15 @@ new Chart(
                         "ANOMALY"
                     ],
                     datasets:[{
-                        data:[
-                            normalCount,
-                            anomalyCount
-                        ]
-                    }]
+                       data:[
+                           normalCount,
+                           anomalyCount
+                     ],
+
+                        backgroundColor:[
+                           "#22c55e",
+                           "#ef4444"
+                    ]}]
                 },
                 options:{
                     responsive:true,
