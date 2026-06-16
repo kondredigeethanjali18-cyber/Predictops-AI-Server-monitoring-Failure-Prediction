@@ -9,17 +9,15 @@ async function loadAlerts() {
     try {
 
         const response =
-            await fetch("/all-predictions");
+            await fetch("/all-server-predictions");
 
         const predictions =
             await response.json();
 
-        alerts =
-            predictions.filter(
-                item =>
-                item.prediction === "ANOMALY"
-            );
+        alerts = predictions.filter(
+          item => item.prediction === "ANOMALY");
 
+        alerts.sort((a, b) => b.confidence - a.confidence);
         filteredAlerts = alerts;
 
         renderTable();
@@ -104,19 +102,21 @@ function renderTable() {
         `;
     });
 
-    document.getElementById(
-        "alertsTableBody"
-    ).innerHTML = html;
+    document.getElementById("alertsTableBody").innerHTML = html;
 
-    document.getElementById(
-        "alertPageNumber"
-    ).innerText = currentPage;
+    const totalPages =
+    Math.ceil(
+        filteredAlerts.length /
+        recordsPerPage
+    ) || 1;
+
+    document.getElementById("alertPageInfo").innerText =`Page ${currentPage} of ${totalPages}`;
 }
+    document.getElementById("prevAlertBtn").disabled =currentPage === 1;
 
+    document.getElementById("nextAlertBtn").disabled =currentPage === totalPages;
 
-document
-.getElementById("nextAlertBtn")
-.addEventListener("click", () => {
+    document.getElementById("nextAlertBtn").addEventListener("click", () => {
 
     if(
         currentPage <
@@ -133,9 +133,7 @@ document
 });
 
 
-document
-.getElementById("prevAlertBtn")
-.addEventListener("click", () => {
+    document.getElementById("prevAlertBtn").addEventListener("click", () => {
 
     if(currentPage > 1){
 

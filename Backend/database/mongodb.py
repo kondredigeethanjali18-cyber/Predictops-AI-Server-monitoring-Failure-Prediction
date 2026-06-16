@@ -1,12 +1,27 @@
 from pymongo import MongoClient
+from dotenv import load_dotenv
+import os
 
-client = MongoClient(
-    "mongodb+srv://Predictops_user:Geethanjali12345@clusterpredictop.iabajyw.mongodb.net/?appName=Clusterpredictop"
-)
+load_dotenv()
 
-db = client["predictops"]
+MONGODB_URI = os.getenv("MONGODB_URI")
 
-metrics_collection = db["metrics"]
-predictions_collection = db["predictions"]
+try:
 
-print("MongoDB Connected")
+    client = MongoClient(MONGODB_URI)
+
+    client.admin.command("ping")
+
+    db = client["predictops"]
+
+    metrics_collection = db["metrics"]
+    predictions_collection = db["predictions"]
+
+    print("MongoDB Connected")
+
+except Exception as e:
+
+    print(f"MongoDB Connection Error: {e}")
+
+    metrics_collection = None
+    predictions_collection = None

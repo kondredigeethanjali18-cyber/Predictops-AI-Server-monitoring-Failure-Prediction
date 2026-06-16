@@ -5,3 +5,8 @@ pandas
 numpy
 scikit-learn
 joblib
+python-dotenv
+fastapi
+uvicorn
+jinja2
+python-multipart

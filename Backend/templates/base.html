@@ -69,25 +69,34 @@
             </a>
 
         </nav>
-
-    </aside>
+</aside>
 
     <!-- Main Content -->
 
     <main class="content">
 
-        {% block content %}
-        {% endblock %}
+    <div class="notification-container">
 
-    </main>
+        <span id="notificationBell">
+            🔔
+        </span>
 
-    <footer class="footer">
-    PredictOps AI v1.0 |
-    FastAPI + MongoDB + Machine Learning
-</footer>
+        <span id="notificationCount">
+            0
+        </span>
 
+        <div id="notificationPanel"></div>
+
+    </div>
+
+    {% block content %}
+    {% endblock %}
+
+</main>
 </div>
 
 </body>
+
+<script src="/static/js/notifications.js"></script>
 
 </html>

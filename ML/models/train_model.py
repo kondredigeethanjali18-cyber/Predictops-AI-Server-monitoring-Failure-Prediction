@@ -3,7 +3,15 @@ import joblib
 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import (
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score,
+    classification_report,
+    confusion_matrix
+)
+
 
 # ----------------------------------
 # Load Dataset
@@ -44,6 +52,7 @@ X_train, X_test, y_train, y_test = train_test_split(
     X,
     y,
     test_size=0.2,
+    stratify=y,
     random_state=42
 )
 
@@ -52,7 +61,11 @@ X_train, X_test, y_train, y_test = train_test_split(
 # ----------------------------------
 
 model = RandomForestClassifier(
-    n_estimators=100,
+    n_estimators=500,
+    max_depth=20,
+    min_samples_split=3,
+    min_samples_leaf=1,
+    class_weight="balanced",
     random_state=42
 )
 
@@ -62,14 +75,75 @@ model.fit(X_train, y_train)
 # Evaluate
 # ----------------------------------
 
-predictions = model.predict(X_test)
+probabilities = model.predict_proba(X_test)
 
-accuracy = accuracy_score(
-    y_test,
-    predictions
+avg_confidence = (
+    probabilities.max(axis=1).mean()
 )
 
-print("\nAccuracy:", round(accuracy * 100, 2), "%")
+print(
+    f"\nAverage Confidence: {avg_confidence * 100:.2f}%"
+)
+
+predictions = model.predict(X_test)
+
+accuracy = accuracy_score(y_test, predictions)
+
+precision = precision_score(
+    y_test,
+    predictions,
+    zero_division=0
+)
+
+recall = recall_score(
+    y_test,
+    predictions,
+    zero_division=0
+)
+
+f1 = f1_score(
+    y_test,
+    predictions,
+    zero_division=0
+)
+
+print("\n==============================")
+print("MODEL EVALUATION")
+print("==============================")
+
+print(
+    f"Accuracy : {accuracy * 100:.2f}%"
+)
+
+print(
+    f"Precision: {precision * 100:.2f}%"
+)
+
+print(
+    f"Recall   : {recall * 100:.2f}%"
+)
+
+print(
+    f"F1 Score : {f1 * 100:.2f}%"
+)
+
+print("\nClassification Report:")
+print(
+    classification_report(
+        y_test,
+        predictions
+    )
+)
+
+print("\nConfusion Matrix:")
+print(
+    confusion_matrix(
+        y_test,
+        predictions
+    )
+)
+
+
 
 # ----------------------------------
 # Save Model
