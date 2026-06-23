@@ -1,0 +1,10 @@
+psutil
+kafka-python
+pymongo
+pandas
+numpy
+scikit-learn
+joblib
+fastapi
+uvicorn
+jinja2

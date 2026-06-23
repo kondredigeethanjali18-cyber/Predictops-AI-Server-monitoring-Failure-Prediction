@@ -12,22 +12,29 @@ async function loadAnalytics() {
     const data =
         await response.json();
 
-    const topCpuServers =
-    [...data]
-    .sort(
-        (a,b) =>
-        b.cpu_usage_percent -
-        a.cpu_usage_percent
-    )
-    .slice(0,5);
+    const serversResponse =
+        await fetch(
+            "/all-servers"
+        );
+
+    const serversData =
+        await serversResponse.json();
+
+    const cpuServers =
+        [...serversData]
+        .sort(
+            (a,b) =>
+            b.cpu_usage_percent -
+            a.cpu_usage_percent
+        );
 
 const cpuServerNames =
-    topCpuServers.map(
+    cpuServers.map(
         x => x.server_name
     );
 
 const cpuData =
-    topCpuServers.map(
+    cpuServers.map(
         x => x.cpu_usage_percent
     );
 
@@ -53,13 +60,6 @@ const memoryData =
     let normalCount = 0;
     let anomalyCount = 0;
 
-    document.getElementById(
-    "totalPredictions").innerText = data.length;
-
-    document.getElementById("normalPredictions").innerText = normalCount;
-
-    document.getElementById("anomalyPredictions").innerText = anomalyCount;
-
     data.forEach(item => {
 
         if(item.prediction === "NORMAL"){
@@ -71,6 +71,13 @@ const memoryData =
             anomalyCount++;
         }
     });
+
+    document.getElementById(
+    "totalPredictions").innerText = data.length;
+
+    document.getElementById("normalPredictions").innerText = normalCount;
+
+    document.getElementById("anomalyPredictions").innerText = anomalyCount;
 
     if(cpuChart){
         cpuChart.destroy();
@@ -100,7 +107,28 @@ const memoryData =
         options:{
             indexAxis:"y",
             responsive:true,
-            maintainAspectRatio:false
+            maintainAspectRatio:false,
+            scales:{
+                x:{
+                    beginAtZero:true,
+                    max:100,
+                    title:{
+                        display:true,
+                        text:"CPU utilization (%)"
+                    }
+                },
+                y:{
+                    title:{
+                        display:true,
+                        text:"Server name"
+                    }
+                }
+            },
+            plugins:{
+                legend:{
+                    display:false
+                }
+            }
         }
     }
 );
@@ -133,7 +161,28 @@ new Chart(
         options:{
             indexAxis:"y",
             responsive:true,
-            maintainAspectRatio:false
+            maintainAspectRatio:false,
+            scales:{
+                x:{
+                    beginAtZero:true,
+                    max:100,
+                    title:{
+                        display:true,
+                        text:"Memory utilization (%)"
+                    }
+                },
+                y:{
+                    title:{
+                        display:true,
+                        text:"Server name"
+                    }
+                }
+            },
+            plugins:{
+                legend:{
+                    display:false
+                }
+            }
         }
     }
 );

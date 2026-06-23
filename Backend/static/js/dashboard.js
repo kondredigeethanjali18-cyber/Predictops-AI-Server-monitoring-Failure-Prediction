@@ -100,7 +100,7 @@ async function loadDashboard() {
         .slice(0,3)
         .map(
             a =>
-            `🔴 ${a.server_name}`
+            `<span class="alert-line"><i class="fas fa-circle-exclamation alert-icon alert-icon-danger"></i> ${a.server_name}</span>`
         )
         .join("<br>");
 }
@@ -109,7 +109,7 @@ async function loadDashboard() {
     document.getElementById(
         "recentAlerts"
     ).innerHTML =
-        "✅ No active alerts";
+        '<span class="alert-line"><i class="fas fa-circle-check alert-icon alert-icon-success"></i> No active alerts</span>';
 }
 }
 

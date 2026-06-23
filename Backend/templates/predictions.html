@@ -46,7 +46,7 @@
         Previous
     </button>
 
-    <span id="predictionPageInfo">
+    <span id="predictionPageNumber">
         Page 1 of 1
     </span>
 
@@ -54,9 +54,8 @@
         Next
     </button>
 
-
 </div>
 
-<script src="/static/js/predictions.js"></script>
+<script src="/static/js/predictions.js?v={{ asset_version('js/predictions.js') }}"></script>
 
 {% endblock %}

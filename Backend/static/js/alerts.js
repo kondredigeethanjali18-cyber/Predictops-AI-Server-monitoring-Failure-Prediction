@@ -9,16 +9,20 @@ async function loadAlerts() {
     try {
 
         const response =
-            await fetch("/all-server-predictions");
+            await fetch("/all-predictions");
 
         const predictions =
             await response.json();
 
-        alerts = predictions.filter(
-          item => item.prediction === "ANOMALY");
+        alerts =
+            predictions.filter(
+                item =>
+                item.prediction === "ANOMALY"
+            );
 
-        alerts.sort((a, b) => b.confidence - a.confidence);
         filteredAlerts = alerts;
+
+        renderNotification();
 
         renderTable();
 
@@ -32,6 +36,19 @@ async function loadAlerts() {
 }
 
 function renderTable() {
+
+    const totalPages =
+        Math.max(
+            1,
+            Math.ceil(
+                filteredAlerts.length /
+                recordsPerPage
+            )
+        );
+
+    if(currentPage > totalPages){
+        currentPage = totalPages;
+    }
 
     const start =
         (currentPage - 1) *
@@ -102,21 +119,62 @@ function renderTable() {
         `;
     });
 
-    document.getElementById("alertsTableBody").innerHTML = html;
+    document.getElementById(
+        "alertsTableBody"
+    ).innerHTML = html;
 
-    const totalPages =
-    Math.ceil(
-        filteredAlerts.length /
-        recordsPerPage
-    ) || 1;
+    document.getElementById(
+        "alertPageNumber"
+    ).innerText =
+        `Page ${currentPage} of ${totalPages}`;
 
-    document.getElementById("alertPageInfo").innerText =`Page ${currentPage} of ${totalPages}`;
+    document.getElementById("nextAlertBtn").disabled =
+        currentPage >= totalPages;
+
+    document.getElementById("prevAlertBtn").disabled =
+        currentPage <= 1;
 }
-    document.getElementById("prevAlertBtn").disabled =currentPage === 1;
 
-    document.getElementById("nextAlertBtn").disabled =currentPage === totalPages;
+function renderNotification() {
 
-    document.getElementById("nextAlertBtn").addEventListener("click", () => {
+    const notification =
+        document.getElementById("alertsNotification");
+
+    if(!notification){
+        return;
+    }
+
+    notification.classList.remove(
+        "notification-warning",
+        "notification-success"
+    );
+
+    if(alerts.length > 0){
+
+        notification.classList.add(
+            "notification-warning"
+        );
+
+        notification.innerHTML =
+            `<i class="fas fa-bell"></i>
+             <span>${alerts.length} active alert${alerts.length === 1 ? "" : "s"} need review.</span>`;
+
+        return;
+    }
+
+    notification.classList.add(
+        "notification-success"
+    );
+
+    notification.innerHTML =
+        `<i class="fas fa-circle-check"></i>
+         <span>No active alerts at the moment.</span>`;
+}
+
+
+document
+.getElementById("nextAlertBtn")
+.addEventListener("click", () => {
 
     if(
         currentPage <
@@ -133,7 +191,9 @@ function renderTable() {
 });
 
 
-    document.getElementById("prevAlertBtn").addEventListener("click", () => {
+document
+.getElementById("prevAlertBtn")
+.addEventListener("click", () => {
 
     if(currentPage > 1){
 

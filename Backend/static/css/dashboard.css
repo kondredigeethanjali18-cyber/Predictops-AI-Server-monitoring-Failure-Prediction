@@ -8,7 +8,7 @@
 
 body{
     font-family:'Segoe UI',sans-serif;
-    background:#f8fafc;
+    background:#f8f9fc;
     color:#1e293b;
 }
 
@@ -163,6 +163,24 @@ body{
     margin-bottom:12px;
 }
 
+.alert-line{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+}
+
+.alert-icon{
+    font-size:14px;
+}
+
+.alert-icon-danger{
+    color:#dc2626;
+}
+
+.alert-icon-success{
+    color:#16a34a;
+}
+
 /* Tables */
 
 .table-section{
@@ -301,111 +319,4 @@ th,td{
 .chart-container{
     height:400px;
     position:relative;
-}
-
-.notification-container{
-    position:absolute;
-    top:20px;
-    right:30px;
-}
-
-#notificationBell{
-
-    font-size:32px;
-
-    color:#1f4fa3;
-
-    cursor:pointer;
-
-    transition:0.3s;
-}
-
-#notificationBell:hover{
-
-    color:#dc3545;
-
-    transform:scale(1.1);
-}
-
-#notificationCount{
-
-    position:absolute;
-
-    top:-8px;
-
-    right:-10px;
-
-    background:#dc3545;
-
-    color:white;
-
-    font-weight:bold;
-
-    min-width:22px;
-
-    height:22px;
-
-    display:flex;
-
-    justify-content:center;
-
-    align-items:center;
-
-    border-radius:50%;
-}
-
-#alertBanner{
-
-    background:#ff4d4d;
-    color:white;
-
-    padding:15px;
-
-    font-weight:bold;
-
-    border-radius:8px;
-
-    margin-bottom:20px;
-}
-
-#notificationPanel{
-
-    display:none;
-
-    position:absolute;
-
-    top:60px;
-    right:20px;
-
-    width:300px;
-
-    background:white;
-
-    border:1px solid #ccc;
-
-    border-radius:10px;
-
-    padding:15px;
-
-    z-index:999;
-}
-
-.pagination{
-
-    display:flex;
-
-    justify-content:center;
-
-    align-items:center;
-
-    gap:15px;
-
-    margin-top:20px;
-}
-
-.pagination span{
-
-    font-weight:bold;
-
-    color:#1f4fa3;
 }
