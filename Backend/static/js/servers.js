@@ -66,16 +66,21 @@ function renderTable() {
        tableBody.innerHTML = html;
 }
 
-    const pageNumber =
-    document.getElementById("pageNumber");
+    
+    const totalPages =
+    Math.ceil(
+        filteredServers.length /
+        recordsPerPage
+    ) || 1;
 
-       if (pageNumber) {
-         pageNumber.innerText = currentPage;
+document.getElementById(
+    "pageInfo"
+).innerText =
+    `Page ${currentPage} of ${totalPages}`;
 }
-}
 
 
-    const nextBtn = document.getElementById("nextBtn");
+const nextBtn = document.getElementById("nextBtn");
         if (nextBtn) {
             nextBtn.addEventListener("click", () => {
 
@@ -89,7 +94,7 @@ function renderTable() {
     });
 }
 
-    const prevBtn = document.getElementById("prevBtn");
+const prevBtn = document.getElementById("prevBtn");
         if (prevBtn) {
             prevBtn.addEventListener("click", () => {
 
@@ -100,11 +105,11 @@ function renderTable() {
     });
 }
 
-    const searchBox = document.getElementById("searchBox");
+const searchBox = document.getElementById("searchBox");
         if (searchBox) {
             searchBox.addEventListener("input", e => {
 
-    const text = e.target.value.toLowerCase();
+const text = e.target.value.toLowerCase();
 
         filteredServers =
             servers.filter(server =>
