@@ -9,17 +9,15 @@ async function loadAlerts() {
     try {
 
         const response =
-            await fetch("/all-predictions");
+            await fetch("/all-server-predictions");
 
         const predictions =
             await response.json();
 
-        alerts =
-            predictions.filter(
-                item =>
-                item.prediction === "ANOMALY"
-            );
+        alerts = predictions.filter(
+          item => item.prediction === "ANOMALY");
 
+        alerts.sort((a, b) => b.confidence - a.confidence);
         filteredAlerts = alerts;
 
         renderNotification();
@@ -119,10 +117,9 @@ function renderTable() {
         `;
     });
 
-    document.getElementById(
-        "alertsTableBody"
-    ).innerHTML = html;
+    document.getElementById("alertsTableBody").innerHTML = html;
 
+<<<<<<< HEAD
     document.getElementById(
         "alertPageNumber"
     ).innerText =
@@ -169,12 +166,21 @@ function renderNotification() {
     notification.innerHTML =
         `<i class="fas fa-circle-check"></i>
          <span>No active alerts at the moment.</span>`;
+=======
+    const totalPages =
+    Math.ceil(
+        filteredAlerts.length /
+        recordsPerPage
+    ) || 1;
+
+    document.getElementById("alertPageInfo").innerText =`Page ${currentPage} of ${totalPages}`;
+>>>>>>> e7ddcb323f78f0b35dd97a8b034311ba89863464
 }
+    document.getElementById("prevAlertBtn").disabled =currentPage === 1;
 
+    document.getElementById("nextAlertBtn").disabled =currentPage === totalPages;
 
-document
-.getElementById("nextAlertBtn")
-.addEventListener("click", () => {
+    document.getElementById("nextAlertBtn").addEventListener("click", () => {
 
     if(
         currentPage <
@@ -191,9 +197,7 @@ document
 });
 
 
-document
-.getElementById("prevAlertBtn")
-.addEventListener("click", () => {
+    document.getElementById("prevAlertBtn").addEventListener("click", () => {
 
     if(currentPage > 1){
 
