@@ -16,7 +16,7 @@ async function loadServers() {
 
         console.log("Servers Loaded:", servers);
 
-        filteredServers = servers;
+        applyServerFilter();
 
         renderTable();
 
@@ -45,6 +45,19 @@ function renderTable() {
             end
         );
 
+    const totalPages =
+        Math.max(
+            1,
+            Math.ceil(
+                filteredServers.length /
+                recordsPerPage
+            )
+        );
+
+    if(currentPage > totalPages){
+        currentPage = totalPages;
+    }
+
     let html = "";
 
     pageData.forEach(server => {
@@ -70,8 +83,118 @@ function renderTable() {
     document.getElementById("pageNumber");
 
        if (pageNumber) {
-         pageNumber.innerText = currentPage;
+         pageNumber.innerText =
+            `Page ${currentPage} of ${totalPages}`;
 }
+
+    updateServerSummary();
+
+    if(nextBtn){
+        nextBtn.disabled =
+            currentPage >= totalPages;
+    }
+
+    if(prevBtn){
+        prevBtn.disabled =
+            currentPage <= 1;
+    }
+}
+
+function updateServerSummary() {
+
+    const totalServers =
+        servers.length;
+
+    const averageCpu =
+        totalServers === 0
+        ? 0
+        : Math.round(
+            servers.reduce(
+                (sum, server) =>
+                sum + Number(server.cpu_usage_percent || 0),
+                0
+            ) / totalServers
+        );
+
+    const highCpuServers =
+        servers.filter(
+            server =>
+            Number(server.cpu_usage_percent || 0) >= 80
+        );
+
+    const totalCount =
+        document.getElementById("serverTotalCount");
+
+    if(totalCount){
+        totalCount.innerText = totalServers;
+    }
+
+    const averageCpuElement =
+        document.getElementById("serverAverageCpu");
+
+    if(averageCpuElement){
+        averageCpuElement.innerText =
+            `${averageCpu}%`;
+    }
+
+    const highCpuCount =
+        document.getElementById("serverHighCpuCount");
+
+    if(highCpuCount){
+        highCpuCount.innerText =
+            highCpuServers.length;
+    }
+
+    const notification =
+        document.getElementById("serverNotification");
+
+    if(!notification){
+        return;
+    }
+
+    notification.classList.remove(
+        "notification-warning",
+        "notification-success"
+    );
+
+    if(highCpuServers.length > 0){
+
+        notification.classList.add(
+            "notification-warning"
+        );
+
+        notification.innerHTML =
+            `<i class="fas fa-triangle-exclamation"></i>
+             <span>${highCpuServers.length} server${highCpuServers.length === 1 ? "" : "s"} above 80% CPU. Review capacity before the next workload spike.</span>`;
+
+        return;
+    }
+
+    notification.classList.add(
+        "notification-success"
+    );
+
+    notification.innerHTML =
+        `<i class="fas fa-circle-check"></i>
+         <span>All monitored servers are below the high CPU threshold right now.</span>`;
+}
+
+function applyServerFilter() {
+
+    const searchBox =
+        document.getElementById("searchBox");
+
+    const text =
+        searchBox
+        ? searchBox.value.toLowerCase()
+        : "";
+
+    filteredServers =
+        servers.filter(server =>
+            server.server_name
+                .toLowerCase()
+                .includes(text)
+        );
 }
 
 
@@ -104,14 +227,7 @@ function renderTable() {
         if (searchBox) {
             searchBox.addEventListener("input", e => {
 
-    const text = e.target.value.toLowerCase();
-
-        filteredServers =
-            servers.filter(server =>
-                server.server_name
-                    .toLowerCase()
-                    .includes(text)
-            );
+        applyServerFilter();
 
         currentPage = 1;
 

@@ -38,7 +38,7 @@
     <div class="card chart-small">
 
         <h3>
-            ⚡ Top 5 CPU Utilization Servers
+            <i class="fas fa-bolt"></i> CPU Utilization Across All Servers
         </h3>
 
         <div class="chart-container">
@@ -66,7 +66,7 @@
 <div class="card chart-large">
 
     <h3>
-        🚨 Anomaly Distribution
+        <i class="fas fa-triangle-exclamation"></i> Anomaly Distribution
     </h3>
 
     <div class="chart-container">
@@ -76,6 +76,6 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="/static/js/analytics.js"></script>
+<script src="/static/js/analytics.js?v={{ asset_version('js/analytics.js') }}"></script>
 
 {% endblock %}

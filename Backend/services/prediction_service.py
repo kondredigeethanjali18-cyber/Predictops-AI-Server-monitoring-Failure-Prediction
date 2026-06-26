@@ -4,7 +4,7 @@ from Backend.database.mongodb import predictions_collection
 from datetime import datetime, timezone
 
 
-MODEL_PATH = "ml/models/anomaly_model.pkl"
+MODEL_PATH = "ML/models/anomaly_model.pkl"
 
 model = joblib.load(MODEL_PATH)
 

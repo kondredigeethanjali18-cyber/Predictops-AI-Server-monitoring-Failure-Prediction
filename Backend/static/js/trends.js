@@ -65,14 +65,30 @@ async function loadMetrics() {
                             label:"CPU %",
                             data:cpuValues,
                             borderColor:"#ef4444",
-                            borderwidth:3,
+                            borderWidth:3,
                             fill:false,
                             tension:0.3
                         }]
                     },
                     options:{
                         responsive:true,
-                        maintainAspectRatio:false
+                        maintainAspectRatio:false,
+                        scales:{
+                            x:{
+                                title:{
+                                    display:true,
+                                    text:"Time"
+                                }
+                            },
+                            y:{
+                                beginAtZero:true,
+                                max:100,
+                                title:{
+                                    display:true,
+                                    text:"CPU utilization (%)"
+                                }
+                            }
+                        }
                     }
                 }
             );
@@ -97,14 +113,30 @@ async function loadMetrics() {
                             label:"Memory %",
                             data:memoryValues,
                             borderColor:"#3b82f6",
-                            borderwidth:3,
+                            borderWidth:3,
                             fill:false,
                             tension:0.3
                         }]
                     },
                     options:{
                         responsive:true,
-                        maintainAspectRatio:false
+                        maintainAspectRatio:false,
+                        scales:{
+                            x:{
+                                title:{
+                                    display:true,
+                                    text:"Time"
+                                }
+                            },
+                            y:{
+                                beginAtZero:true,
+                                max:100,
+                                title:{
+                                    display:true,
+                                    text:"Memory utilization (%)"
+                                }
+                            }
+                        }
                     }
                 }
             );

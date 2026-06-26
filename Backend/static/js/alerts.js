@@ -22,6 +22,8 @@ async function loadAlerts() {
 
         filteredAlerts = alerts;
 
+        renderNotification();
+
         renderTable();
 
     } catch(error) {
@@ -34,6 +36,19 @@ async function loadAlerts() {
 }
 
 function renderTable() {
+
+    const totalPages =
+        Math.max(
+            1,
+            Math.ceil(
+                filteredAlerts.length /
+                recordsPerPage
+            )
+        );
+
+    if(currentPage > totalPages){
+        currentPage = totalPages;
+    }
 
     const start =
         (currentPage - 1) *
@@ -110,7 +125,50 @@ function renderTable() {
 
     document.getElementById(
         "alertPageNumber"
-    ).innerText = currentPage;
+    ).innerText =
+        `Page ${currentPage} of ${totalPages}`;
+
+    document.getElementById("nextAlertBtn").disabled =
+        currentPage >= totalPages;
+
+    document.getElementById("prevAlertBtn").disabled =
+        currentPage <= 1;
+}
+
+function renderNotification() {
+
+    const notification =
+        document.getElementById("alertsNotification");
+
+    if(!notification){
+        return;
+    }
+
+    notification.classList.remove(
+        "notification-warning",
+        "notification-success"
+    );
+
+    if(alerts.length > 0){
+
+        notification.classList.add(
+            "notification-warning"
+        );
+
+        notification.innerHTML =
+            `<i class="fas fa-bell"></i>
+             <span>${alerts.length} active alert${alerts.length === 1 ? "" : "s"} need review.</span>`;
+
+        return;
+    }
+
+    notification.classList.add(
+        "notification-success"
+    );
+
+    notification.innerHTML =
+        `<i class="fas fa-circle-check"></i>
+         <span>No active alerts at the moment.</span>`;
 }
 
 

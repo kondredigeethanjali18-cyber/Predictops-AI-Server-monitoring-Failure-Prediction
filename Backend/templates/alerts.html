@@ -4,6 +4,11 @@
 
 <h1>Alerts</h1>
 
+<div class="notification-bar" id="alertsNotification">
+    <i class="fas fa-circle-info"></i>
+    <span>Loading alert notification...</span>
+</div>
+
 <table>
 
     <thead>
@@ -29,7 +34,7 @@
     </button>
 
     <span id="alertPageNumber">
-        1
+        Page 1 of 1
     </span>
 
     <button id="nextAlertBtn">
@@ -38,6 +43,6 @@
 
 </div>
 
-<script src="/static/js/alerts.js"></script>
+<script src="/static/js/alerts.js?v={{ asset_version('js/alerts.js') }}"></script>
 
 {% endblock %}

@@ -46,6 +46,19 @@ async function loadPredictions() {
 
 function renderTable() {
 
+    const totalPages =
+        Math.max(
+            1,
+            Math.ceil(
+                filteredPredictions.length /
+                recordsPerPage
+            )
+        );
+
+    if(currentPage > totalPages){
+        currentPage = totalPages;
+    }
+
     const start =
         (currentPage - 1) *
         recordsPerPage;
@@ -108,7 +121,14 @@ function renderTable() {
 
     document.getElementById(
         "predictionPageNumber"
-    ).innerText = currentPage;
+    ).innerText =
+        `Page ${currentPage} of ${totalPages}`;
+
+    document.getElementById("nextPredictionBtn").disabled =
+        currentPage >= totalPages;
+
+    document.getElementById("prevPredictionBtn").disabled =
+        currentPage <= 1;
 }
 
 

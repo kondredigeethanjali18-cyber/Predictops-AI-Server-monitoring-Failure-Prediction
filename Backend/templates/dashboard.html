@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 
+{% block styles %}
+<link rel="stylesheet" href="/static/css/dashboard.css?v={{ asset_version('css/dashboard.css') }}">
+{% endblock %}
+
 {% block content %}
 
 <div class="dashboard-header">
@@ -34,22 +38,22 @@
 <div class="info-grid">
 
     <div class="info-card">
-        <h3>🔥 Top Risk Server</h3>
+        <h3><i class="fas fa-fire"></i> Top Risk Server</h3>
         <div id="topRiskServer">Loading...</div>
     </div>
 
     <div class="info-card">
-        <h3>📊 Latest Prediction</h3>
+        <h3><i class="fas fa-chart-bar"></i> Latest Prediction</h3>
         <div id="latestPrediction">Loading...</div>
     </div>
 
     <div class="info-card">
-        <h3>🚨 recent Alerts</h3>
+        <h3><i class="fas fa-triangle-exclamation"></i> recent Alerts</h3>
         <div id="recentAlerts">Loading...</div>
     </div>
 
     <div class="info-card">
-        <h3>⏱ Last Updated</h3>
+        <h3><i class="fas fa-clock"></i> Last Updated</h3>
         <div id="lastUpdated">Loading...</div>
     </div>
 
@@ -63,6 +67,6 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="/static/js/dashboard.js"></script>
+<script src="/static/js/dashboard.js?v={{ asset_version('js/dashboard.js') }}"></script>
 
 {% endblock %}

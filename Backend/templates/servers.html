@@ -2,7 +2,46 @@
 
 {% block content %}
 
-<h1>Servers</h1>
+<div class="dashboard-header page-header-row">
+    <div>
+        <h1>Server Inventory</h1>
+        <p>Live utilization snapshot for every monitored server</p>
+    </div>
+
+    <div class="page-actions">
+        <input
+            type="text"
+            id="searchBox"
+            placeholder="Search server">
+
+        <button id="exportBtn">
+            <i class="fas fa-file-export"></i>
+            Export CSV
+        </button>
+    </div>
+</div>
+
+<div class="notification-bar" id="serverNotification">
+    <i class="fas fa-circle-info"></i>
+    <span>Loading server health notification...</span>
+</div>
+
+<div class="cards compact-cards">
+    <div class="card total-card">
+        <h3>Total Servers</h3>
+        <div class="metric" id="serverTotalCount">0</div>
+    </div>
+
+    <div class="card healthy-card">
+        <h3>Average CPU</h3>
+        <div class="metric" id="serverAverageCpu">0%</div>
+    </div>
+
+    <div class="card warning-card">
+        <h3>High Utilization</h3>
+        <div class="metric" id="serverHighCpuCount">0</div>
+    </div>
+</div>
 
 
 <table id="serversTable">
@@ -28,7 +67,7 @@
     </button>
 
     <span id="pageNumber">
-        1
+        Page 1 of 1
     </span>
 
     <button id="nextBtn">
@@ -37,15 +76,6 @@
 
 </div>
 
-    <button id="exportBtn">
-        Export CSV
-    </button>
-
-    <input
-        type="text"
-        id="searchBox"
-        placeholder="Search Server">
-
-<script src="/static/js/servers.js"></script>
+<script src="/static/js/servers.js?v={{ asset_version('js/servers.js') }}"></script>
 
 {% endblock %}

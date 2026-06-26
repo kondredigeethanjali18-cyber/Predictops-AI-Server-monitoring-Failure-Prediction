@@ -5,3 +5,6 @@ pandas
 numpy
 scikit-learn
 joblib
+fastapi
+uvicorn
+jinja2
