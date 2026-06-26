@@ -10,6 +10,11 @@ body{
     font-family:'Segoe UI',sans-serif;
     background:#f8f9fc;
     color:#1e293b;
+    overflow-x:hidden;
+}
+
+.navbar{
+    margin-bottom:0;
 }
 
 /* Layout */
@@ -74,15 +79,17 @@ body{
 /* Main Content */
 
 .content{
-    margin-left:260px;
     width:100%;
-    padding:30px;
+    max-width:1280px;
+    margin:0 auto;
+    padding:18px 24px 30px;
+    overflow-x:hidden;
 }
 
 /* Dashboard Header */
 
 .dashboard-header{
-    margin-bottom:25px;
+    margin-bottom:18px;
 }
 
 .dashboard-header h1{
@@ -99,20 +106,16 @@ body{
 .cards{
     display:grid;
     grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-    gap:20px;
-    margin-bottom:25px;
+    gap:16px;
+    margin-bottom:18px;
 }
 
 .card{
     background:white;
-    border-radius:16px;
-    padding:25px;
+    border-radius:8px;
+    padding:22px;
     box-shadow:0 4px 15px rgba(0,0,0,0.08);
-    transition:0.3s;
-}
-
-.card:hover{
-    transform:translateY(-4px);
+    transition:border-color .2s, box-shadow .2s;
 }
 
 .card h3{
@@ -148,15 +151,20 @@ body{
 .info-grid{
     display:grid;
     grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
-    gap:20px;
-    margin-top:20px;
+    gap:16px;
+    margin-top:0;
 }
 
 .info-card{
     background:white;
-    border-radius:16px;
+    border-radius:8px;
     padding:20px;
     box-shadow:0 4px 15px rgba(0,0,0,0.08);
+}
+
+.card:hover,
+.info-card:hover{
+    box-shadow:0 6px 18px rgba(15,23,42,0.09);
 }
 
 .info-card h3{
@@ -187,7 +195,7 @@ body{
     background:white;
     margin-top:25px;
     padding:20px;
-    border-radius:16px;
+    border-radius:8px;
     box-shadow:0 4px 15px rgba(0,0,0,0.08);
 }
 
@@ -237,8 +245,7 @@ th,td{
     }
 
     .content{
-        margin-left:220px;
-        padding:20px;
+        padding:16px;
     }
 
     .cards,
@@ -320,113 +327,3 @@ th,td{
     height:400px;
     position:relative;
 }
-<<<<<<< HEAD
-=======
-
-.notification-container{
-    position:absolute;
-    top:20px;
-    right:30px;
-}
-
-#notificationBell{
-
-    font-size:32px;
-
-    color:#1f4fa3;
-
-    cursor:pointer;
-
-    transition:0.3s;
-}
-
-#notificationBell:hover{
-
-    color:#dc3545;
-
-    transform:scale(1.1);
-}
-
-#notificationCount{
-
-    position:absolute;
-
-    top:-8px;
-
-    right:-10px;
-
-    background:#dc3545;
-
-    color:white;
-
-    font-weight:bold;
-
-    min-width:22px;
-
-    height:22px;
-
-    display:flex;
-
-    justify-content:center;
-
-    align-items:center;
-
-    border-radius:50%;
-}
-
-#alertBanner{
-
-    background:#ff4d4d;
-    color:white;
-
-    padding:15px;
-
-    font-weight:bold;
-
-    border-radius:8px;
-
-    margin-bottom:20px;
-}
-
-#notificationPanel{
-
-    display:none;
-
-    position:absolute;
-
-    top:60px;
-    right:20px;
-
-    width:300px;
-
-    background:white;
-
-    border:1px solid #ccc;
-
-    border-radius:10px;
-
-    padding:15px;
-
-    z-index:999;
-}
-
-.pagination{
-
-    display:flex;
-
-    justify-content:center;
-
-    align-items:center;
-
-    gap:15px;
-
-    margin-top:20px;
-}
-
-.pagination span{
-
-    font-weight:bold;
-
-    color:#1f4fa3;
-}
->>>>>>> e7ddcb323f78f0b35dd97a8b034311ba89863464

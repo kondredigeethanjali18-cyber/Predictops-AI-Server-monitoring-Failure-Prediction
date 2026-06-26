@@ -4,13 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}PredictOps AI{% endblock %}</title>
-    
-    <!-- Font Awesome CDN -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Favicon -->
-    <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="/static/css/style.css?v={{ asset_version('css/style.css') }}">
 
     {% block styles %}{% endblock %}
@@ -29,86 +25,13 @@
                 <li><a href="/trends"><i class="fas fa-chart-line"></i> Trends</a></li>
             </ul>
         </div>
-<<<<<<< HEAD
     </nav>
 
     <main class="content">
         {% block content %}{% endblock %}
     </main>
-    
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>
-=======
-
-        <nav>
-
-            <a href="/dashboard">
-                <i class="fas fa-chart-line"></i>
-                Dashboard
-            </a>
-
-            <a href="/servers">
-                <i class="fas fa-server"></i>
-                Servers
-            </a>
-
-            <a href="/predictions">
-                <i class="fas fa-brain"></i>
-                Predictions
-            </a>
-
-            <a href="/alerts">
-                <i class="fas fa-triangle-exclamation"></i>
-                Alerts
-            </a>
-
-            <a href="/insights">
-                <i class="fas fa-lightbulb"></i>
-                AI Insights
-            </a>
-
-            <a href="/analytics">
-                <i class="fas fa-chart-pie"></i>
-                Analytics
-            </a>
-
-            <a href="/trends">
-                <i class="fas fa-arrow-trend-up"></i>
-                Performance Trends
-            </a>
-
-        </nav>
-</aside>
-
-    <!-- Main Content -->
-
-    <main class="content">
-
-    <div class="notification-container">
-
-        <span id="notificationBell">
-            🔔
-        </span>
-
-        <span id="notificationCount">
-            0
-        </span>
-
-        <div id="notificationPanel"></div>
-
-    </div>
-
-    {% block content %}
-    {% endblock %}
-
-</main>
-</div>
-
-</body>
-
-<script src="/static/js/notifications.js"></script>
-
-</html>
->>>>>>> e7ddcb323f78f0b35dd97a8b034311ba89863464
