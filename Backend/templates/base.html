@@ -29,6 +29,7 @@
                 <li><a href="/trends"><i class="fas fa-chart-line"></i> Trends</a></li>
             </ul>
         </div>
+<<<<<<< HEAD
     </nav>
 
     <main class="content">
@@ -39,3 +40,75 @@
     {% block scripts %}{% endblock %}
 </body>
 </html>
+=======
+
+        <nav>
+
+            <a href="/dashboard">
+                <i class="fas fa-chart-line"></i>
+                Dashboard
+            </a>
+
+            <a href="/servers">
+                <i class="fas fa-server"></i>
+                Servers
+            </a>
+
+            <a href="/predictions">
+                <i class="fas fa-brain"></i>
+                Predictions
+            </a>
+
+            <a href="/alerts">
+                <i class="fas fa-triangle-exclamation"></i>
+                Alerts
+            </a>
+
+            <a href="/insights">
+                <i class="fas fa-lightbulb"></i>
+                AI Insights
+            </a>
+
+            <a href="/analytics">
+                <i class="fas fa-chart-pie"></i>
+                Analytics
+            </a>
+
+            <a href="/trends">
+                <i class="fas fa-arrow-trend-up"></i>
+                Performance Trends
+            </a>
+
+        </nav>
+</aside>
+
+    <!-- Main Content -->
+
+    <main class="content">
+
+    <div class="notification-container">
+
+        <span id="notificationBell">
+            🔔
+        </span>
+
+        <span id="notificationCount">
+            0
+        </span>
+
+        <div id="notificationPanel"></div>
+
+    </div>
+
+    {% block content %}
+    {% endblock %}
+
+</main>
+</div>
+
+</body>
+
+<script src="/static/js/notifications.js"></script>
+
+</html>
+>>>>>>> e7ddcb323f78f0b35dd97a8b034311ba89863464

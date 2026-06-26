@@ -79,9 +79,14 @@ function renderTable() {
        tableBody.innerHTML = html;
 }
 
-    const pageNumber =
-    document.getElementById("pageNumber");
+    
+    const totalPages =
+    Math.ceil(
+        filteredServers.length /
+        recordsPerPage
+    ) || 1;
 
+<<<<<<< HEAD
        if (pageNumber) {
          pageNumber.innerText =
             `Page ${currentPage} of ${totalPages}`;
@@ -195,10 +200,16 @@ function applyServerFilter() {
                 .toLowerCase()
                 .includes(text)
         );
+=======
+document.getElementById(
+    "pageInfo"
+).innerText =
+    `Page ${currentPage} of ${totalPages}`;
+>>>>>>> e7ddcb323f78f0b35dd97a8b034311ba89863464
 }
 
 
-    const nextBtn = document.getElementById("nextBtn");
+const nextBtn = document.getElementById("nextBtn");
         if (nextBtn) {
             nextBtn.addEventListener("click", () => {
 
@@ -212,7 +223,7 @@ function applyServerFilter() {
     });
 }
 
-    const prevBtn = document.getElementById("prevBtn");
+const prevBtn = document.getElementById("prevBtn");
         if (prevBtn) {
             prevBtn.addEventListener("click", () => {
 
@@ -223,11 +234,22 @@ function applyServerFilter() {
     });
 }
 
-    const searchBox = document.getElementById("searchBox");
+const searchBox = document.getElementById("searchBox");
         if (searchBox) {
             searchBox.addEventListener("input", e => {
 
+<<<<<<< HEAD
         applyServerFilter();
+=======
+const text = e.target.value.toLowerCase();
+
+        filteredServers =
+            servers.filter(server =>
+                server.server_name
+                    .toLowerCase()
+                    .includes(text)
+            );
+>>>>>>> e7ddcb323f78f0b35dd97a8b034311ba89863464
 
         currentPage = 1;
 

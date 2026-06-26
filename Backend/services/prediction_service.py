@@ -6,7 +6,13 @@ from datetime import datetime, timezone
 
 MODEL_PATH = "ML/models/anomaly_model.pkl"
 
-model = joblib.load(MODEL_PATH)
+try:
+    model = joblib.load(MODEL_PATH)
+    print("ML Model Loaded Successfully")
+
+except Exception as e:
+    model = None
+    print(f"Model Loading Error: {e}")
 
 FEATURES = [
     "cpu_usage_percent",
@@ -27,125 +33,174 @@ FEATURES = [
 
 def predict_latest_server():
 
-    df = pd.read_csv(
-        "data/processed/feature_engineered_metrics.csv"
-    )
+    try:
 
-    latest = df.iloc[-1]
+        if model is None:
+            raise Exception("Model Not Loaded")
 
-    X = pd.DataFrame(
-        [latest[FEATURES]],
-        columns=FEATURES
-    )
+        df = pd.read_csv(
+            "data/processed/feature_engineered_metrics.csv"
+        )
 
-    prediction = model.predict(X)[0]
+        latest = df.iloc[-1]
 
-    confidence = float(
-    max(model.predict_proba(X)[0])
-)
+        X = pd.DataFrame(
+            [latest[FEATURES]],
+            columns=FEATURES
+        )
 
-    causes = []
+        prediction = model.predict(X)[0]
 
-    if latest["cpu_usage_percent"] > 90:
-     causes.append("High CPU Usage")
+        confidence = float(
+            max(model.predict_proba(X)[0])
+        )
 
-    if latest["memory_usage_percent"] > 90:
-     causes.append("High Memory Usage")
+        causes = []
 
-    if latest["disk_usage_percent"] > 90:
-     causes.append("High Disk Usage")
+        if latest["cpu_usage_percent"] > 90:
+            causes.append("High CPU Usage")
 
-    if latest["error_count"] > 10:
-     causes.append("High Error Count")
+        if latest["memory_usage_percent"] > 90:
+            causes.append("High Memory Usage")
 
-    if latest["request_latency_ms"] > 500:
-     causes.append("High Request Latency")
+        if latest["disk_usage_percent"] > 90:
+            causes.append("High Disk Usage")
 
-    if not causes:
-     causes.append("No major issue detected")
+        if latest["error_count"] > 10:
+            causes.append("High Error Count")
 
-    result = {
-    "server_id": latest["server_id"],
-    "server_name": latest["server_name"],
+        if latest["request_latency_ms"] > 500:
+            causes.append("High Request Latency")
 
-    "prediction": (
-        "ANOMALY"
-        if prediction == 1
-        else "NORMAL"
-    ),
+        if not causes:
+            causes.append("No major issue detected")
 
-    "confidence": round(confidence * 100, 2),
+        result = {
 
-    "cpu_usage_percent": float(latest["cpu_usage_percent"]),
-    "memory_usage_percent": float(latest["memory_usage_percent"]),
-    "disk_usage_percent": float(latest["disk_usage_percent"]),
+            "server_id": latest["server_id"],
+            "server_name": latest["server_name"],
 
-    "possible_causes": causes,
+            "prediction":
+                "ANOMALY"
+                if prediction == 1
+                else "NORMAL",
 
-    "timestamp": datetime.now(timezone.utc)
-}
+            "confidence":
+                round(confidence * 100, 2),
 
-# Save prediction to MongoDB
-    predictions_collection.insert_one(result)
+            "cpu_usage_percent":
+                float(latest["cpu_usage_percent"]),
 
-    return result
+            "memory_usage_percent":
+                float(latest["memory_usage_percent"]),
+
+            "disk_usage_percent":
+                float(latest["disk_usage_percent"]),
+
+            "possible_causes":
+                causes,
+
+            "timestamp":
+                datetime.now(timezone.utc)
+        }
+
+        if predictions_collection is not None:
+            predictions_collection.insert_one(result)
+
+        return result
+    
+    except Exception as e:
+
+        print(f"Prediction Error: {e}")
+
+        return {
+            "prediction": "UNKNOWN",
+            "confidence": 0,
+            "possible_causes": ["Prediction Failed"]
+        }
 
 from Backend.services.feature_engineering import build_features
 
 
 def predict_metric(metric):
 
-    features = build_features(metric)
+    try:
 
-    X = pd.DataFrame([features])
+        if model is None:
+            raise Exception("Model Not Loaded")
 
-    prediction = model.predict(X)[0]
+        features = build_features(metric)
 
-    confidence = float(
-        max(model.predict_proba(X)[0])
-    )
+        X = pd.DataFrame([features])
 
-    causes = []
+        prediction = model.predict(X)[0]
 
-    if metric["cpu_usage_percent"] > 90:
-        causes.append("High CPU Usage")
+        confidence = float(
+            max(model.predict_proba(X)[0])
+        )
 
-    if metric["memory_usage_percent"] > 90:
-        causes.append("High Memory Usage")
+        causes = []
 
-    if metric["disk_usage_percent"] > 90:
-        causes.append("High Disk Usage")
+        if metric["cpu_usage_percent"] > 90:
+            causes.append("High CPU Usage")
 
-    if not causes:
-        causes.append("No major issue detected")
+        if metric["memory_usage_percent"] > 90:
+            causes.append("High Memory Usage")
 
-    result = {
-        "server_name": metric["server_name"],
+        if metric["disk_usage_percent"] > 90:
+            causes.append("High Disk Usage")
 
-        "prediction":
-            "ANOMALY"
-            if prediction == 1
-            else "NORMAL",
+        if not causes:
+            causes.append("No major issue detected")
 
-        "confidence":
-            round(confidence * 100, 2),
+        result = {
 
-        "cpu_usage_percent":
-            metric["cpu_usage_percent"],
+            "server_name":
+                metric["server_name"],
 
-        "memory_usage_percent":
-            metric["memory_usage_percent"],
+            "prediction":
+                "ANOMALY"
+                if prediction == 1
+                else "NORMAL",
 
-        "disk_usage_percent":
-            metric["disk_usage_percent"],
+            "confidence":
+                round(confidence * 100, 2),
 
-        "possible_causes":
-            causes,
+            "cpu_usage_percent":
+                metric["cpu_usage_percent"],
 
-        "timestamp":
-            datetime.now(timezone.utc)
-    }
+            "memory_usage_percent":
+                metric["memory_usage_percent"],
 
-    predictions_collection.insert_one(result)
+            "disk_usage_percent":
+                metric["disk_usage_percent"],
 
-    return result
+            "possible_causes":
+                causes,
+
+            "timestamp":
+                datetime.now(timezone.utc)
+        }
+
+        if predictions_collection is not None:
+            predictions_collection.insert_one(result)
+
+        return result
+
+    except Exception as e:
+
+        print(f"Metric Prediction Error: {e}")
+
+        return {
+            "server_name":
+                metric.get("server_name", "Unknown"),
+
+            "prediction":
+                "UNKNOWN",
+
+            "confidence":
+                0,
+
+            "possible_causes":
+                ["Prediction Failed"]
+        }

@@ -1,18 +1,22 @@
 import pandas as pd
+import numpy as np
 
 # Load data
+
 df = pd.read_csv("data/server_metrics.csv")
 
 # ----------------------------------
+
 # Server Metadata
+
 # ----------------------------------
 
 servers = [
-    ("SRV001", "web-server-01", "ap-south-1", "production"),
-    ("SRV002", "api-server-01", "ap-south-1", "production"),
-    ("SRV003", "database-server-01", "us-east-1", "production"),
-    ("SRV004", "cache-server-01", "eu-west-1", "staging"),
-    ("SRV005", "worker-server-01", "ap-south-1", "development")
+("SRV001", "web-server-01", "ap-south-1", "production"),
+("SRV002", "api-server-01", "ap-south-1", "production"),
+("SRV003", "database-server-01", "us-east-1", "production"),
+("SRV004", "cache-server-01", "eu-west-1", "staging"),
+("SRV005", "worker-server-01", "ap-south-1", "development")
 ]
 
 df["server_id"] = ""
@@ -29,53 +33,102 @@ for i in range(len(df)):
     df.loc[i, "environment"] = server[3]
 
 # ----------------------------------
+
+# Generate Synthetic Records
+
+# ----------------------------------
+
+synthetic_rows = []
+
+for _ in range(1000):
+  row = df.sample(1).iloc[0].copy()
+  row["cpu_usage_percent"] += np.random.randint(-5, 6)
+  row["memory_usage_percent"] += np.random.randint(-5, 6)
+  row["disk_usage_percent"] += np.random.randint(-2, 3)
+  row["bytes_sent"] += np.random.uniform(-50, 50)
+  row["bytes_received"] += np.random.uniform(-50, 50)
+  row["request_latency_ms"] += np.random.randint(-50, 51)
+  synthetic_rows.append(row)
+  synthetic_df = pd.DataFrame(synthetic_rows)
+
+df = pd.concat(
+[df, synthetic_df],
+ignore_index=True
+)
+
+# ----------------------------------
+
 # Feature Engineering
+
 # ----------------------------------
 
 # Total network traffic
+
 df["network_total"] = (
-    df["bytes_sent"] +
-    df["bytes_received"]
+df["bytes_sent"] +
+df["bytes_received"]
 )
 
 # CPU / Memory ratio
+
 df["cpu_memory_ratio"] = (
-    df["cpu_usage_percent"] /
-    (df["memory_usage_percent"] + 1)
+df["cpu_usage_percent"] /
+(df["memory_usage_percent"] + 1)
 )
 
 # CPU trend
+
 df["cpu_change"] = (
-    df["cpu_usage_percent"].diff()
+df["cpu_usage_percent"].diff()
 )
 
 # Memory trend
+
 df["memory_change"] = (
-    df["memory_usage_percent"].diff()
+df["memory_usage_percent"].diff()
 )
 
 # Latency per process
+
 df["latency_per_process"] = (
-    df["request_latency_ms"] /
-    (df["active_processes"] + 1)
+df["request_latency_ms"] /
+(df["active_processes"] + 1)
 )
 
-# Replace NaN from diff()
+# Replace NaN values
+
 df.fillna(0, inplace=True)
 
 # ----------------------------------
-# Temporary Anomaly Label
+
+# Improved Anomaly Label
+
 # ----------------------------------
 
 df["anomaly"] = (
-    (df["cpu_usage_percent"] > 90)
+    (
+        (df["cpu_usage_percent"] > 85)
+        &
+        (df["memory_usage_percent"] > 75)
+    )
     |
-    (df["memory_usage_percent"] > 90)
+    (
+        (df["request_latency_ms"] > 600)
+        &
+        (df["error_count"] > 5)
+    )
     |
-    (df["error_count"] > 10)
+    (
+        (df["disk_usage_percent"] > 90)
+    )
 ).astype(int)
 
-# Save output
+# ----------------------------------
+
+# Save Dataset
+
+# ----------------------------------
+
 output_path = "data/processed/feature_engineered_metrics.csv"
 
 df.to_csv(output_path, index=False)
@@ -83,3 +136,5 @@ df.to_csv(output_path, index=False)
 print("Feature engineering completed")
 print("Saved:", output_path)
 print("Rows:", len(df))
+print("\nAnomaly Distribution:")
+print(df["anomaly"].value_counts())

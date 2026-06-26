@@ -1,6 +1,6 @@
 .env
 
-.venv
+
 
 __pycache__/    
 
@@ -11,3 +11,4 @@ logs/
 data/
 
 *.pyc
+.sh

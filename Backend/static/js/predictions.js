@@ -191,6 +191,27 @@ document
 });
 
 
+const totalPages =
+    Math.ceil(
+        filteredPredictions.length /
+        recordsPerPage
+    ) || 1;
+
+document.getElementById(
+    "predictionPageInfo"
+).innerText =
+    `Page ${currentPage} of ${totalPages}`;
+
+    document.getElementById(
+    "prevPredictionBtn"
+).disabled =
+    currentPage === 1;
+
+document.getElementById(
+    "nextPredictionBtn"
+).disabled =
+    currentPage === totalPages;
+
 loadPredictions();
 
 setInterval(

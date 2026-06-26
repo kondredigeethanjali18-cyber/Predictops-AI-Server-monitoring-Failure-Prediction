@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import logging
 from os import getenv
 
@@ -72,3 +73,32 @@ else:
     metrics_collection = None
     predictions_collection = None
     logger.error("MongoDB is not available. collections are set to None.")
+=======
+from pymongo import MongoClient
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+MONGODB_URI = os.getenv("MONGODB_URI")
+
+try:
+
+    client = MongoClient(MONGODB_URI)
+
+    client.admin.command("ping")
+
+    db = client["predictops"]
+
+    metrics_collection = db["metrics"]
+    predictions_collection = db["predictions"]
+
+    print("MongoDB Connected")
+
+except Exception as e:
+
+    print(f"MongoDB Connection Error: {e}")
+
+    metrics_collection = None
+    predictions_collection = None
+>>>>>>> e7ddcb323f78f0b35dd97a8b034311ba89863464
