@@ -1,6 +1,7 @@
 from pymongo import MongoClient
+from os import getenv
 
-uri = "mongodb+srv://Predictops_user:Geethanjali12345@clusterpredictop.iabajyw.mongodb.net/?appName=Clusterpredictop"
+uri = getenv("uri")
 
 client = MongoClient(uri)
 

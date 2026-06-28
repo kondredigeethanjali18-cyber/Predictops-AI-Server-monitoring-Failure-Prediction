@@ -1,6 +1,6 @@
-<<<<<<< HEAD
 import logging
 from os import getenv
+from time import sleep
 
 from pymongo import MongoClient, ReadPreference
 
@@ -9,41 +9,41 @@ logger = logging.getLogger(__name__)
 
 MONGO_URI = getenv(
     "MONGO_URI",
-    "mongodb://localhost:27017",
+    getenv("MONGODB_URI", "mongodb://localhost:27017"),
 )
 MONGO_DB = getenv("MONGO_DB", "predictops")
 LOCAL_MONGO_URI = getenv("LOCAL_MONGO_URI", "mongodb://localhost:27017")
+MONGO_CONNECT_RETRIES = int(getenv("MONGO_CONNECT_RETRIES", "6"))
+MONGO_CONNECT_RETRY_DELAY = int(getenv("MONGO_CONNECT_RETRY_DELAY", "5"))
 
 
 def create_mongo_client(uri: str) -> MongoClient:
-    """Create a MongoClient instance using the provided URI."""
     connect_kwargs = {
         "serverSelectionTimeoutMS": 10000,
         "connectTimeoutMS": 10000,
         "appName": "PredictOpsAI",
+        "tls": uri.startswith("mongodb+srv://"),
     }
-
-    if uri.startswith("mongodb+srv://"):
-        connect_kwargs["tls"] = True
-    else:
-        connect_kwargs["tls"] = False
 
     return MongoClient(uri, **connect_kwargs)
 
 
 def connect_mongo() -> MongoClient | None:
-    """Try to connect to MongoDB using configured URIs and return the client."""
-    try:
-        client = create_mongo_client(MONGO_URI)
-        client.admin.command("ping")
-        logger.info("MongoDB connected using MONGO_URI")
-        return client
-    except Exception as exc:
-        logger.warning(
-            "MongoDB connection failed using MONGO_URI. "
-            "Falling back to LOCAL_MONGO_URI if configured."
-        )
-        logger.warning(str(exc))
+    for attempt in range(1, MONGO_CONNECT_RETRIES + 1):
+        try:
+            client = create_mongo_client(MONGO_URI)
+            client.admin.command("ping")
+            logger.info("MongoDB connected using MONGO_URI")
+            return client
+        except Exception as exc:
+            logger.warning(
+                "MongoDB connection failed using MONGO_URI "
+                f"(attempt {attempt}/{MONGO_CONNECT_RETRIES})"
+            )
+            logger.warning(str(exc))
+
+            if attempt < MONGO_CONNECT_RETRIES:
+                sleep(MONGO_CONNECT_RETRY_DELAY)
 
     if MONGO_URI.startswith("mongodb+srv://"):
         try:
@@ -52,7 +52,7 @@ def connect_mongo() -> MongoClient | None:
             logger.info("MongoDB connected using LOCAL_MONGO_URI")
             return client
         except Exception as exc:
-            logger.error("Local MongoDB fallback failed.")
+            logger.error("Local MongoDB fallback failed")
             logger.error(str(exc))
 
     return None
@@ -72,33 +72,4 @@ else:
     db = None
     metrics_collection = None
     predictions_collection = None
-    logger.error("MongoDB is not available. collections are set to None.")
-=======
-from pymongo import MongoClient
-from dotenv import load_dotenv
-import os
-
-load_dotenv()
-
-MONGODB_URI = os.getenv("MONGODB_URI")
-
-try:
-
-    client = MongoClient(MONGODB_URI)
-
-    client.admin.command("ping")
-
-    db = client["predictops"]
-
-    metrics_collection = db["metrics"]
-    predictions_collection = db["predictions"]
-
-    print("MongoDB Connected")
-
-except Exception as e:
-
-    print(f"MongoDB Connection Error: {e}")
-
-    metrics_collection = None
-    predictions_collection = None
->>>>>>> e7ddcb323f78f0b35dd97a8b034311ba89863464
+    logger.error("MongoDB is not available. Collections are set to None.")

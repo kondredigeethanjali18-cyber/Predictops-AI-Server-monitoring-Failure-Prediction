@@ -5,113 +5,64 @@ let currentPage = 1;
 const recordsPerPage = 10;
 
 async function loadServers() {
-
     try {
-
-        const response =
-            await fetch("/all-servers");
-
-        servers =
-            await response.json();
-
-        console.log("Servers Loaded:", servers);
+        const response = await fetch("/all-servers");
+        servers = await response.json();
 
         applyServerFilter();
-
         renderTable();
-
     } catch(error) {
-
-        console.error(
-            "Error loading servers:",
-            error
-        );
+        console.error("Error loading servers:", error);
     }
 }
 
+function applyServerFilter() {
+    const searchBox = document.getElementById("searchBox");
+    const text = searchBox ? searchBox.value.toLowerCase() : "";
+
+    filteredServers = servers.filter(server =>
+        server.server_name.toLowerCase().includes(text)
+    );
+}
+
 function renderTable() {
+    const totalPages = Math.max(
+        1,
+        Math.ceil(filteredServers.length / recordsPerPage)
+    );
 
-    const start =
-        (currentPage - 1) *
-        recordsPerPage;
-
-    const end =
-        start +
-        recordsPerPage;
-
-    const pageData =
-        filteredServers.slice(
-            start,
-            end
-        );
-
-    const totalPages =
-        Math.max(
-            1,
-            Math.ceil(
-                filteredServers.length /
-                recordsPerPage
-            )
-        );
-
-    if(currentPage > totalPages){
+    if(currentPage > totalPages) {
         currentPage = totalPages;
     }
 
-    let html = "";
+    const start = (currentPage - 1) * recordsPerPage;
+    const end = start + recordsPerPage;
+    const pageData = filteredServers.slice(start, end);
 
-    pageData.forEach(server => {
-
-        html += `
+    const html = pageData.map(server => `
         <tr>
             <td>${server.server_name}</td>
             <td>${server.cpu_usage_percent}%</td>
             <td>${server.memory_usage_percent}%</td>
             <td>${server.disk_usage_percent}%</td>
         </tr>
-        `;
-    });
+    `).join("");
 
-    const tableBody =
-    document.getElementById("serverTableBody");
+    document.getElementById("serverTableBody").innerHTML = html;
+    document.getElementById("pageNumber").innerText =
+        `Page ${currentPage} of ${totalPages}`;
 
-      if (tableBody) {
-       tableBody.innerHTML = html;
-}
-
-    
-    const totalPages =
-    Math.ceil(
-        filteredServers.length /
-        recordsPerPage
-    ) || 1;
-
-<<<<<<< HEAD
-       if (pageNumber) {
-         pageNumber.innerText =
-            `Page ${currentPage} of ${totalPages}`;
-}
+    document.getElementById("nextBtn").disabled =
+        currentPage >= totalPages;
+    document.getElementById("prevBtn").disabled =
+        currentPage <= 1;
 
     updateServerSummary();
-
-    if(nextBtn){
-        nextBtn.disabled =
-            currentPage >= totalPages;
-    }
-
-    if(prevBtn){
-        prevBtn.disabled =
-            currentPage <= 1;
-    }
 }
 
 function updateServerSummary() {
-
-    const totalServers =
-        servers.length;
-
-    const averageCpu =
-        totalServers === 0
+    const totalServers = servers.length;
+    const averageCpu = totalServers === 0
         ? 0
         : Math.round(
             servers.reduce(
@@ -121,178 +72,78 @@ function updateServerSummary() {
             ) / totalServers
         );
 
-    const highCpuServers =
-        servers.filter(
-            server =>
-            Number(server.cpu_usage_percent || 0) >= 80
-        );
-
-    const totalCount =
-        document.getElementById("serverTotalCount");
-
-    if(totalCount){
-        totalCount.innerText = totalServers;
-    }
-
-    const averageCpuElement =
-        document.getElementById("serverAverageCpu");
-
-    if(averageCpuElement){
-        averageCpuElement.innerText =
-            `${averageCpu}%`;
-    }
-
-    const highCpuCount =
-        document.getElementById("serverHighCpuCount");
-
-    if(highCpuCount){
-        highCpuCount.innerText =
-            highCpuServers.length;
-    }
-
-    const notification =
-        document.getElementById("serverNotification");
-
-    if(!notification){
-        return;
-    }
-
-    notification.classList.remove(
-        "notification-warning",
-        "notification-success"
+    const highCpuServers = servers.filter(
+        server => Number(server.cpu_usage_percent || 0) >= 80
     );
 
-    if(highCpuServers.length > 0){
+    document.getElementById("serverTotalCount").innerText = totalServers;
+    document.getElementById("serverAverageCpu").innerText = `${averageCpu}%`;
+    document.getElementById("serverHighCpuCount").innerText =
+        highCpuServers.length;
 
-        notification.classList.add(
-            "notification-warning"
-        );
+    const notification = document.getElementById("serverNotification");
+    notification.classList.remove("notification-warning", "notification-success");
 
+    if(highCpuServers.length > 0) {
+        notification.classList.add("notification-warning");
         notification.innerHTML =
             `<i class="fas fa-triangle-exclamation"></i>
              <span>${highCpuServers.length} server${highCpuServers.length === 1 ? "" : "s"} above 80% CPU. Review capacity before the next workload spike.</span>`;
-
         return;
     }
 
-    notification.classList.add(
-        "notification-success"
-    );
-
+    notification.classList.add("notification-success");
     notification.innerHTML =
         `<i class="fas fa-circle-check"></i>
          <span>All monitored servers are below the high CPU threshold right now.</span>`;
 }
 
-function applyServerFilter() {
+document.getElementById("nextBtn").addEventListener("click", () => {
+    const totalPages = Math.max(
+        1,
+        Math.ceil(filteredServers.length / recordsPerPage)
+    );
 
-    const searchBox =
-        document.getElementById("searchBox");
-
-    const text =
-        searchBox
-        ? searchBox.value.toLowerCase()
-        : "";
-
-    filteredServers =
-        servers.filter(server =>
-            server.server_name
-                .toLowerCase()
-                .includes(text)
-        );
-=======
-document.getElementById(
-    "pageInfo"
-).innerText =
-    `Page ${currentPage} of ${totalPages}`;
->>>>>>> e7ddcb323f78f0b35dd97a8b034311ba89863464
-}
-
-
-const nextBtn = document.getElementById("nextBtn");
-        if (nextBtn) {
-            nextBtn.addEventListener("click", () => {
-
-        if (
-            currentPage <
-            Math.ceil(filteredServers.length / recordsPerPage)
-        ) {
-            currentPage++;
-            renderTable();
-        }
-    });
-}
-
-const prevBtn = document.getElementById("prevBtn");
-        if (prevBtn) {
-            prevBtn.addEventListener("click", () => {
-
-        if (currentPage > 1) {
-            currentPage--;
-            renderTable();
-        }
-    });
-}
-
-const searchBox = document.getElementById("searchBox");
-        if (searchBox) {
-            searchBox.addEventListener("input", e => {
-
-<<<<<<< HEAD
-        applyServerFilter();
-=======
-const text = e.target.value.toLowerCase();
-
-        filteredServers =
-            servers.filter(server =>
-                server.server_name
-                    .toLowerCase()
-                    .includes(text)
-            );
->>>>>>> e7ddcb323f78f0b35dd97a8b034311ba89863464
-
-        currentPage = 1;
-
+    if(currentPage < totalPages) {
+        currentPage++;
         renderTable();
+    }
+});
+
+document.getElementById("prevBtn").addEventListener("click", () => {
+    if(currentPage > 1) {
+        currentPage--;
+        renderTable();
+    }
+});
+
+document.getElementById("searchBox").addEventListener("input", () => {
+    applyServerFilter();
+    currentPage = 1;
+    renderTable();
+});
+
+document.getElementById("exportBtn").addEventListener("click", () => {
+    let csv = "Server,CPU,Memory,Disk\n";
+
+    filteredServers.forEach(server => {
+        csv +=
+            `${server.server_name},${server.cpu_usage_percent},${server.memory_usage_percent},${server.disk_usage_percent}\n`;
     });
-}
 
-    
-
-
-    const exportBtn =
-    document.getElementById("exportBtn");
-
-      if (exportBtn) {
-       exportBtn.addEventListener("click", () => {
-
-        let csv =
-            "Server,CPU,Memory,Disk\n";
-
-        filteredServers.forEach(server => {
-
-            csv +=
-                `${server.server_name},${server.cpu_usage_percent},${server.memory_usage_percent},${server.disk_usage_percent}\n`;
-        });
-
-        const blob =
-            new Blob([csv], {
-                type: "text/csv"
-            });
-
-        const url =
-            URL.createObjectURL(blob);
-
-        const a =
-            document.createElement("a");
-
-        a.href = url;
-        a.download =
-            "server_report.csv";
-
-        a.click();
+    const blob = new Blob([csv], {
+        type: "text/csv"
     });
-}
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+
+    a.href = url;
+    a.download = "server_report.csv";
+    a.click();
+
+    URL.revokeObjectURL(url);
+});
 
 loadServers();
 

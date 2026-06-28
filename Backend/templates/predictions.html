@@ -5,23 +5,12 @@
 <h1>Predictions</h1>
 
 <select id="predictionFilter">
-
-    <option value="all">
-        All Predictions
-    </option>
-
-    <option value="NORMAL">
-        Normal
-    </option>
-
-    <option value="ANOMALY">
-        Anomaly
-    </option>
-
+    <option value="all">All Predictions</option>
+    <option value="NORMAL">Normal</option>
+    <option value="ANOMALY">Anomaly</option>
 </select>
 
 <table>
-
     <thead>
         <tr>
             <th>Server</th>
@@ -34,31 +23,13 @@
         </tr>
     </thead>
 
-    <tbody id="predictionTableBody">
-
-    </tbody>
-
+    <tbody id="predictionTableBody"></tbody>
 </table>
 
 <div class="pagination">
-
-    <button id="prevPredictionBtn">
-        Previous
-    </button>
-
-<<<<<<< HEAD
-    <span id="predictionPageNumber">
-=======
-    <span id="predictionPageInfo">
->>>>>>> e7ddcb323f78f0b35dd97a8b034311ba89863464
-        Page 1 of 1
-    </span>
-
-    <button id="nextPredictionBtn">
-        Next
-    </button>
-
-
+    <button id="prevPredictionBtn">Previous</button>
+    <span id="predictionPageNumber">Page 1 of 1</span>
+    <button id="nextPredictionBtn">Next</button>
 </div>
 
 <script src="/static/js/predictions.js?v={{ asset_version('js/predictions.js') }}"></script>

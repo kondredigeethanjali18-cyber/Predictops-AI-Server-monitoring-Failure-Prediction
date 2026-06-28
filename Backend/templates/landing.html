@@ -5,7 +5,10 @@
 
     <title>PredictOps AI</title>
 
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet"
           href="/static/css/landing.css?v={{ asset_version('css/landing.css') }}">
 
@@ -15,27 +18,74 @@
 
 <div class="hero">
 
-    <div class="hero-content">
+    <nav class="landing-nav">
+        <a href="/" class="brand"><i class="fas fa-server"></i> PredictOps AI</a>
+        <a href="/dashboard" class="nav-link">Dashboard</a>
+    </nav>
 
-        <h1><i class="fas fa-rocket"></i> PredictOps AI</h1>
+    <div class="hero-layout">
 
-        <h2>
-            Intelligent Server Monitoring &
-            Predictive Analytics Platform
-        </h2>
+        <div class="hero-content">
 
-        <p>
-            Monitor infrastructure health, detect anomalies,
-            and predict failures using Machine Learning.
-        </p>
+            <span class="eyebrow"><i class="fas fa-shield-halved"></i> Infrastructure health intelligence</span>
 
-        <a href="/dashboard">
+            <h1>PredictOps AI</h1>
 
-            <button class="launch-btn">
-                Launch Dashboard
-            </button>
+            <h2>
+                Predict server failure before it becomes downtime.
+            </h2>
 
-        </a>
+            <p>
+                Monitor infrastructure health, identify risky servers, and act on
+                AI-driven alerts from one focused operations workspace.
+            </p>
+
+            <div class="hero-actions">
+                <a href="/dashboard" class="launch-btn">
+                    <i class="fas fa-gauge-high"></i>
+                    Launch Dashboard
+                </a>
+                <span class="hero-note"><i class="fas fa-circle-check"></i> Live status updates every few seconds</span>
+            </div>
+
+        </div>
+
+        <div class="hero-panel" aria-label="Infrastructure health preview">
+            <div class="panel-header">
+                <span>Operations Overview</span>
+                <strong>Live</strong>
+            </div>
+
+            <div class="panel-health">
+                <div>
+                    <span class="panel-label">Fleet Health</span>
+                    <strong>96%</strong>
+                </div>
+                <div class="health-ring">
+                    <span></span>
+                </div>
+            </div>
+
+            <div class="panel-list">
+                <div class="panel-row">
+                    <span><i class="fas fa-server"></i> api-prod-03</span>
+                    <strong class="risk-high">High Risk</strong>
+                </div>
+                <div class="panel-row">
+                    <span><i class="fas fa-memory"></i> db-cluster-01</span>
+                    <strong class="risk-medium">Warning</strong>
+                </div>
+                <div class="panel-row">
+                    <span><i class="fas fa-check-circle"></i> worker-07</span>
+                    <strong class="risk-low">Healthy</strong>
+                </div>
+            </div>
+
+            <div class="panel-footer">
+                <i class="fas fa-bolt"></i>
+                Predictive alert generated from CPU and memory patterns
+            </div>
+        </div>
 
     </div>
 
@@ -44,16 +94,19 @@
 <div class="stats">
 
     <div class="stat-card">
+        <i class="fas fa-server"></i>
         <h2 id="serverCount">0</h2>
         <p>Total Servers</p>
     </div>
 
     <div class="stat-card">
+        <i class="fas fa-bell"></i>
         <h2 id="alertCount">0</h2>
         <p>Active Alerts</p>
     </div>
 
     <div class="stat-card">
+        <i class="fas fa-chart-line"></i>
         <h2>99%</h2>
         <p>Prediction Accuracy</p>
     </div>
@@ -63,21 +116,24 @@
 <div class="features">
 
     <div class="feature-card">
-        <h3><i class="fas fa-robot"></i> AI Predictions</h3>
+        <span class="feature-icon"><i class="fas fa-robot"></i></span>
+        <h3>AI Predictions</h3>
         <p>
             Predict server anomalies before failures occur.
         </p>
     </div>
 
     <div class="feature-card">
-        <h3><i class="fas fa-chart-line"></i> Real-Time Monitoring</h3>
+        <span class="feature-icon"><i class="fas fa-chart-line"></i></span>
+        <h3>Real-Time Monitoring</h3>
         <p>
             Track CPU, Memory and Disk usage continuously.
         </p>
     </div>
 
     <div class="feature-card">
-        <h3><i class="fas fa-triangle-exclamation"></i> Alert Management</h3>
+        <span class="feature-icon"><i class="fas fa-triangle-exclamation"></i></span>
+        <h3>Alert Management</h3>
         <p>
             Detect and respond to infrastructure issues instantly.
         </p>
