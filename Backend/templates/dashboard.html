@@ -7,8 +7,20 @@
 {% block content %}
 
 <div class="dashboard-header">
-    <h1>PredictOps AI Dashboard</h1>
-    <p>AI Powered Server Monitoring & Predictive Analytics</p>
+    <div>
+        <h1>PredictOps AI Dashboard</h1>
+        <p>AI Powered Server Monitoring & Predictive Analytics</p>
+    </div>
+
+    <div class="notification-widget">
+        <button class="notification-bell" id="notificationBell" type="button" aria-label="View notifications">
+            <i class="fas fa-bell"></i>
+            <span id="notificationCount">0</span>
+        </button>
+        <div class="notification-panel" id="notificationPanel">
+            <div class="notification-empty">Loading notifications...</div>
+        </div>
+    </div>
 </div>
 
 <div class="cards">
@@ -16,6 +28,11 @@
     <div class="card total-card">
         <h3>Total Servers</h3>
         <div class="metric" id="totalServers">0</div>
+    </div>
+
+    <div class="card records-card">
+        <h3>Records</h3>
+        <div class="metric" id="totalRecords">0</div>
     </div>
 
     <div class="card healthy-card">
@@ -63,5 +80,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="/static/js/dashboard.js?v={{ asset_version('js/dashboard.js') }}"></script>
+<script src="/static/js/notifications.js?v={{ asset_version('js/notifications.js') }}"></script>
 
 {% endblock %}

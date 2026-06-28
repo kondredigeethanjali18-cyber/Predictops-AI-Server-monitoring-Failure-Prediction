@@ -206,6 +206,7 @@ button{
     padding:20px;
     border-radius:16px;
     box-shadow:0 4px 15px rgba(0,0,0,0.08);
+    overflow-x:auto;
 }
 
 table{
@@ -222,6 +223,37 @@ th,td{
     padding:12px;
     border-bottom:1px solid #e5e7eb;
     text-align:center;
+}
+
+.prediction-table-section{
+    margin-top:0;
+}
+
+.prediction-table{
+    min-width:980px;
+}
+
+.prediction-table th{
+    font-size:13px;
+    letter-spacing:0;
+    text-transform:uppercase;
+    white-space:nowrap;
+}
+
+.prediction-table td{
+    color:#334155;
+    font-size:14px;
+    vertical-align:middle;
+}
+
+.prediction-table tbody tr:hover{
+    background:#f8fafc;
+}
+
+.timestamp-cell{
+    color:#475569;
+    font-weight:600;
+    white-space:nowrap;
 }
 
 /* Buttons */

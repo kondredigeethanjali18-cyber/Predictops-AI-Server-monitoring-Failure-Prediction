@@ -90,6 +90,11 @@ body{
 
 .dashboard-header{
     margin-bottom:18px;
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:18px;
+    position:relative;
 }
 
 .dashboard-header h1{
@@ -99,6 +104,108 @@ body{
 
 .dashboard-header p{
     color:#64748b;
+}
+
+.notification-widget{
+    position:relative;
+    flex:0 0 auto;
+}
+
+.notification-bell{
+    width:44px;
+    height:44px;
+    border:1px solid #cbd5e1;
+    border-radius:8px;
+    background:white;
+    color:#1e293b;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    box-shadow:0 4px 15px rgba(0,0,0,0.08);
+}
+
+.notification-bell:hover{
+    background:#eff6ff;
+    color:#1d4ed8;
+}
+
+.notification-bell span{
+    position:absolute;
+    top:-7px;
+    right:-7px;
+    min-width:20px;
+    height:20px;
+    border-radius:999px;
+    background:#dc2626;
+    color:white;
+    border:2px solid #f8f9fc;
+    font-size:11px;
+    font-weight:700;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:0 5px;
+}
+
+.notification-panel{
+    display:none;
+    position:absolute;
+    right:0;
+    top:54px;
+    width:min(340px,calc(100vw - 32px));
+    max-height:380px;
+    overflow:auto;
+    background:white;
+    color:#1e293b;
+    border:1px solid #e2e8f0;
+    border-radius:8px;
+    box-shadow:0 20px 45px rgba(15,23,42,.18);
+    z-index:20;
+}
+
+.notification-item,
+.notification-empty{
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    padding:13px 14px;
+    border-bottom:1px solid #e2e8f0;
+    line-height:1.45;
+}
+
+.notification-item:last-child,
+.notification-empty:last-child{
+    border-bottom:0;
+}
+
+.notification-item .alert-icon{
+    color:#dc2626;
+    margin-top:4px;
+}
+
+.notification-time{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    color:#64748b;
+    font-size:12px;
+    font-weight:600;
+    margin-top:6px;
+}
+
+.notification-time i{
+    color:#2563eb;
+}
+
+.notification-empty{
+    color:#64748b;
+}
+
+.notification-empty i{
+    color:#16a34a;
+    margin-top:4px;
 }
 
 /* KPI Cards */
@@ -132,6 +239,10 @@ body{
 
 .total-card{
     border-left:6px solid #2563eb;
+}
+
+.records-card{
+    border-left:6px solid #7c3aed;
 }
 
 .healthy-card{
@@ -255,6 +366,10 @@ th,td{
 
     .dashboard-header h1{
         font-size:24px;
+    }
+
+    .dashboard-header{
+        align-items:flex-start;
     }
 }
 

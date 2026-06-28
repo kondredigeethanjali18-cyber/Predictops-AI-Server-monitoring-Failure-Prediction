@@ -48,10 +48,11 @@ function renderTable() {
                 <td>${item.server_name}</td>
                 <td>${badge}</td>
                 <td>${item.confidence}%</td>
-                <td>${item.cpu_usage_percent}%</td>
-                <td>${item.memory_usage_percent}%</td>
-                <td>${item.disk_usage_percent}%</td>
-                <td>${item.timestamp}</td>
+                <td>${formatPercent(item.cpu_usage_percent)}</td>
+                <td>${formatPercent(item.memory_usage_percent)}</td>
+                <td>${formatPercent(item.disk_usage_percent)}</td>
+                <td>${formatNetworkThroughput(item)}</td>
+                <td class="timestamp-cell">${formatPredictionTime(item.timestamp)}</td>
             </tr>
         `;
     }).join("");
@@ -64,6 +65,123 @@ function renderTable() {
         currentPage >= totalPages;
     document.getElementById("prevPredictionBtn").disabled =
         currentPage <= 1;
+}
+
+function formatPredictionTime(timestamp) {
+    if(!timestamp) {
+        return "Time unavailable";
+    }
+
+    const date = new Date(timestamp);
+
+    if(Number.isNaN(date.getTime())) {
+        return timestamp;
+    }
+
+    const year =
+        date.getFullYear();
+
+    const month =
+        date.toLocaleString(
+            [],
+            {
+                month: "long"
+            }
+        );
+
+    const day =
+        date.getDate();
+
+    const time =
+        date.toLocaleString(
+            [],
+            {
+                hour: "2-digit",
+                minute: "2-digit"
+            }
+        );
+
+    return `${year} ${month} ${day}, ${time}`;
+}
+
+function formatPercent(value) {
+    if(value === undefined || value === null || value === "") {
+        return "N/A";
+    }
+
+    const number = Number(value);
+
+    if(Number.isNaN(number)) {
+        return `${value}%`;
+    }
+
+    return `${number.toFixed(1)}%`;
+}
+
+function formatNetworkThroughput(item) {
+    const throughput =
+        item.network_throughput ??
+        item.network_throughput_mb_s ??
+        getThroughputFromNetworkTotal(item) ??
+        getCombinedThroughput(item);
+
+    if(throughput === undefined || throughput === null || throughput === "") {
+        return "N/A";
+    }
+
+    const number = Number(throughput);
+
+    if(Number.isNaN(number)) {
+        return throughput;
+    }
+
+    return `${number.toFixed(2)} MB/s`;
+}
+
+function getThroughputFromNetworkTotal(item) {
+    const total =
+        item.network_total ??
+        item.network_load;
+
+    if(total === undefined || total === null || total === "") {
+        return undefined;
+    }
+
+    return normalizeNetworkVolumeToMb(total) / 5;
+}
+
+function getCombinedThroughput(item) {
+    const sent =
+        item.network_sent_mb;
+
+    const received =
+        item.network_received_mb;
+
+    if(sent !== undefined && received !== undefined) {
+        return (Number(sent) + Number(received)) / 5;
+    }
+
+    if(item.bytes_sent !== undefined && item.bytes_received !== undefined) {
+        return (
+            normalizeNetworkVolumeToMb(item.bytes_sent) +
+            normalizeNetworkVolumeToMb(item.bytes_received)
+        ) / 5;
+    }
+
+    return undefined;
+}
+
+function normalizeNetworkVolumeToMb(value) {
+    const number =
+        Number(value);
+
+    if(Number.isNaN(number)) {
+        return 0;
+    }
+
+    return number > 100000
+        ? number / (1024 * 1024)
+        : number;
 }
 
 document.getElementById("predictionFilter").addEventListener("change", () => {

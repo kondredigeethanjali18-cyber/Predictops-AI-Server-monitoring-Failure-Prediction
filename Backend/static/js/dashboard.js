@@ -11,8 +11,13 @@ async function loadDashboard() {
     let healthy = 0;
     let warning = 0;
     let critical = 0;
+    const serverNames = new Set();
 
     data.forEach(server => {
+
+        serverNames.add(
+            server.server_name || "Unknown"
+        );
 
         const cpu =
             server.cpu_usage_percent;
@@ -38,6 +43,10 @@ async function loadDashboard() {
 
     document.getElementById(
         "totalServers"
+    ).innerText = serverNames.size;
+
+    document.getElementById(
+        "totalRecords"
     ).innerText = data.length;
 
     document.getElementById(
