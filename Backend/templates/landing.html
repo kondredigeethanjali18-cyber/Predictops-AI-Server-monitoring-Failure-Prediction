@@ -20,7 +20,18 @@
 
     <nav class="landing-nav">
         <a href="/" class="brand"><i class="fas fa-server"></i> PredictOps AI</a>
-        <a href="/dashboard" class="nav-link">Dashboard</a>
+        <div class="landing-actions">
+            <div class="notification-widget">
+                <button class="notification-bell" id="notificationBell" type="button" aria-label="View notifications">
+                    <i class="fas fa-bell"></i>
+                    <span id="notificationCount">0</span>
+                </button>
+                <div class="notification-panel" id="notificationPanel">
+                    <div class="notification-empty">Loading notifications...</div>
+                </div>
+            </div>
+            <a href="/dashboard" class="nav-link">Dashboard</a>
+        </div>
     </nav>
 
     <div class="hero-layout">
@@ -142,7 +153,8 @@
 </div>
 
 
-<script src="/static/js/landing.js"></script>
+<script src="/static/js/landing.js?v={{ asset_version('js/landing.js') }}"></script>
+<script src="/static/js/notifications.js?v={{ asset_version('js/notifications.js') }}"></script>
 
 </body>
 </html>

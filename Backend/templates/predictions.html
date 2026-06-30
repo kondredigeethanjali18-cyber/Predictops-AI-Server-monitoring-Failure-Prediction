@@ -2,29 +2,39 @@
 
 {% block content %}
 
-<h1>Predictions</h1>
+<div class="page-header-row">
+    <div class="dashboard-header">
+        <h1>Predictions</h1>
+        <p>Latest AI health predictions with resource and throughput context.</p>
+    </div>
 
-<select id="predictionFilter">
-    <option value="all">All Predictions</option>
-    <option value="NORMAL">Normal</option>
-    <option value="ANOMALY">Anomaly</option>
-</select>
+    <div class="page-actions">
+        <select id="predictionFilter">
+            <option value="all">All Predictions</option>
+            <option value="NORMAL">Normal</option>
+            <option value="ANOMALY">Anomaly</option>
+        </select>
+    </div>
+</div>
 
-<table>
-    <thead>
-        <tr>
-            <th>Server</th>
-            <th>Prediction</th>
-            <th>Confidence</th>
-            <th>CPU</th>
-            <th>Memory</th>
-            <th>Disk</th>
-            <th>Time</th>
-        </tr>
-    </thead>
+<div class="table-section prediction-table-section">
+    <table class="prediction-table">
+        <thead>
+            <tr>
+                <th>Server</th>
+                <th>Prediction</th>
+                <th>Confidence</th>
+                <th>CPU</th>
+                <th>Memory</th>
+                <th>Disk</th>
+                <th>Network Throughput (MB/s)</th>
+                <th>Time</th>
+            </tr>
+        </thead>
 
-    <tbody id="predictionTableBody"></tbody>
-</table>
+        <tbody id="predictionTableBody"></tbody>
+    </table>
+</div>
 
 <div class="pagination">
     <button id="prevPredictionBtn">Previous</button>
