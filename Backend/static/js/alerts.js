@@ -48,6 +48,11 @@ function renderTable() {
             severityClass = "severity-high";
         }
 
+        const fallbackRemark = item.prediction === "NORMAL" 
+            ? "System operating normally within standard thresholds." 
+            : `${severity}: resource usage deviation (${item.confidence}% confidence). Review recommended.`;
+        const remark = item.remark || fallbackRemark;
+
         return `
             <tr>
                 <td>${item.server_name}</td>
@@ -55,6 +60,7 @@ function renderTable() {
                 <td>${item.confidence}%</td>
                 <td><span class="${severityClass}">${severity}</span></td>
                 <td>${(item.possible_causes || []).join(", ")}</td>
+                <td style="text-align: left; font-size: 13px; color: #475569;">${remark}</td>
             </tr>
         `;
     }).join("");

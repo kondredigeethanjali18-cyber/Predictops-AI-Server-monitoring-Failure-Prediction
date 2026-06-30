@@ -34,6 +34,19 @@ def calculate_network_throughput(network_total):
 
 
 
+def generate_remark(prediction: str, confidence: float, cpu: float, memory: float, disk: float, causes: list) -> str:
+    if prediction == "NORMAL":
+        return "System operating normally within standard thresholds."
+    
+    cause_str = ", ".join(causes) if causes else ""
+    if confidence >= 90:
+        return f"CRITICAL: High failure probability ({confidence}%). Indicators: {cause_str or 'anomaly behavioral signature'}. Urgent intervention needed."
+    elif confidence >= 70:
+        return f"WARNING: Severe resource deviation ({confidence}%). Indicators: {cause_str or 'high utilization'}. Monitor closely."
+    else:
+        return f"NOTICE: Moderate variance ({confidence}%). Indicators: {cause_str or 'behavioral anomaly'}."
+
+
 def predict_latest_server():
 
     df = pd.read_csv(
@@ -94,7 +107,16 @@ def predict_latest_server():
 
     "possible_causes": causes,
 
-    "timestamp": datetime.now(timezone.utc)
+    "timestamp": datetime.now(timezone.utc),
+
+    "remark": generate_remark(
+        "ANOMALY" if prediction == 1 else "NORMAL",
+        round(confidence * 100, 2),
+        float(latest["cpu_usage_percent"]),
+        float(latest["memory_usage_percent"]),
+        float(latest["disk_usage_percent"]),
+        causes
+    )
 }
 
 # Save prediction to MongoDB
@@ -160,7 +182,16 @@ def predict_metric(metric):
             causes,
 
         "timestamp":
-            datetime.now(timezone.utc)
+            datetime.now(timezone.utc),
+
+        "remark": generate_remark(
+            "ANOMALY" if prediction == 1 else "NORMAL",
+            round(confidence * 100, 2),
+            float(metric["cpu_usage_percent"]),
+            float(metric["memory_usage_percent"]),
+            float(metric["disk_usage_percent"]),
+            causes
+        )
     }
 
     predictions_collection.insert_one(result)
