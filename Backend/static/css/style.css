@@ -15,6 +15,10 @@ body{
     color:white;
     margin:0 0 25px;
     padding:0 25px;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.15);
 }
 
 .navbar-container{
