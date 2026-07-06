@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
@@ -11,6 +11,7 @@ from Backend.routes.dashboard import router as dashboard_router
 from Backend.routes.metrics import router as metrics_router
 from Backend.routes.dashboard_api import router as dashboard_api_router
 from Backend.routes.insights import router as insights_router
+from Backend.routes.auth import router as auth_router, get_current_user_page, get_current_user_api
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -33,6 +34,11 @@ try:
 except Exception as e:
     logger.error(f"Failed to include dashboard_api_router: {e}")
 
+try:
+    app.include_router(auth_router)
+except Exception as e:
+    logger.error(f"Failed to include auth_router: {e}")
+
 
 class NoConditionalStaticFiles(StaticFiles):
     def file_response(
@@ -50,7 +56,7 @@ class NoConditionalStaticFiles(StaticFiles):
             return FileResponse("", status_code=404)
 
 try:
-    app.include_router(insights_router)
+    app.include_router(insights_router, dependencies=[Depends(get_current_user_api)])
 except Exception as e:
     logger.error(f"Failed to include insights_router: {e}")
 
@@ -109,17 +115,17 @@ except Exception as e:
     logger.error(f"Failed to include health_router: {e}")
 
 try:
-    app.include_router(prediction_router)
+    app.include_router(prediction_router, dependencies=[Depends(get_current_user_api)])
 except Exception as e:
     logger.error(f"Failed to include prediction_router: {e}")
 
 try:
-    app.include_router(dashboard_router)
+    app.include_router(dashboard_router, dependencies=[Depends(get_current_user_api)])
 except Exception as e:
     logger.error(f"Failed to include dashboard_router: {e}")
 
 try:
-    app.include_router(metrics_router)
+    app.include_router(metrics_router, dependencies=[Depends(get_current_user_api)])
 except Exception as e:
     logger.error(f"Failed to include metrics_router: {e}")
 
@@ -147,71 +153,65 @@ def landing(request: Request):
         return JSONResponse(status_code=500, content={"detail": "Failed to render landing page"})
 
 @app.get("/dashboard")
-def dashboard(request: Request):
+def dashboard(request: Request, user: str = Depends(get_current_user_page)):
     try:
         if not templates:
             return JSONResponse(status_code=500, content={"detail": "Templates not initialized"})
         return templates.TemplateResponse(
             request=request,
             name="dashboard.html",
-            context={}
+            context={"user": user}
         )
     except Exception as e:
         logger.error(f"Error rendering dashboard page: {e}")
         return JSONResponse(status_code=500, content={"detail": "Failed to render dashboard page"})
 
 @app.get("/servers")
-def servers(request: Request):
-
+def servers(request: Request, user: str = Depends(get_current_user_page)):
     return templates.TemplateResponse(
         request=request,
         name="servers.html",
-        context={}
+        context={"user": user}
     )
 
 @app.get("/predictions")
-def predictions(request: Request):
-
+def predictions(request: Request, user: str = Depends(get_current_user_page)):
     return templates.TemplateResponse(
         request=request,
         name="predictions.html",
-        context={}
+        context={"user": user}
     )
 
 @app.get("/alerts")
-def alerts(request: Request):
-
+def alerts(request: Request, user: str = Depends(get_current_user_page)):
     return templates.TemplateResponse(
         request=request,
         name="alerts.html",
-        context={}
+        context={"user": user}
     )
 
 @app.get("/insights")
-def insights(request: Request):
-
+def insights(request: Request, user: str = Depends(get_current_user_page)):
     return templates.TemplateResponse(
         request=request,
         name="insights.html",
-        context={}
+        context={"user": user}
     )
 
 @app.get("/analytics")
-def analytics(request: Request):
-
+def analytics(request: Request, user: str = Depends(get_current_user_page)):
     return templates.TemplateResponse(
         request=request,
         name="analytics.html",
-        context={}
+        context={"user": user}
     )
 
 @app.get("/trends")
-def trends(request: Request):
-
+def trends(request: Request, user: str = Depends(get_current_user_page)):
     return templates.TemplateResponse(
         request=request,
         name="trends.html",
-        context={}
+        context={"user": user}
     )
 
 @app.get("/favicon.ico")

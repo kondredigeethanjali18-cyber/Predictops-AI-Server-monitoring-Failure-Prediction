@@ -15,7 +15,10 @@
     <nav class="navbar">
         <div class="navbar-container">
             <a href="/" class="navbar-brand">PredictOps AI</a>
-            <ul class="nav-menu">
+            <button class="navbar-toggle" id="navbarToggle" aria-label="Toggle navigation" type="button">
+                <i class="fas fa-bars"></i>
+            </button>
+            <ul class="nav-menu" id="navMenu">
                 <li><a href="/dashboard"><i class="fas fa-gauge-high"></i> Dashboard</a></li>
                 <li><a href="/servers"><i class="fas fa-server"></i> Server Inventory</a></li>
                 <li><a href="/predictions"><i class="fas fa-crystal-ball"></i> Predictions</a></li>
@@ -23,6 +26,10 @@
                 <li><a href="/insights"><i class="fas fa-brain"></i> Insights</a></li>
                 <li><a href="/analytics"><i class="fas fa-chart-bar"></i> Analytics</a></li>
                 <li><a href="/trends"><i class="fas fa-chart-line"></i> Trends</a></li>
+                {% if user %}
+                <li class="nav-user-item"><span class="nav-user"><i class="fas fa-user-circle"></i> {{ user }}</span></li>
+                <li><a href="/logout" class="nav-logout"><i class="fas fa-right-from-bracket"></i> Logout</a></li>
+                {% endif %}
             </ul>
         </div>
     </nav>
@@ -32,6 +39,27 @@
     </main>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const toggle = document.getElementById('navbarToggle');
+            const menu = document.getElementById('navMenu');
+            if (toggle && menu) {
+                toggle.addEventListener('click', () => {
+                    menu.classList.toggle('active');
+                    const icon = toggle.querySelector('i');
+                    if (icon) {
+                        if (menu.classList.contains('active')) {
+                            icon.classList.remove('fa-bars');
+                            icon.classList.add('fa-xmark');
+                        } else {
+                            icon.classList.remove('fa-xmark');
+                            icon.classList.add('fa-bars');
+                        }
+                    }
+                });
+            }
+        });
+    </script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - PredictOps AI</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            margin: 0;
+            padding: 20px;
+        }
+        .login-card {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+        .login-card h2 {
+            margin-bottom: 8px;
+            color: #0f172a;
+            font-size: 28px;
+            font-weight: 700;
+        }
+        .login-card p {
+            color: #64748b;
+            margin-bottom: 24px;
+            font-size: 14px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #334155;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .input-wrapper {
+            position: relative;
+        }
+        .input-wrapper i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
+        }
+        .input-wrapper input {
+            width: 100%;
+            padding: 12px 12px 12px 42px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 15px;
+            color: #1e293b;
+            background: #f8fafc;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .input-wrapper input:focus {
+            border-color: #2563eb;
+            background: white;
+        }
+        .btn-submit {
+            width: 100%;
+            padding: 12px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 10px;
+        }
+        .btn-submit:hover {
+            background: #1d4ed8;
+        }
+        .error-message {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <h2>PredictOps AI</h2>
+        <p>AI Powered Server Monitoring & Predictive Analytics</p>
+        
+        {% if error %}
+        <div class="error-message">
+            <i class="fas fa-triangle-exclamation"></i>
+            <span>{{ error }}</span>
+        </div>
+        {% endif %}
+        
+        <form action="/login" method="POST">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="username" name="username" placeholder="Enter username" required>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="password" name="password" placeholder="Enter password" required>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn-submit">Log In</button>
+        </form>
+    </div>
+</body>
+</html>
