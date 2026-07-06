@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="dashboard-header page-header-row" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;">
+    <div>
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px; flex-wrap: wrap;">
+            <h1 style="margin: 0;"><i class="fas fa-chart-bar" style="color: #2563eb;"></i> Telemetry & Infrastructure Analytics</h1>
+            <span class="live-tag live-tag-info" style="font-size: 12px; padding: 4px 10px; border-radius: 20px;"><i class="fas fa-circle live-pulse"></i> Live Analytics</span>
+        </div>
+        <p>Real-time resource utilization, throughput distribution & historical anomaly spectrum across all 22 servers</p>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px; background: white; padding: 8px 14px; border-radius: 10px; border: 1px solid #e2e8f0; font-size: 12px; color: #64748b; font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,0.04);">
+        <span><i class="fas fa-clock" style="color: #2563eb; margin-right: 4px;"></i> Synced: <strong id="analyticsSyncTime" style="color: #0f172a;">--</strong></span>
+        <span class="countdown-badge" id="analyticsCountdownBadge" style="background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;"><i class="fas fa-rotate" style="font-size: 10px;"></i> <span id="analyticsRemainingSecs">8s</span></span>
+    </div>
+</div>
+
+<!-- 3 Summary KPI Cards -->
+<div class="cards analytics-summary-cards" style="margin-bottom: 20px;">
+
+    <div class="card total-card">
+        <div class="card-header-row">
+            <h3>Total Predictions</h3>
+            <div class="card-icon" style="color: #2563eb; background: transparent;"><i class="fas fa-database"></i></div>
+        </div>
+        <div class="metric" id="totalPredictions">0</div>
+        <div class="card-subtext">Cumulative evaluated metrics</div>
+    </div>
+
+    <div class="card healthy-card">
+        <div class="card-header-row">
+            <h3>Normal Predictions</h3>
+            <div class="card-icon" style="color: #16a34a; background: transparent;"><i class="fas fa-circle-check"></i></div>
+        </div>
+        <div class="metric" id="normalPredictions" style="color: #16a34a;">0</div>
+        <div class="card-subtext">Operating within baseline</div>
+    </div>
+
+    <div class="card critical-card">
+        <div class="card-header-row">
+            <h3>Anomaly Predictions</h3>
+            <div class="card-icon" style="color: #dc2626; background: transparent;"><i class="fas fa-triangle-exclamation"></i></div>
+        </div>
+        <div class="metric" id="anomalyPredictions" style="color: #dc2626;">0</div>
+        <div class="card-subtext">Detected failure risks</div>
+    </div>
+
+</div>
+
+<!-- Compact 2-by-2 Side-by-Side Charts Grid (Responsive & Touch-Friendly) -->
+<div class="charts analytics-charts-grid" style="gap: 18px; margin-top: 0;">
+
+    <!-- Chart 1: CPU Utilization -->
+    <div class="chart-card" style="padding: 16px 18px;">
+        <h3 style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+            <i class="fas fa-bolt" style="color: #f59e0b;"></i> CPU Utilization Across All Servers
+        </h3>
+        <div class="chart-container" style="height: 250px; position: relative;">
+            <canvas id="cpuChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Chart 2: Top 5 Memory Utilization -->
+    <div class="chart-card" style="padding: 16px 18px;">
+        <h3 style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+            <i class="fas fa-memory" style="color: #a855f7;"></i> Top 5 Memory Utilization Servers
+        </h3>
+        <div class="chart-container" style="height: 250px; position: relative;">
+            <canvas id="memoryChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Chart 3: Server Resource Allocation (CPU vs Memory) -->
+    <div class="chart-card" style="padding: 16px 18px;">
+        <h3 style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+            <i class="fas fa-server" style="color: #3b82f6;"></i> Server Resource Allocation (CPU vs Memory)
+        </h3>
+        <div class="chart-container" style="height: 250px; position: relative;">
+            <canvas id="utilizationChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Chart 4: Network Throughput per Server -->
+    <div class="chart-card" style="padding: 16px 18px;">
+        <h3 style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+            <i class="fas fa-network-wired" style="color: #f43f5e;"></i> Network Throughput (MB/s) per Server
+        </h3>
+        <div class="chart-container" style="height: 250px; position: relative;">
+            <canvas id="throughputChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Chart 5: Historical Anomaly Distribution -->
+    <div class="chart-card" style="padding: 16px 18px;">
+        <h3 style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+            <i class="fas fa-clock-rotate-left" style="color: #8b5cf6;"></i> Historical Anomaly Distribution
+        </h3>
+        <div class="chart-container" style="height: 250px; position: relative;">
+            <canvas id="predictionChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Chart 6: Current Server Status Distribution -->
+    <div class="chart-card" style="padding: 16px 18px;">
+        <h3 style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+            <i class="fas fa-chart-pie" style="color: #0ea5e9;"></i> Current Server Status Distribution
+        </h3>
+        <div class="chart-container" style="height: 250px; position: relative;">
+            <canvas id="statusDistributionChart"></canvas>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="/static/js/analytics.js?v={{ asset_version('js/analytics.js') }}"></script>
+
+{% endblock %}

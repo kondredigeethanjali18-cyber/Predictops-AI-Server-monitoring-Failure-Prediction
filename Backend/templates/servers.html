@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="dashboard-header page-header-row">
+    <div>
+        <h1>Server Inventory</h1>
+        <p>Live utilization snapshot for every monitored server</p>
+    </div>
+
+    <div class="page-actions">
+        <input
+            type="text"
+            id="searchBox"
+            placeholder="Search server">
+
+        <button id="exportBtn">
+            <i class="fas fa-file-export"></i>
+            Export CSV
+        </button>
+    </div>
+</div>
+
+<div class="notification-bar" id="serverNotification">
+    <i class="fas fa-circle-info"></i>
+    <span>Loading server health notification...</span>
+</div>
+
+<div class="cards compact-cards" style="margin-bottom: 18px;">
+    <div class="card total-card server-filter-card active" data-server-filter="ALL" title="Click to view all servers">
+        <div class="card-header-row">
+            <h3>Total Servers</h3>
+            <div class="card-icon" style="color: #3b82f6;"><i class="fas fa-server"></i></div>
+        </div>
+        <div class="metric" id="serverTotalCount">0</div>
+        <div class="card-subtext">Infrastructure fleet</div>
+    </div>
+
+    <div class="card healthy-card">
+        <div class="card-header-row">
+            <h3>Average CPU</h3>
+            <div class="card-icon" style="color: #10b981;"><i class="fas fa-microchip"></i></div>
+        </div>
+        <div class="metric" id="serverAverageCpu">0%</div>
+        <div class="card-subtext">Fleet compute average</div>
+    </div>
+
+    <div class="card info-card-subtle">
+        <div class="card-header-row">
+            <h3>Average Memory</h3>
+            <div class="card-icon" style="color: #8b5cf6;"><i class="fas fa-memory"></i></div>
+        </div>
+        <div class="metric" id="serverAverageMem">0%</div>
+        <div class="card-subtext">Fleet RAM allocation</div>
+    </div>
+
+    <div class="card warning-card server-filter-card" data-server-filter="HIGH" title="Click to filter servers with CPU > 80%">
+        <div class="card-header-row">
+            <h3>High Stress (>80%)</h3>
+            <div class="card-icon" style="color: #ef4444;"><i class="fas fa-triangle-exclamation"></i></div>
+        </div>
+        <div class="metric" id="serverHighCpuCount" style="color: #dc2626;">0</div>
+        <div class="card-subtext">Nodes nearing saturation</div>
+    </div>
+</div>
+
+<div style="display: flex; gap: 8px; margin-bottom: 14px;" id="serverFilterPills">
+    <button class="filter-pill active" data-filter="ALL">All Nodes (<span id="pillAllCount">0</span>)</button>
+    <button class="filter-pill" data-filter="HIGH" style="color: #dc2626;"><i class="fas fa-triangle-exclamation"></i> High Load >80% (<span id="pillHighCount">0</span>)</button>
+    <button class="filter-pill" data-filter="NORMAL" style="color: #16a34a;"><i class="fas fa-circle-check"></i> Normal State (<span id="pillNormalCount">0</span>)</button>
+</div>
+
+<div class="table-section">
+    <table id="serversTable">
+        <thead>
+            <tr>
+                <th style="width: 50px; text-align: center;">#</th>
+                <th class="server-col-header" style="min-width: 160px;">Server</th>
+                <th>CPU</th>
+                <th>Memory</th>
+                <th>Disk</th>
+            </tr>
+        </thead>
+
+        <tbody id="serverTableBody"></tbody>
+    </table>
+</div>
+
+<div class="pagination" id="serversPagination"></div>
+
+<script src="/static/js/servers.js?v={{ asset_version('js/servers.js') }}"></script>
+
+{% endblock %}

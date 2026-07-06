@@ -1,0 +1,279 @@
+let allServers = [];
+let filteredServers = [];
+let currentPage = 1;
+const serversPerPage = 10;
+let currentFilter = "ALL";
+let searchQuery = "";
+
+async function loadServers() {
+    try {
+        const response = await fetch("/all-servers");
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        allServers = await response.json();
+
+        const count = allServers.length || 1;
+        let totalCpu = 0;
+        let totalMem = 0;
+        let highCount = 0;
+        let normalCount = 0;
+
+        allServers.forEach(server => {
+            const cpu = Number(server.cpu_usage_percent) || 0;
+            const mem = Number(server.memory_usage_percent) || 0;
+            totalCpu += cpu;
+            totalMem += mem;
+
+            if (cpu > 80 || mem > 80) {
+                highCount++;
+            } else {
+                normalCount++;
+            }
+        });
+
+        const totalCountEl = document.getElementById("serverTotalCount");
+        const avgCpuEl = document.getElementById("serverAverageCpu");
+        const avgMemEl = document.getElementById("serverAverageMem");
+        const highCountEl = document.getElementById("serverHighCpuCount");
+
+        if (totalCountEl) totalCountEl.innerText = allServers.length;
+        if (avgCpuEl) avgCpuEl.innerText = (totalCpu / count).toFixed(1) + "%";
+        if (avgMemEl) avgMemEl.innerText = (totalMem / count).toFixed(1) + "%";
+        if (highCountEl) highCountEl.innerText = highCount;
+
+        // Update filter pills counters
+        const pillAll = document.getElementById("pillAllCount");
+        const pillHigh = document.getElementById("pillHighCount");
+        const pillNormal = document.getElementById("pillNormalCount");
+
+        if (pillAll) pillAll.innerText = allServers.length;
+        if (pillHigh) pillHigh.innerText = highCount;
+        if (pillNormal) pillNormal.innerText = normalCount;
+
+        const notif = document.getElementById("serverNotification");
+        if (notif) {
+            if (highCount > 0) {
+                notif.className = "notification-bar notification-warning";
+                notif.innerHTML = `<i class="fas fa-triangle-exclamation"></i> <span><strong>${highCount} servers</strong> are currently experiencing high utilization (>80%).</span>`;
+            } else {
+                notif.className = "notification-bar notification-success";
+                notif.innerHTML = `<i class="fas fa-circle-check"></i> <span>All ${allServers.length} servers are operating within healthy resource parameters.</span>`;
+            }
+        }
+
+        applyServerFilter();
+        renderTable();
+
+    } catch (error) {
+        console.error("Error loading servers:", error);
+    }
+}
+
+function applyServerFilter() {
+    filteredServers = allServers.filter(s => {
+        const cpu = Number(s.cpu_usage_percent) || 0;
+        const mem = Number(s.memory_usage_percent) || 0;
+
+        let matchesType = true;
+        if (currentFilter === "HIGH") {
+            matchesType = (cpu > 80 || mem > 80);
+        } else if (currentFilter === "NORMAL") {
+            matchesType = (cpu <= 80 && mem <= 80);
+        }
+
+        const matchesSearch = !searchQuery || (s.server_name && s.server_name.toLowerCase().includes(searchQuery.toLowerCase()));
+
+        return matchesType && matchesSearch;
+    });
+}
+
+function renderTable() {
+    const tableBody = document.getElementById("serverTableBody");
+    if (!tableBody) return;
+
+    const totalPages = Math.max(1, Math.ceil(filteredServers.length / serversPerPage));
+
+    if (currentPage > totalPages) {
+        currentPage = totalPages;
+    }
+
+    const startIndex = (currentPage - 1) * serversPerPage;
+    const paginated = filteredServers.slice(startIndex, startIndex + serversPerPage);
+
+    if (paginated.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #94a3b8; padding: 24px;">No servers found matching criteria.</td></tr>`;
+        renderNumberedPagination("serversPagination", 1, 1, () => {});
+        return;
+    }
+
+    tableBody.innerHTML = paginated.map((server, index) => {
+        const sNo = startIndex + index + 1;
+        const cpu = Number(server.cpu_usage_percent) || 0;
+        const mem = Number(server.memory_usage_percent) || 0;
+        const disk = Number(server.disk_usage_percent) || 0;
+
+        const cpuColor = cpu > 80 ? "#dc2626" : cpu > 60 ? "#d97706" : "#16a34a";
+        const memColor = mem > 85 ? "#dc2626" : mem > 70 ? "#d97706" : "#16a34a";
+        const diskColor = disk > 85 ? "#dc2626" : disk > 70 ? "#d97706" : "#16a34a";
+
+        return `
+            <tr>
+                <td style="text-align: center; color: #64748b; font-weight: 700; font-size: 12.5px;">${sNo}</td>
+                <td class="server-cell">
+                    <div class="server-cell-badge">
+                        <span class="server-icon-box"><i class="fas fa-server"></i></span>
+                        <span class="server-name-text">${server.server_name}</span>
+                    </div>
+                </td>
+                <td><strong style="color: ${cpuColor};">${cpu}%</strong></td>
+                <td><strong style="color: ${memColor};">${mem}%</strong></td>
+                <td><strong style="color: ${diskColor};">${disk}%</strong></td>
+            </tr>
+        `;
+
+    }).join("");
+
+    renderNumberedPagination("serversPagination", currentPage, totalPages, newPage => {
+        currentPage = newPage;
+        renderTable();
+    });
+}
+
+function renderNumberedPagination(containerId, currPage, totalPages, onPageClick) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    if (totalPages <= 1) {
+        container.innerHTML = `
+            <button class="page-nav-btn" disabled><i class="fas fa-chevron-left"></i> Prev</button>
+            <button class="page-num-btn active">1</button>
+            <button class="page-nav-btn" disabled>Next <i class="fas fa-chevron-right"></i></button>
+            <span class="page-summary">Page 1 of 1</span>
+        `;
+        return;
+    }
+
+    let html = "";
+    html += `<button class="page-nav-btn" ${currPage === 1 ? "disabled" : ""} data-page="${currPage - 1}"><i class="fas fa-chevron-left"></i> Prev</button>`;
+
+    const maxBtns = 10;
+    let startPage = 1;
+    let endPage = totalPages;
+
+    if (totalPages > maxBtns) {
+        if (currPage <= 6) {
+            startPage = 1;
+            endPage = 9;
+        } else if (currPage + 4 >= totalPages) {
+            startPage = totalPages - 8;
+            endPage = totalPages;
+        } else {
+            startPage = currPage - 4;
+            endPage = currPage + 4;
+        }
+    }
+
+    if (startPage > 1) {
+        html += `<button class="page-num-btn" data-page="1">1</button>`;
+        if (startPage > 2) {
+            html += `<span class="page-ellipsis">...</span>`;
+        }
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+        html += `<button class="page-num-btn ${i === currPage ? "active" : ""}" data-page="${i}">${i}</button>`;
+    }
+
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            html += `<span class="page-ellipsis">...</span>`;
+        }
+        html += `<button class="page-num-btn" data-page="${totalPages}">${totalPages}</button>`;
+    }
+
+    html += `<button class="page-nav-btn" ${currPage === totalPages ? "disabled" : ""} data-page="${currPage + 1}">Next <i class="fas fa-chevron-right"></i></button>`;
+    html += `<span class="page-summary">Page ${currPage} of ${totalPages}</span>`;
+
+    container.innerHTML = html;
+
+    container.querySelectorAll("button[data-page]").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const p = parseInt(btn.getAttribute("data-page"));
+            if (!isNaN(p) && p >= 1 && p <= totalPages && p !== currPage) {
+                onPageClick(p);
+            }
+        });
+    });
+}
+
+function setServerFilter(filter) {
+    currentFilter = filter;
+    currentPage = 1;
+
+    document.querySelectorAll("#serverFilterPills .filter-pill").forEach(p => {
+        p.classList.toggle("active", p.getAttribute("data-filter") === filter);
+    });
+
+    document.querySelectorAll(".server-filter-card").forEach(c => {
+        c.classList.toggle("active", c.getAttribute("data-server-filter") === filter);
+    });
+
+    applyServerFilter();
+    renderTable();
+}
+
+function initServers() {
+    const searchBox = document.getElementById("searchBox");
+    if (searchBox) {
+        searchBox.addEventListener("input", e => {
+            searchQuery = e.target.value;
+            currentPage = 1;
+            applyServerFilter();
+            renderTable();
+        });
+    }
+
+    document.querySelectorAll("#serverFilterPills .filter-pill").forEach(pill => {
+        pill.addEventListener("click", () => {
+            setServerFilter(pill.getAttribute("data-filter") || "ALL");
+        });
+    });
+
+    document.querySelectorAll(".server-filter-card").forEach(card => {
+        card.addEventListener("click", () => {
+            setServerFilter(card.getAttribute("data-server-filter") || "ALL");
+        });
+    });
+
+    const exportBtn = document.getElementById("exportBtn");
+    if (exportBtn) {
+        exportBtn.addEventListener("click", () => {
+            if (filteredServers.length === 0) {
+                alert("No servers to export.");
+                return;
+            }
+
+            let csv = "S.No,Server,CPU (%),Memory (%),Disk (%)\n";
+            filteredServers.forEach((server, index) => {
+                csv += `${index + 1},${server.server_name},${server.cpu_usage_percent},${server.memory_usage_percent},${server.disk_usage_percent}\n`;
+            });
+            const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `server_inventory_${Date.now()}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+    }
+
+    loadServers();
+    setInterval(loadServers, 10000);
+}
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initServers);
+} else {
+    initServers();
+}

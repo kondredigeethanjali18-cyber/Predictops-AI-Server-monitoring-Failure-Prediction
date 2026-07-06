@@ -1,0 +1,441 @@
+from fastapi import FastAPI, Request, Depends
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, RedirectResponse, JSONResponse
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
+import logging
+
+from Backend.routes.health import router as health_router
+from Backend.routes.prediction import router as prediction_router
+from Backend.routes.dashboard import router as dashboard_router
+from Backend.routes.metrics import router as metrics_router
+from Backend.routes.dashboard_api import router as dashboard_api_router
+from Backend.routes.insights import router as insights_router
+from Backend.routes.auth import (
+    router as auth_router,
+    get_current_user_page,
+    get_current_user_api,
+    get_current_user_session,
+    require_role,
+    UserSession
+)
+from Backend.services.chaos_service import get_chaos_override_for_server
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+app = FastAPI(
+    title="PredictOps AI Server Monitoring"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Include routers with exception handling
+try:
+    app.include_router(dashboard_api_router)
+except Exception as e:
+    logger.error(f"Failed to include dashboard_api_router: {e}")
+
+try:
+    app.include_router(auth_router)
+except Exception as e:
+    logger.error(f"Failed to include auth_router: {e}")
+
+
+class NoConditionalStaticFiles(StaticFiles):
+    def file_response(
+        self,
+        full_path,
+        stat_result,
+        scope,
+        status_code=200,
+    ):
+        try:
+            response = FileResponse(full_path, status_code=status_code, stat_result=stat_result)
+            return response
+        except Exception as e:
+            logger.error(f"Error serving static file {full_path}: {e}")
+            return FileResponse("", status_code=404)
+
+try:
+    app.include_router(insights_router, dependencies=[Depends(get_current_user_api)])
+except Exception as e:
+    logger.error(f"Failed to include insights_router: {e}")
+
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent
+
+try:
+    app.mount(
+        "/static",
+        NoConditionalStaticFiles(directory=str(BASE_DIR / "static")),
+        name="static"
+    )
+except Exception as e:
+    logger.error(f"Failed to mount static files: {e}")
+
+@app.middleware("http")
+async def add_no_cache_headers(request: Request, call_next):
+    try:
+        response = await call_next(request)
+        # Prevent browser back-button bfcache from serving protected pages after logout
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        return response
+    except Exception as e:
+        logger.error(f"Middleware error for {request.url.path}: {e}")
+        return JSONResponse(status_code=500, content={"detail": "Internal server error"})
+
+try:
+    templates = Jinja2Templates(
+        directory=str(BASE_DIR / "templates")
+    )
+except Exception as e:
+    logger.error(f"Failed to initialize Jinja2Templates: {e}")
+    templates = None
+
+def asset_version(path: str) -> str:
+    try:
+        asset_path = BASE_DIR / "static" / path
+        return str(int(asset_path.stat().st_mtime))
+    except OSError as e:
+        logger.warning(f"Asset version error for {path}: {e}")
+        return "1"
+    except Exception as e:
+        logger.error(f"Unexpected error in asset_version: {e}")
+        return "1"
+
+if templates:
+    templates.env.globals["asset_version"] = asset_version
+
+# Include remaining routers with exception handling
+try:
+    app.include_router(health_router)
+except Exception as e:
+    logger.error(f"Failed to include health_router: {e}")
+
+try:
+    app.include_router(prediction_router, dependencies=[Depends(get_current_user_api)])
+except Exception as e:
+    logger.error(f"Failed to include prediction_router: {e}")
+
+try:
+    app.include_router(dashboard_router, dependencies=[Depends(get_current_user_api)])
+except Exception as e:
+    logger.error(f"Failed to include dashboard_router: {e}")
+
+try:
+    app.include_router(metrics_router, dependencies=[Depends(get_current_user_api)])
+except Exception as e:
+    logger.error(f"Failed to include metrics_router: {e}")
+
+from fastapi.exceptions import RequestValidationError
+
+# Validation exception handler
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    logger.warning(f"Validation error at {request.url.path}: {exc.errors()}")
+    content_type = request.headers.get("content-type", "")
+    accept_header = request.headers.get("accept", "")
+    is_json = "application/json" in content_type or "application/json" in accept_header
+
+    # Extract clean human-friendly message
+    missing_fields = []
+    for err in exc.errors():
+        loc = err.get("loc", [])
+        if len(loc) > 1 and loc[0] == "body":
+            missing_fields.append(str(loc[1]))
+        elif loc:
+            missing_fields.append(str(loc[-1]))
+
+    if missing_fields:
+        detail_msg = f"Missing required fields: {', '.join(missing_fields)}"
+    else:
+        detail_msg = "Invalid request parameters"
+
+    if is_json:
+        return JSONResponse(
+            status_code=400,
+            content={"detail": detail_msg, "success": False, "errors": exc.errors()}
+        )
+
+    if "/login" in request.url.path or "/signup" in request.url.path:
+        mode = "signup" if "/signup" in request.url.path else "login"
+        return templates.TemplateResponse(
+            request=request,
+            name="login.html",
+            context={
+                "error": detail_msg,
+                "mode": mode
+            }
+        )
+
+    return JSONResponse(
+        status_code=400,
+        content={"detail": detail_msg, "success": False}
+    )
+
+# Global exception handler
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Unhandled exception at {request.url.path}: {exc}")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "An unexpected error occurred"}
+    )
+
+# Telemetry state memory for smooth realistic metrics drift
+SERVER_TELEMETRY_STATE = {}
+
+def generate_telemetry_batch():
+    """Generates a complete telemetry batch for all 22 servers and records predictions."""
+    import random
+    from datetime import datetime, timezone
+    from Backend.services.server_registry import SERVERS
+    from Backend.database.mongodb import get_metrics_collection
+    from Backend.services.prediction_service import predict_metric
+
+    global SERVER_TELEMETRY_STATE
+
+    col = get_metrics_collection()
+    # Dynamic active anomaly incident servers in this cycle
+    active_incident_names = {"AUTH-server-01", "EU-gateway-01", "cache-server-01", "db-server-02"}
+
+    for server in SERVERS:
+        sname = server["server_name"]
+        chaos_ov = get_chaos_override_for_server(sname)
+        is_incident = sname in active_incident_names
+
+        curr = SERVER_TELEMETRY_STATE.get(sname, {})
+
+        if chaos_ov:
+            # Active Chaos Injected Override
+            cpu_usage = round(chaos_ov.get("cpu", 95.0), 1)
+            memory_percent = round(chaos_ov.get("mem", 92.0), 1)
+            disk_usage = round(chaos_ov.get("disk", 88.0), 1)
+            latency = round(chaos_ov.get("lat", 450.0), 1)
+            active_procs = 352
+            net_sent = round(random.uniform(140.0, 240.0), 2)
+            net_recv = round(random.uniform(140.0, 240.0), 2)
+        elif is_incident:
+            # Active Anomaly Telemetry
+            cpu_usage = round(random.uniform(91.5, 98.4), 1)
+            memory_percent = round(random.uniform(86.0, 96.5), 1)
+            disk_usage = round(random.uniform(85.0, 94.0), 1)
+            latency = round(random.uniform(380.0, 680.0), 1)
+            active_procs = random.randint(344, 356)
+            net_sent = round(random.uniform(120.0, 220.0), 2)
+            net_recv = round(random.uniform(120.0, 220.0), 2)
+        else:
+            # Healthy Baseline Telemetry with smooth realistic walk
+            prev_cpu = curr.get("cpu", random.uniform(25.0, 48.0))
+            prev_mem = curr.get("mem", random.uniform(30.0, 52.0))
+            prev_disk = curr.get("disk", random.uniform(28.0, 45.0))
+            prev_lat = curr.get("lat", random.uniform(40.0, 75.0))
+
+            cpu_usage = round(min(64.0, max(18.0, prev_cpu + random.uniform(-2.2, 2.2))), 1)
+            memory_percent = round(min(66.0, max(22.0, prev_mem + random.uniform(-1.8, 1.8))), 1)
+            disk_usage = round(min(60.0, max(20.0, prev_disk + random.uniform(-0.4, 0.6))), 1)
+            latency = round(min(90.0, max(28.0, prev_lat + random.uniform(-3.5, 3.5))), 1)
+            active_procs = random.randint(335, 345)
+            net_sent = round(random.uniform(35.0, 95.0), 2)
+            net_recv = round(random.uniform(35.0, 95.0), 2)
+
+        SERVER_TELEMETRY_STATE[sname] = {
+            "cpu": cpu_usage,
+            "mem": memory_percent,
+            "disk": disk_usage,
+            "lat": latency
+        }
+
+        now_utc = datetime.now(timezone.utc)
+        metrics = {
+            "server_id": server["server_id"],
+            "server_name": sname,
+            "timestamp": now_utc.isoformat(),
+            "cpu_usage_percent": cpu_usage,
+            "memory_usage_percent": memory_percent,
+            "memory_used_mb": round((memory_percent / 100.0) * 16000.0, 2),
+            "disk_usage_percent": disk_usage,
+            "network_sent_mb": net_sent,
+            "network_received_mb": net_recv,
+            "request_latency_ms": latency,
+            "active_processes": active_procs
+        }
+
+        if col is not None:
+            try:
+                col.insert_one(dict(metrics))
+            except Exception as ins_err:
+                logger.error(f"Telemetry insertion error for {sname}: {ins_err}")
+
+        try:
+            predict_metric(metrics)
+        except Exception as pred_err:
+            logger.error(f"Prediction error for {sname}: {pred_err}")
+
+    # Invalidate telemetry and summary caches upon new batch completion
+    try:
+        from Backend.services.cache_service import CacheService
+        CacheService.invalidate_prefix("metrics:")
+        CacheService.invalidate_prefix("predictions:")
+        CacheService.invalidate_prefix("dashboard:")
+        CacheService.invalidate_prefix("insights:")
+    except Exception as c_err:
+        logger.debug(f"Cache invalidation error: {c_err}")
+
+
+async def auto_telemetry_generator():
+    """Continuously generates live telemetry for all 22 servers in the background."""
+    import asyncio
+    from Backend.services.server_registry import SERVERS
+    logger.info(f"Auto Telemetry Generator active for fleet of {len(SERVERS)} servers with 10s interval.")
+
+    while True:
+        try:
+            generate_telemetry_batch()
+            await asyncio.sleep(10)
+        except Exception as loop_err:
+            logger.error(f"Auto telemetry loop error: {loop_err}")
+            await asyncio.sleep(10)
+
+
+@app.on_event("startup")
+async def on_startup():
+    import asyncio
+    from Backend.services.session_service import purge_all_sessions
+    try:
+        purge_all_sessions()
+        logger.info("Application started: All prior user sessions have been purged. Fresh login required.")
+    except Exception as e:
+        logger.error(f"Error purging sessions on startup: {e}")
+
+    # Seed initial live telemetry batch immediately so dashboard has fresh data on load
+    try:
+        generate_telemetry_batch()
+        logger.info("Initial live telemetry batch generated successfully.")
+    except Exception as seed_err:
+        logger.error(f"Error seeding initial telemetry batch: {seed_err}")
+
+    # Launch real-time telemetry generator in background
+    asyncio.create_task(auto_telemetry_generator())
+
+@app.get("/")
+def landing(request: Request):
+    user_session = get_current_user_session(request)
+    if not user_session:
+        return RedirectResponse(url="/login", status_code=302)
+    try:
+        if not templates:
+            return JSONResponse(status_code=500, content={"detail": "Templates not initialized"})
+        return templates.TemplateResponse(
+            request=request,
+            name="landing.html",
+            context={"user": user_session, "role": user_session.role}
+        )
+    except Exception as e:
+        logger.error(f"Error rendering landing page: {e}")
+        return JSONResponse(status_code=500, content={"detail": "Failed to render landing page"})
+
+@app.get("/dashboard")
+def dashboard(request: Request, user: UserSession = Depends(get_current_user_page)):
+    try:
+        if not templates:
+            return JSONResponse(status_code=500, content={"detail": "Templates not initialized"})
+        return templates.TemplateResponse(
+            request=request,
+            name="dashboard.html",
+            context={"user": user, "role": user.role}
+        )
+    except Exception as e:
+        logger.error(f"Error rendering dashboard page: {e}")
+        return JSONResponse(status_code=500, content={"detail": "Failed to render dashboard page"})
+
+@app.get("/servers")
+def servers(request: Request, user: UserSession = Depends(get_current_user_page)):
+    return templates.TemplateResponse(
+        request=request,
+        name="servers.html",
+        context={"user": user, "role": user.role}
+    )
+
+@app.get("/predictions")
+def predictions(request: Request, user: UserSession = Depends(get_current_user_page)):
+    return templates.TemplateResponse(
+        request=request,
+        name="predictions.html",
+        context={"user": user, "role": user.role}
+    )
+
+@app.get("/alerts")
+def alerts(request: Request, user: UserSession = Depends(get_current_user_page)):
+    return templates.TemplateResponse(
+        request=request,
+        name="alerts.html",
+        context={"user": user, "role": user.role}
+    )
+
+@app.get("/insights")
+def insights(request: Request, user: UserSession = Depends(get_current_user_page)):
+    return templates.TemplateResponse(
+        request=request,
+        name="insights.html",
+        context={"user": user, "role": user.role}
+    )
+
+@app.get("/analytics")
+def analytics(request: Request, user: UserSession = Depends(get_current_user_page)):
+    return templates.TemplateResponse(
+        request=request,
+        name="analytics.html",
+        context={"user": user, "role": user.role}
+    )
+
+@app.get("/admin")
+def admin_console(request: Request, user: UserSession = Depends(require_role(["admin"]))):
+    try:
+        if not templates:
+            return JSONResponse(status_code=500, content={"detail": "Templates not initialized"})
+        return templates.TemplateResponse(
+            request=request,
+            name="admin.html",
+            context={"user": user, "role": user.role}
+        )
+    except Exception as e:
+        logger.error(f"Error rendering admin console: {e}")
+        return JSONResponse(status_code=500, content={"detail": "Failed to render admin console"})
+
+@app.get("/admin/users")
+def admin_users_page(request: Request, user: UserSession = Depends(require_role(["admin"]))):
+    try:
+        if not templates:
+            return JSONResponse(status_code=500, content={"detail": "Templates not initialized"})
+        return templates.TemplateResponse(
+            request=request,
+            name="admin_users.html",
+            context={"user": user, "role": user.role}
+        )
+    except Exception as e:
+        logger.error(f"Error rendering admin users page: {e}")
+        return JSONResponse(status_code=500, content={"detail": "Failed to render user management"})
+
+@app.get("/trends")
+def trends():
+    return RedirectResponse(url="/analytics", status_code=302)
+
+@app.get("/cache/stats")
+def cache_stats():
+    from Backend.services.cache_service import CacheService
+    return CacheService.get_stats()
+
+@app.get("/favicon.ico")
+def favicon() -> RedirectResponse:
+    return RedirectResponse(url="/static/favicon.ico")

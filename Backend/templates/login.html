@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PredictOps AI - Role-Based Sign In & Portals</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: 
+                linear-gradient(135deg, rgba(8, 13, 26, 0.98), rgba(21, 45, 89, 0.95)),
+                #0f172a;
+            margin: 0;
+            padding: 24px 16px;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            box-sizing: border-box;
+        }
+        .login-container {
+            width: 100%;
+            max-width: 480px;
+            position: relative;
+        }
+        .login-container::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: -20px;
+            right: -20px;
+            bottom: -20px;
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.22) 0%, transparent 70%);
+            z-index: -1;
+            filter: blur(16px);
+        }
+        .login-card {
+            background: rgba(30, 41, 59, 0.88);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 20px;
+            padding: 32px 26px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.65);
+            text-align: center;
+        }
+        .brand-icon {
+            width: 54px;
+            height: 54px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.3), rgba(37, 99, 235, 0.1));
+            border: 1px solid rgba(37, 99, 235, 0.5);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+            box-shadow: 0 0 25px rgba(37, 99, 235, 0.35);
+        }
+        .brand-icon i {
+            font-size: 24px;
+            color: #60a5fa;
+            text-shadow: 0 0 12px rgba(59, 130, 246, 0.6);
+        }
+        .login-card h2 {
+            margin: 0 0 4px;
+            color: white;
+            font-size: 23px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+        .login-card .app-tagline {
+            color: #94a3b8;
+            margin: 0 0 18px;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+        
+        /* Auth Mode Switch Tabs */
+        .auth-tabs {
+            display: flex;
+            background: rgba(15, 23, 42, 0.65);
+            border-radius: 10px;
+            padding: 4px;
+            margin-bottom: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .auth-tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            color: #94a3b8;
+            font-size: 13.5px;
+            font-weight: 700;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+        }
+        .auth-tab-btn.active {
+            background: #2563eb;
+            color: white;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+        }
+        .auth-tab-btn:hover:not(.active) {
+            color: #e2e8f0;
+        }
+
+        /* Role-Specific Portal Selector Tabs */
+        .portal-selector-wrapper {
+            margin-bottom: 16px;
+            text-align: left;
+        }
+        .portal-selector-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .portal-tabs {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            background: rgba(15, 23, 42, 0.7);
+            padding: 4px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .portal-tab-btn {
+            padding: 8px 4px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: #94a3b8;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 700;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            transition: all 0.2s ease;
+        }
+        .portal-tab-btn i {
+            font-size: 14px;
+            transition: transform 0.2s;
+        }
+        .portal-tab-btn:hover {
+            color: #e2e8f0;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Active portal styles */
+        .portal-tab-btn.active-viewer {
+            background: rgba(37, 99, 235, 0.25);
+            border-color: rgba(59, 130, 246, 0.5);
+            color: #93c5fd;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+        }
+        .portal-tab-btn.active-devops {
+            background: rgba(16, 185, 129, 0.22);
+            border-color: rgba(16, 185, 129, 0.5);
+            color: #6ee7b7;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+        }
+        .portal-tab-btn.active-admin {
+            background: rgba(239, 68, 68, 0.25);
+            border-color: rgba(239, 68, 68, 0.5);
+            color: #fca5a5;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.25);
+        }
+
+        /* Portal Info Banner */
+        .portal-info-box {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 10px 14px;
+            margin-bottom: 16px;
+            text-align: left;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            transition: all 0.2s;
+        }
+        .portal-info-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+        .portal-info-text h4 {
+            margin: 0 0 2px 0;
+            font-size: 12.5px;
+            font-weight: 700;
+            color: #f8fafc;
+        }
+        .portal-info-text p {
+            margin: 0;
+            font-size: 11.5px;
+            color: #94a3b8;
+            line-height: 1.35;
+        }
+
+        /* Quick Demo Credentials Pill Row */
+        .quick-credentials-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            text-align: left;
+        }
+        .quick-cred-label {
+            font-size: 11px;
+            color: #64748b;
+            font-weight: 600;
+        }
+        .quick-cred-chip {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #cbd5e1;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .quick-cred-chip:hover {
+            background: rgba(37, 99, 235, 0.25);
+            border-color: rgba(59, 130, 246, 0.4);
+            color: #93c5fd;
+            transform: translateY(-1px);
+        }
+
+        .form-section {
+            display: none;
+        }
+        .form-section.active {
+            display: block;
+            animation: fadeIn 0.25s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+            text-align: left;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            color: #cbd5e1;
+            font-weight: 600;
+            font-size: 11.5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .input-wrapper .input-icon-left {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            font-size: 15px;
+            pointer-events: none;
+            transition: color 0.2s;
+        }
+        .input-wrapper input {
+            width: 100%;
+            padding: 12px 42px 12px 40px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 10px;
+            font-size: 13.5px;
+            color: white;
+            background: rgba(15, 23, 42, 0.5);
+            outline: none;
+            box-sizing: border-box;
+            transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s;
+        }
+        .input-wrapper input:focus {
+            border-color: #3b82f6;
+            background: rgba(15, 23, 42, 0.75);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+        }
+        .input-wrapper input:focus ~ .input-icon-left {
+            color: #60a5fa;
+        }
+
+        .input-action-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            border-radius: 6px;
+            transition: color 0.15s, background 0.15s;
+        }
+        .input-action-btn:hover {
+            color: #f1f5f9;
+            background: rgba(255, 255, 255, 0.08);
+        }
+        .clear-cross-btn {
+            display: none;
+            right: 10px;
+            color: #94a3b8;
+            font-size: 14px;
+        }
+        .clear-cross-btn.visible {
+            display: inline-flex;
+        }
+        .clear-cross-btn:hover {
+            color: #f87171;
+        }
+
+        /* Password Validation Checklist */
+        .password-checklist {
+            background: rgba(15, 23, 42, 0.55);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin-top: 8px;
+            font-size: 12px;
+            text-align: left;
+        }
+        .checklist-title {
+            color: #94a3b8;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.4px;
+        }
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #64748b;
+            margin-bottom: 5px;
+            transition: color 0.2s ease;
+        }
+        .checklist-item:last-child {
+            margin-bottom: 0;
+        }
+        .checklist-item i {
+            font-size: 12px;
+            width: 14px;
+            text-align: center;
+            color: #475569;
+            transition: color 0.2s ease, transform 0.2s ease;
+        }
+        .checklist-item.valid {
+            color: #86efac;
+            font-weight: 500;
+        }
+        .checklist-item.valid i {
+            color: #22c55e;
+            transform: scale(1.1);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 13px;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 14.5px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.1s, filter 0.2s, box-shadow 0.2s;
+            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.35);
+        }
+        .btn-submit:hover {
+            filter: brightness(1.1);
+            box-shadow: 0 10px 20px -3px rgba(37, 99, 235, 0.45);
+        }
+        .btn-submit:active {
+            transform: scale(0.98);
+        }
+
+        .switch-mode-link {
+            display: inline-block;
+            margin-top: 16px;
+            color: #94a3b8;
+            font-size: 13px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .switch-mode-link span {
+            color: #60a5fa;
+            font-weight: 600;
+            text-decoration: underline;
+        }
+        .switch-mode-link:hover span {
+            color: #93c5fd;
+        }
+
+        .error-message {
+            background: rgba(239, 68, 68, 0.18);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            color: #fca5a5;
+            padding: 12px 15px;
+            border-radius: 10px;
+            font-size: 13px;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-align: left;
+        }
+        .error-message i {
+            font-size: 16px;
+            color: #f87171;
+            flex-shrink: 0;
+        }
+
+        .success-message {
+            background: rgba(34, 197, 94, 0.18);
+            border: 1px solid rgba(34, 197, 94, 0.4);
+            color: #86efac;
+            padding: 12px 15px;
+            border-radius: 10px;
+            font-size: 13px;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-align: left;
+            animation: fadeIn 0.3s ease;
+        }
+        .success-message i {
+            font-size: 16px;
+            color: #22c55e;
+            flex-shrink: 0;
+        }
+
+        /* Mobile Optimization */
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 26px 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="brand-icon">
+                <i class="fas fa-server"></i>
+            </div>
+            <h2>PredictOps AI</h2>
+            <p class="app-tagline">Enterprise Server Monitoring & Predictive AI</p>
+
+            <!-- Mode Switch Tabs -->
+            <div class="auth-tabs">
+                <button type="button" class="auth-tab-btn {% if mode != 'signup' %}active{% endif %}" id="tabBtnLogin" onclick="switchAuthTab('login')">
+                    <i class="fas fa-right-to-bracket"></i> Sign In
+                </button>
+                <button type="button" class="auth-tab-btn {% if mode == 'signup' %}active{% endif %}" id="tabBtnSignup" onclick="switchAuthTab('signup')">
+                    <i class="fas fa-user-plus"></i> Sign Up
+                </button>
+            </div>
+            
+            {% if success %}
+            <div class="success-message">
+                <i class="fas fa-circle-check"></i>
+                <span>{{ success }}</span>
+            </div>
+            {% endif %}
+
+            {% if error %}
+            <div class="error-message">
+                <i class="fas fa-triangle-exclamation"></i>
+                <span>{{ error }}</span>
+            </div>
+            {% endif %}
+            
+            <!-- ========================================================================= -->
+            <!-- 1. SIGN IN FORM WITH ROLE-SPECIFIC LOGIN PORTALS                          -->
+            <!-- ========================================================================= -->
+            <div id="loginSection" class="form-section {% if mode != 'signup' %}active{% endif %}">
+
+                <!-- Role Portal Selector Tabs -->
+                <div class="portal-selector-wrapper">
+                    <div class="portal-selector-label">
+                        <i class="fas fa-shield-halved"></i> Choose Login Role Portal
+                    </div>
+                    <div class="portal-tabs" id="portalTabs">
+                        <button type="button" class="portal-tab-btn active-viewer" id="portalBtnViewer" onclick="selectLoginPortal('viewer')">
+                            <i class="fas fa-eye"></i>
+                            <span>Viewer</span>
+                        </button>
+                        <button type="button" class="portal-tab-btn" id="portalBtnDevops" onclick="selectLoginPortal('devops')">
+                            <i class="fas fa-screwdriver-wrench"></i>
+                            <span>DevOps</span>
+                        </button>
+                        <button type="button" class="portal-tab-btn" id="portalBtnAdmin" onclick="selectLoginPortal('admin')">
+                            <i class="fas fa-shield-halved"></i>
+                            <span>Admin</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Active Portal Info Banner -->
+                <div class="portal-info-box" id="portalInfoBox">
+                    <div class="portal-info-icon" id="portalInfoIcon" style="background: rgba(37, 99, 235, 0.25); color: #60a5fa;">
+                        <i class="fas fa-eye"></i>
+                    </div>
+                    <div class="portal-info-text">
+                        <h4 id="portalInfoTitle">Viewer / Analyst Portal</h4>
+                        <p id="portalInfoDesc">Access live telemetry charts, Chart.js analytics, server inventory, and AI failure prediction insights.</p>
+                    </div>
+                </div>
+
+                <!-- Quick Test Credentials Hint -->
+                <div class="quick-credentials-row">
+                    <span class="quick-cred-label"><i class="fas fa-bolt" style="color: #f59e0b;"></i> Quick Logins:</span>
+                    <span class="quick-cred-chip" onclick="quickFillCredentials('vamsi', 'vamsi_password', 'admin')">
+                        <i class="fas fa-crown" style="color: #f87171;"></i> Admin (vamsi)
+                    </span>
+                    <span class="quick-cred-chip" onclick="quickFillCredentials('geethanjali', 'geethanjali_password', 'devops')">
+                        <i class="fas fa-wrench" style="color: #34d399;"></i> DevOps (geethanjali)
+                    </span>
+                </div>
+
+                <form action="/login" method="POST" id="loginForm" autocomplete="off">
+                    <input type="hidden" id="loginPortalInput" name="login_portal" value="{{ login_portal or 'viewer' }}">
+
+                    <!-- Invisible decoy inputs to divert browser autofill heuristics -->
+                    <input type="text" name="b_decoy_user" style="position:absolute;opacity:0;height:0;width:0;pointer-events:none;z-index:-10;" tabindex="-1" autocomplete="off">
+                    <input type="password" name="b_decoy_pwd" style="position:absolute;opacity:0;height:0;width:0;pointer-events:none;z-index:-10;" tabindex="-1" autocomplete="new-password">
+
+                    <div class="form-group">
+                        <label for="loginUsername" id="loginUsernameLabel">Username</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-user input-icon-left"></i>
+                            <input type="text" id="loginUsername" name="username" value="{{ username or '' }}" placeholder="Enter username" required readonly autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" onfocus="this.removeAttribute('readonly');" onpointerdown="this.removeAttribute('readonly');">
+                            <button type="button" class="input-action-btn clear-cross-btn" id="loginUsernameClear" title="Clear username" tabindex="-1">
+                                <i class="fas fa-xmark"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="loginPassword">Password</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-lock input-icon-left"></i>
+                            <input type="password" id="loginPassword" name="password" placeholder="Enter password" required readonly autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" onfocus="this.removeAttribute('readonly');" onpointerdown="this.removeAttribute('readonly');">
+                            <button type="button" class="input-action-btn" id="loginPasswordToggle" title="Show or hide password" tabindex="-1">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn-submit" id="btnLoginSubmit">
+                        <i class="fas fa-right-to-bracket" style="margin-right: 6px;"></i> Sign In as Viewer / Analyst
+                    </button>
+                </form>
+
+                <div class="switch-mode-link" onclick="switchAuthTab('signup')">
+                    Don't have an account? <span>Sign Up</span>
+                </div>
+            </div>
+
+            <!-- ========================================================================= -->
+            <!-- 2. SIGN UP FORM WITH ROLE SELECTION                                       -->
+            <!-- ========================================================================= -->
+            <div id="signupSection" class="form-section {% if mode == 'signup' %}active{% endif %}">
+                <form action="/signup" method="POST" id="signupForm" autocomplete="off">
+                    <!-- Invisible decoy inputs to divert browser autofill heuristics -->
+                    <input type="text" name="b_decoy_user_signup" style="position:absolute;opacity:0;height:0;width:0;pointer-events:none;z-index:-10;" tabindex="-1" autocomplete="off">
+                    <input type="password" name="b_decoy_pwd_signup" style="position:absolute;opacity:0;height:0;width:0;pointer-events:none;z-index:-10;" tabindex="-1" autocomplete="new-password">
+
+                    <div class="form-group">
+                        <label for="signupUsername">Username</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-user input-icon-left"></i>
+                            <input type="text" id="signupUsername" name="username" value="" placeholder="Choose username (e.g. dev_user1)" required readonly autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" onfocus="this.removeAttribute('readonly');" onpointerdown="this.removeAttribute('readonly');">
+                            <button type="button" class="input-action-btn clear-cross-btn" id="signupUsernameClear" title="Clear username" tabindex="-1">
+                                <i class="fas fa-xmark"></i>
+                            </button>
+                        </div>
+
+                        <!-- Live Username Validation Checklist -->
+                        <div class="password-checklist" id="usernameChecklist">
+                            <div class="checklist-title"><i class="fas fa-user-shield"></i> Username Requirements</div>
+                            <div class="checklist-item" id="chkUserLen">
+                                <i class="fas fa-circle-dot"></i> 3 to 30 characters
+                            </div>
+                            <div class="checklist-item" id="chkUserLetter">
+                                <i class="fas fa-circle-dot"></i> Must contain letters (numbers only is not allowed)
+                            </div>
+                            <div class="checklist-item" id="chkUserChars">
+                                <i class="fas fa-circle-dot"></i> Letters, numbers, underscores, dots, or dashes
+                            </div>
+                            <div class="checklist-item" id="chkUserBounds">
+                                <i class="fas fa-circle-dot"></i> Starts & ends with letter/number, no consecutive symbols
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="signupEmail">Email Address</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-envelope input-icon-left"></i>
+                            <input type="email" id="signupEmail" name="email" value="" placeholder="Enter email (e.g. user@example.com)" required readonly autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" onfocus="this.removeAttribute('readonly');" onpointerdown="this.removeAttribute('readonly');">
+                            <button type="button" class="input-action-btn clear-cross-btn" id="signupEmailClear" title="Clear email" tabindex="-1">
+                                <i class="fas fa-xmark"></i>
+                            </button>
+                        </div>
+
+                        <!-- Live Email Validation Checklist -->
+                        <div class="password-checklist" id="emailChecklist">
+                            <div class="checklist-title"><i class="fas fa-envelope-circle-check"></i> Email Requirements</div>
+                            <div class="checklist-item" id="chkEmailFormat">
+                                <i class="fas fa-circle-dot"></i> Valid format with @ and domain (e.g. user@example.com)
+                            </div>
+                            <div class="checklist-item" id="chkEmailDomain">
+                                <i class="fas fa-circle-dot"></i> Valid top-level domain (.com, .org, .net, .io, .in, etc.)
+                            </div>
+                            <div class="checklist-item" id="chkEmailLength">
+                                <i class="fas fa-circle-dot"></i> Max 100 characters, no spaces
+                            </div>
+                            <div class="checklist-item" id="chkEmailGenuine">
+                                <i class="fas fa-circle-dot"></i> Genuine provider (disposable emails not allowed)
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="signupPassword">Password</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-lock input-icon-left"></i>
+                            <input type="password" id="signupPassword" name="password" placeholder="Create strong password" required readonly autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" onfocus="this.removeAttribute('readonly');" onpointerdown="this.removeAttribute('readonly');">
+                            <button type="button" class="input-action-btn" id="signupPasswordToggle" title="Show or hide password" tabindex="-1">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+
+                        <!-- Live Password Validation Checklist -->
+                        <div class="password-checklist">
+                            <div class="checklist-title"><i class="fas fa-shield"></i> Password Requirements</div>
+                            <div class="checklist-item" id="chkLength">
+                                <i class="fas fa-circle-dot"></i> At least 8 characters
+                            </div>
+                            <div class="checklist-item" id="chkCaps">
+                                <i class="fas fa-circle-dot"></i> At least one uppercase letter (A-Z)
+                            </div>
+                            <div class="checklist-item" id="chkLower">
+                                <i class="fas fa-circle-dot"></i> At least one lowercase letter (a-z)
+                            </div>
+                            <div class="checklist-item" id="chkNumber">
+                                <i class="fas fa-circle-dot"></i> At least one number (0-9)
+                            </div>
+                            <div class="checklist-item" id="chkSpecial">
+                                <i class="fas fa-circle-dot"></i> At least one special character (!@#$%^&*)
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="signupConfirmPassword">Confirm Password</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-shield-halved input-icon-left"></i>
+                            <input type="password" id="signupConfirmPassword" name="confirm_password" placeholder="Confirm your password" required readonly autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" onfocus="this.removeAttribute('readonly');" onpointerdown="this.removeAttribute('readonly');">
+                            <button type="button" class="input-action-btn" id="signupConfirmPasswordToggle" title="Show or hide password" tabindex="-1">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div id="matchNotice" style="font-size: 12px; margin-top: 6px; display: none;"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="signupRole">Initial Account Role</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-user-shield input-icon-left"></i>
+                            <select id="signupRole" name="role" style="width: 100%; padding: 12px 14px 12px 40px; border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 10px; font-size: 13.5px; color: white; background: rgba(15, 23, 42, 0.85); outline: none; cursor: pointer;">
+                                <option value="viewer" selected style="background: #0f172a; color: white;">Viewer / Analyst (Read-Only Telemetry & Predictions)</option>
+                                <option value="devops" style="background: #0f172a; color: white;">DevOps Engineer (Incident Triage & Diagnostics)</option>
+                                <option value="admin" style="background: #0f172a; color: white;">Admin (User Management & Retraining)</option>
+                            </select>
+                            <i class="fas fa-chevron-down" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8; pointer-events: none; font-size: 12px;"></i>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn-submit" id="btnCreateAccount">Create Account</button>
+                </form>
+
+                <div class="switch-mode-link" onclick="switchAuthTab('login')">
+                    Already have an account? <span>Sign In</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const userInteractedInputs = new Set();
+        let currentSelectedPortal = "{{ login_portal or 'viewer' }}";
+
+        const PORTAL_CONFIG = {
+            viewer: {
+                title: "Viewer / Analyst Portal",
+                desc: "Access live telemetry charts, Chart.js analytics, server inventory, and AI failure prediction insights.",
+                icon: "fa-eye",
+                color: "#60a5fa",
+                bg: "rgba(37, 99, 235, 0.25)",
+                activeClass: "active-viewer",
+                btnText: "Sign In as Viewer / Analyst",
+                btnGradient: "linear-gradient(135deg, #3b82f6, #1d4ed8)"
+            },
+            devops: {
+                title: "DevOps Engineer Portal",
+                desc: "Access active incident triage (Acknowledge/Resolve), manual ML inference diagnostics, cache flushing & chaos telemetry simulator.",
+                icon: "fa-screwdriver-wrench",
+                color: "#34d399",
+                bg: "rgba(16, 185, 129, 0.25)",
+                activeClass: "active-devops",
+                btnText: "Sign In as DevOps Engineer",
+                btnGradient: "linear-gradient(135deg, #10b981, #047857)"
+            },
+            admin: {
+                title: "Super Administrator Portal",
+                desc: "Full administrative controls: User & Role Management (/admin/users), ML ensemble retraining, artifact hot-reload & alert override.",
+                icon: "fa-shield-halved",
+                color: "#f87171",
+                bg: "rgba(239, 68, 68, 0.25)",
+                activeClass: "active-admin",
+                btnText: "Sign In as Administrator",
+                btnGradient: "linear-gradient(135deg, #ef4444, #b91c1c)"
+            }
+        };
+
+        function selectLoginPortal(portal) {
+            currentSelectedPortal = portal;
+            const hiddenInput = document.getElementById('loginPortalInput');
+            if (hiddenInput) hiddenInput.value = portal;
+
+            const cfg = PORTAL_CONFIG[portal] || PORTAL_CONFIG.viewer;
+
+            // Update portal tab buttons
+            const btnV = document.getElementById('portalBtnViewer');
+            const btnD = document.getElementById('portalBtnDevops');
+            const btnA = document.getElementById('portalBtnAdmin');
+
+            if (btnV) btnV.className = `portal-tab-btn ${portal === 'viewer' ? 'active-viewer' : ''}`;
+            if (btnD) btnD.className = `portal-tab-btn ${portal === 'devops' ? 'active-devops' : ''}`;
+            if (btnA) btnA.className = `portal-tab-btn ${portal === 'admin' ? 'active-admin' : ''}`;
+
+            // Update portal info box
+            const infoIcon = document.getElementById('portalInfoIcon');
+            const infoTitle = document.getElementById('portalInfoTitle');
+            const infoDesc = document.getElementById('portalInfoDesc');
+
+            if (infoIcon) {
+                infoIcon.style.background = cfg.bg;
+                infoIcon.style.color = cfg.color;
+                infoIcon.innerHTML = `<i class="fas ${cfg.icon}"></i>`;
+            }
+            if (infoTitle) infoTitle.textContent = cfg.title;
+            if (infoDesc) infoDesc.textContent = cfg.desc;
+
+            // Update submit button
+            const submitBtn = document.getElementById('btnLoginSubmit');
+            if (submitBtn) {
+                submitBtn.innerHTML = `<i class="fas fa-right-to-bracket" style="margin-right: 6px;"></i> ${cfg.btnText}`;
+                submitBtn.style.background = cfg.btnGradient;
+            }
+        }
+
+        function quickFillCredentials(username, password, portal) {
+            selectLoginPortal(portal);
+            const uInput = document.getElementById('loginUsername');
+            const pInput = document.getElementById('loginPassword');
+
+            if (uInput) {
+                uInput.removeAttribute('readonly');
+                uInput.value = username;
+                userInteractedInputs.add('loginUsername');
+                uInput.dispatchEvent(new Event('input'));
+            }
+            if (pInput) {
+                pInput.removeAttribute('readonly');
+                pInput.value = password;
+                userInteractedInputs.add('loginPassword');
+            }
+        }
+
+        function switchAuthTab(mode) {
+            const loginSection = document.getElementById('loginSection');
+            const signupSection = document.getElementById('signupSection');
+            const tabBtnLogin = document.getElementById('tabBtnLogin');
+            const tabBtnSignup = document.getElementById('tabBtnSignup');
+
+            if (mode === 'signup') {
+                loginSection.classList.remove('active');
+                signupSection.classList.add('active');
+                tabBtnLogin.classList.remove('active');
+                tabBtnSignup.classList.add('active');
+                const sU = document.getElementById('signupUsername');
+                if (sU) {
+                    sU.removeAttribute('readonly');
+                    sU.focus();
+                }
+            } else {
+                signupSection.classList.remove('active');
+                loginSection.classList.add('active');
+                tabBtnSignup.classList.remove('active');
+                tabBtnLogin.classList.add('active');
+                const lU = document.getElementById('loginUsername');
+                if (lU) {
+                    lU.removeAttribute('readonly');
+                    lU.focus();
+                }
+            }
+        }
+
+        // Active autofill scrubber preventing background browser credential injection
+        function runAutofillScrubber() {
+            const fieldIds = [
+                'loginUsername',
+                'loginPassword',
+                'signupUsername',
+                'signupEmail',
+                'signupPassword',
+                'signupConfirmPassword'
+            ];
+
+            fieldIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el && !userInteractedInputs.has(id) && document.activeElement !== el) {
+                    el.value = '';
+                }
+            });
+        }
+
+        // Run scrubber immediately and regularly during initial page lifecycle
+        runAutofillScrubber();
+        window.addEventListener('DOMContentLoaded', () => {
+            runAutofillScrubber();
+            selectLoginPortal(currentSelectedPortal);
+        });
+        window.addEventListener('load', () => {
+            runAutofillScrubber();
+            const scrubberInterval = setInterval(runAutofillScrubber, 100);
+            setTimeout(() => clearInterval(scrubberInterval), 3000);
+        });
+
+        // Register genuine user input events
+        document.querySelectorAll('input').forEach(inp => {
+            const markInteracted = () => {
+                userInteractedInputs.add(inp.id);
+                inp.removeAttribute('readonly');
+            };
+            inp.addEventListener('input', markInteracted);
+            inp.addEventListener('keydown', markInteracted);
+            inp.addEventListener('paste', markInteracted);
+            inp.addEventListener('focus', () => inp.removeAttribute('readonly'));
+            inp.addEventListener('pointerdown', () => inp.removeAttribute('readonly'));
+        });
+
+        function setupPasswordToggle(inputId, toggleBtnId) {
+            const input = document.getElementById(inputId);
+            const btn = document.getElementById(toggleBtnId);
+            if (!input || !btn) return;
+
+            btn.addEventListener('click', () => {
+                const isPassword = input.type === 'password';
+                input.type = isPassword ? 'text' : 'password';
+                const icon = btn.querySelector('i');
+                if (icon) {
+                    icon.classList.toggle('fa-eye', !isPassword);
+                    icon.classList.toggle('fa-eye-slash', isPassword);
+                }
+            });
+        }
+
+        function setupClearButton(inputId, clearBtnId) {
+            const input = document.getElementById(inputId);
+            const btn = document.getElementById(clearBtnId);
+            if (!input || !btn) return;
+
+            function updateVisibility() {
+                if (input.value.trim().length > 0) {
+                    btn.classList.add('visible');
+                } else {
+                    btn.classList.remove('visible');
+                }
+            }
+
+            input.addEventListener('input', updateVisibility);
+            btn.addEventListener('click', () => {
+                input.value = '';
+                updateVisibility();
+                input.dispatchEvent(new Event('input'));
+                input.focus();
+            });
+            updateVisibility();
+        }
+
+        setupPasswordToggle('loginPassword', 'loginPasswordToggle');
+        setupPasswordToggle('signupPassword', 'signupPasswordToggle');
+        setupPasswordToggle('signupConfirmPassword', 'signupConfirmPasswordToggle');
+
+        setupClearButton('loginUsername', 'loginUsernameClear');
+        setupClearButton('signupUsername', 'signupUsernameClear');
+        setupClearButton('signupEmail', 'signupEmailClear');
+
+        const signupUsernameInput = document.getElementById('signupUsername');
+        const signupEmailInput = document.getElementById('signupEmail');
+        const signupPasswordInput = document.getElementById('signupPassword');
+        const signupConfirmPasswordInput = document.getElementById('signupConfirmPassword');
+        const matchNotice = document.getElementById('matchNotice');
+
+        const chkUserLen = document.getElementById('chkUserLen');
+        const chkUserLetter = document.getElementById('chkUserLetter');
+        const chkUserChars = document.getElementById('chkUserChars');
+        const chkUserBounds = document.getElementById('chkUserBounds');
+
+        const chkEmailFormat = document.getElementById('chkEmailFormat');
+        const chkEmailDomain = document.getElementById('chkEmailDomain');
+        const chkEmailLength = document.getElementById('chkEmailLength');
+        const chkEmailGenuine = document.getElementById('chkEmailGenuine');
+
+        const chkLength = document.getElementById('chkLength');
+        const chkCaps = document.getElementById('chkCaps');
+        const chkLower = document.getElementById('chkLower');
+        const chkNumber = document.getElementById('chkNumber');
+        const chkSpecial = document.getElementById('chkSpecial');
+
+        const RESERVED_USERNAMES = [
+            'admin', 'administrator', 'root', 'system', 'superuser',
+            'null', 'undefined', 'anonymous', 'guest', 'api', 'bot',
+            'support', 'help', 'security', 'predictops'
+        ];
+
+        const DISPOSABLE_EMAIL_DOMAINS = [
+            'mailinator.com', 'tempmail.com', 'temp-mail.org', '10minutemail.com',
+            'guerrillamail.com', 'guerrillamail.net', 'guerrillamail.org',
+            'trashmail.com', 'trashmail.net', 'yopmail.com', 'yopmail.net',
+            'dispostable.com', 'fakeinbox.com', 'getairmail.com', 'mohmal.com',
+            'crazymailing.com', 'burnermail.io', 'throwawaymail.com', 'fakemail.net',
+            'nada.ltd', 'tempmailaddress.com', 'sharklasers.com', 'grr.la'
+        ];
+
+        function updateCheckItem(element, isValid) {
+            if (!element) return;
+            const icon = element.querySelector('i');
+            if (isValid) {
+                element.classList.add('valid');
+                if (icon) icon.className = 'fas fa-circle-check';
+            } else {
+                element.classList.remove('valid');
+                if (icon) icon.className = 'fas fa-circle-dot';
+            }
+        }
+
+        function validateSignupUsername() {
+            if (!signupUsernameInput) return false;
+            const u = signupUsernameInput.value.trim();
+
+            const isLenValid = u.length >= 3 && u.length <= 30;
+            const hasLetter = /[a-zA-Z]/.test(u);
+            const isCharsValid = /^[a-zA-Z0-9_.-]+$/.test(u) && !RESERVED_USERNAMES.includes(u.toLowerCase());
+            const isBoundsValid = u.length >= 3 && !/^[_\.-]/.test(u) && !/[_\.-]$/.test(u) && !/[_\.-]{2,}/.test(u);
+
+            updateCheckItem(chkUserLen, isLenValid);
+            updateCheckItem(chkUserLetter, hasLetter);
+            updateCheckItem(chkUserChars, isCharsValid);
+            updateCheckItem(chkUserBounds, isBoundsValid);
+
+            return isLenValid && hasLetter && isCharsValid && isBoundsValid;
+        }
+
+        function validateSignupEmail() {
+            if (!signupEmailInput) return false;
+            const e = signupEmailInput.value.trim().toLowerCase();
+
+            const isLengthValid = e.length >= 5 && e.length <= 100 && !/\s/.test(e);
+            const emailRegex = /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/;
+            const isFormatValid = emailRegex.test(e) && !e.includes("..") && !e.startsWith(".") && !e.split("@")[0].endsWith(".");
+
+            let isDomainValid = false;
+            let isGenuine = false;
+
+            if (isFormatValid) {
+                const parts = e.split("@");
+                if (parts.length === 2 && parts[1]) {
+                    const domain = parts[1];
+                    const domainParts = domain.split(".");
+                    const tld = domainParts[domainParts.length - 1];
+                    isDomainValid = domainParts.length >= 2 && tld.length >= 2 && /^[a-z]+$/.test(tld);
+                    isGenuine = !DISPOSABLE_EMAIL_DOMAINS.includes(domain);
+                }
+            }
+
+            updateCheckItem(chkEmailFormat, isFormatValid);
+            updateCheckItem(chkEmailDomain, isDomainValid);
+            updateCheckItem(chkEmailLength, isLengthValid);
+            updateCheckItem(chkEmailGenuine, isGenuine);
+
+            return isLengthValid && isFormatValid && isDomainValid && isGenuine;
+        }
+
+        function validateSignupPassword() {
+            if (!signupPasswordInput) return;
+            const pwd = signupPasswordInput.value;
+
+            const isLengthValid = pwd.length >= 8 && pwd.length <= 128;
+            const isCapsValid = /[A-Z]/.test(pwd);
+            const isLowerValid = /[a-z]/.test(pwd);
+            const isNumberValid = /[0-9]/.test(pwd);
+            const isSpecialValid = /[!@#$%^&*()_+\-=\[\]{}|;':",.\/<>?`~]/.test(pwd);
+
+            updateCheckItem(chkLength, isLengthValid);
+            updateCheckItem(chkCaps, isCapsValid);
+            updateCheckItem(chkLower, isLowerValid);
+            updateCheckItem(chkNumber, isNumberValid);
+            updateCheckItem(chkSpecial, isSpecialValid);
+
+            checkPasswordMatch();
+        }
+
+        function checkPasswordMatch() {
+            if (!signupConfirmPasswordInput || !signupPasswordInput || !matchNotice) return;
+            const p1 = signupPasswordInput.value;
+            const p2 = signupConfirmPasswordInput.value;
+
+            if (p2.length === 0) {
+                matchNotice.style.display = 'none';
+                return;
+            }
+
+            matchNotice.style.display = 'block';
+            if (p1 === p2) {
+                matchNotice.style.color = '#86efac';
+                matchNotice.innerHTML = '<i class="fas fa-check"></i> Passwords match';
+            } else {
+                matchNotice.style.color = '#fca5a5';
+                matchNotice.innerHTML = '<i class="fas fa-xmark"></i> Passwords do not match';
+            }
+        }
+
+        if (signupUsernameInput) signupUsernameInput.addEventListener('input', validateSignupUsername);
+        if (signupEmailInput) signupEmailInput.addEventListener('input', validateSignupEmail);
+        if (signupPasswordInput) signupPasswordInput.addEventListener('input', validateSignupPassword);
+        if (signupConfirmPasswordInput) signupConfirmPasswordInput.addEventListener('input', checkPasswordMatch);
+
+        const signupForm = document.getElementById('signupForm');
+        if (signupForm) {
+            signupForm.addEventListener('submit', (e) => {
+                const u = signupUsernameInput ? signupUsernameInput.value.trim() : '';
+                const eVal = signupEmailInput ? signupEmailInput.value.trim().toLowerCase() : '';
+                const pwd = signupPasswordInput.value;
+                const confirm = signupConfirmPasswordInput.value;
+
+                // 1. Username checks
+                const isUsernameValid = validateSignupUsername();
+                if (!isUsernameValid) {
+                    e.preventDefault();
+                    if (u.length < 3 || u.length > 30) {
+                        alert('Username must be between 3 and 30 characters.');
+                    } else if (!/[a-zA-Z]/.test(u)) {
+                        alert('Username cannot be numbers only. It must contain letters or mixed characters (e.g. user123).');
+                    } else if (RESERVED_USERNAMES.includes(u.toLowerCase())) {
+                        alert(`Username "${u}" is reserved for system use.`);
+                    } else if (/^[_\.-]/.test(u) || /[_\.-]$/.test(u)) {
+                        alert('Username must start and end with a letter or number.');
+                    } else if (/[_\.-]{2,}/.test(u)) {
+                        alert('Username cannot contain consecutive special characters (e.g. ".." or "__").');
+                    } else {
+                        alert('Please enter a valid username matching all requirements.');
+                    }
+                    signupUsernameInput.focus();
+                    return;
+                }
+
+                // 2. Email checks
+                const isEmailValid = validateSignupEmail();
+                if (!isEmailValid) {
+                    e.preventDefault();
+                    if (!eVal) {
+                        alert('Email address is required.');
+                    } else if (eVal.length > 100 || /\s/.test(eVal)) {
+                        alert('Email address must not exceed 100 characters and cannot contain spaces.');
+                    } else if (!/^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/.test(eVal)) {
+                        alert('Please enter a valid email format (e.g. name@domain.com).');
+                    } else if (DISPOSABLE_EMAIL_DOMAINS.some(d => eVal.endsWith('@' + d))) {
+                        alert('Temporary or disposable email addresses are not allowed. Please use a genuine email address.');
+                    } else {
+                        alert('Please enter a valid email address with a recognized domain.');
+                    }
+                    signupEmailInput.focus();
+                    return;
+                }
+
+                // 3. Password matching check
+                if (pwd !== confirm) {
+                    e.preventDefault();
+                    alert('Passwords do not match.');
+                    signupConfirmPasswordInput.focus();
+                    return;
+                }
+
+                // 4. Password strength checks
+                const isLengthValid = pwd.length >= 8 && pwd.length <= 128;
+                const isCapsValid = /[A-Z]/.test(pwd);
+                const isLowerValid = /[a-z]/.test(pwd);
+                const isNumberValid = /[0-9]/.test(pwd);
+                const isSpecialValid = /[!@#$%^&*()_+\-=\[\]{}|;':",.\/<>?`~]/.test(pwd);
+
+                if (!isLengthValid || !isCapsValid || !isLowerValid || !isNumberValid || !isSpecialValid) {
+                    e.preventDefault();
+                    alert('Please satisfy all password strength requirements before submitting.');
+                    signupPasswordInput.focus();
+                    return;
+                }
+
+                // 5. Password divergence from username
+                if (u.length >= 3 && pwd.toLowerCase().includes(u.toLowerCase())) {
+                    e.preventDefault();
+                    alert('Password cannot contain your username.');
+                    signupPasswordInput.focus();
+                    return;
+                }
+            });
+        }
+    </script>
+</body>
+</html>

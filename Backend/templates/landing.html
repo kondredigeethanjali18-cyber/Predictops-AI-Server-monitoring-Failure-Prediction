@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>PredictOps AI</title>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet"
+          href="/static/css/landing.css?v={{ asset_version('css/landing.css') }}">
+
+</head>
+
+<body>
+
+<div class="hero">
+
+    <nav class="landing-nav">
+        <a href="/" class="brand"><i class="fas fa-server"></i> PredictOps AI</a>
+        <div class="landing-actions">
+            <div class="notification-widget">
+                <button class="notification-bell" id="notificationBell" type="button" aria-label="View notifications">
+                    <i class="fas fa-bell"></i>
+                    <span id="notificationCount">0</span>
+                </button>
+                <div class="notification-panel" id="notificationPanel">
+                    <div class="notification-empty">Loading notifications...</div>
+                </div>
+            </div>
+            {% if user %}
+            {% set urole = role or (user.role if user and user.role is defined else 'viewer') %}
+            <span class="nav-user" style="color: #cbd5e1; display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600;">
+                <i class="fas fa-user-circle"></i> {{ user.username if user.username is defined else user }}
+                <span class="role-badge role-{{ urole }}" style="padding: 2px 8px; font-size: 11px; border-radius: 4px;">
+                    {% if urole == 'admin' %}
+                        <i class="fas fa-shield-halved"></i> ADMIN
+                    {% elif urole in ['devops', 'engineer'] %}
+                        <i class="fas fa-screwdriver-wrench"></i> DEVOPS ENGINEER
+                    {% else %}
+                        <i class="fas fa-eye"></i> VIEWER
+                    {% endif %}
+                </span>
+            </span>
+            {% if urole == 'admin' %}
+            <a href="/admin" class="nav-link" style="border-color: rgba(59, 130, 246, 0.5); background: rgba(37, 99, 235, 0.2);"><i class="fas fa-shield-halved"></i> Admin Console</a>
+            <a href="/admin/users" class="nav-link" style="border-color: rgba(59, 130, 246, 0.5); background: rgba(37, 99, 235, 0.2);"><i class="fas fa-users-gear"></i> Users</a>
+            {% endif %}
+            <a href="/dashboard" class="nav-link">Dashboard</a>
+            <a href="/logout" class="nav-link" style="color: #fca5a5; border-color: rgba(239, 68, 68, 0.4);"><i class="fas fa-right-from-bracket"></i> Logout</a>
+            {% else %}
+            <a href="/login" class="nav-link">Sign In</a>
+            <a href="/signup" class="nav-link" style="background: rgba(37, 99, 235, 0.2); border-color: rgba(37, 99, 235, 0.5);">Sign Up</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <div class="hero-layout">
+
+        <div class="hero-content">
+
+            <span class="eyebrow"><i class="fas fa-shield-halved"></i> Infrastructure health intelligence</span>
+
+            <h1>PredictOps AI</h1>
+
+            <h2>
+                Predict server failure before it becomes downtime.
+            </h2>
+
+            <p>
+                Monitor infrastructure health, identify risky servers, and act on
+                AI-driven alerts from one focused operations workspace.
+            </p>
+
+            <div class="hero-actions">
+                <a href="/dashboard" class="launch-btn">
+                    <i class="fas fa-gauge-high"></i>
+                    Launch Dashboard
+                </a>
+                <span class="hero-note"><i class="fas fa-circle-check"></i> Live status updates every few seconds</span>
+            </div>
+
+        </div>
+
+        <div class="hero-panel" aria-label="Infrastructure health preview">
+            <div class="panel-header">
+                <span>Operations Overview</span>
+                <strong><i class="fas fa-circle live-pulse" style="font-size: 8px; margin-right: 4px;"></i> Live</strong>
+            </div>
+
+            <div class="panel-health">
+                <div class="panel-health-main">
+                    <div>
+                        <span class="panel-label">Fleet Health Index</span>
+                        <strong id="landingFleetHealth">--%</strong>
+                    </div>
+                    <div class="health-ring" id="landingHealthRing" title="Live Fleet Health Distribution">
+                        <span id="landingHealthRingInner"><i class="fas fa-shield-heart" style="color: #16a34a; font-size: 19px;"></i></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-list" id="landingPanelList">
+                <div class="panel-row">
+                    <span><i class="fas fa-server"></i> Loading telemetry...</span>
+                    <strong class="risk-low">Syncing</strong>
+                </div>
+            </div>
+
+            <div class="panel-footer" id="landingAlertFooter">
+                <div class="footer-time-row">
+                    <span><i class="fas fa-clock" style="color: #60a5fa; margin-right: 4px;"></i> Synced: <strong id="landingSyncTime">--:--:-- (IST)</strong></span>
+                    <span class="countdown-badge" id="landingCountdownBadge"><i class="fas fa-rotate" style="font-size: 10px;"></i> Next in <strong id="landingRemainingSecs">10s</strong></span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<div class="stats">
+
+    <div class="stat-card">
+        <i class="fas fa-database"></i>
+        <h2 id="serverCount">0</h2>
+        <p>Total Records</p>
+    </div>
+
+    <div class="stat-card">
+        <i class="fas fa-bell"></i>
+        <h2 id="alertCount">0</h2>
+        <p>Active Alerts</p>
+    </div>
+
+    <div class="stat-card">
+        <i class="fas fa-chart-line"></i>
+        <h2 id="accuracyCount">99.1%</h2>
+        <p>Prediction Accuracy</p>
+    </div>
+
+</div>
+
+<div class="features">
+
+    <div class="feature-card">
+        <span class="feature-icon"><i class="fas fa-robot"></i></span>
+        <h3>AI Predictions</h3>
+        <p>
+            Predict server anomalies before failures occur.
+        </p>
+    </div>
+
+    <div class="feature-card">
+        <span class="feature-icon"><i class="fas fa-chart-line"></i></span>
+        <h3>Real-Time Monitoring</h3>
+        <p>
+            Track CPU, Memory and Disk usage continuously.
+        </p>
+    </div>
+
+    <div class="feature-card">
+        <span class="feature-icon"><i class="fas fa-triangle-exclamation"></i></span>
+        <h3>Alert Management</h3>
+        <p>
+            Detect and respond to infrastructure issues instantly.
+        </p>
+    </div>
+
+</div>
+
+
+<script src="/static/js/landing.js?v={{ asset_version('js/landing.js') }}"></script>
+<script src="/static/js/notifications.js?v={{ asset_version('js/notifications.js') }}"></script>
+
+</body>
+</html>
