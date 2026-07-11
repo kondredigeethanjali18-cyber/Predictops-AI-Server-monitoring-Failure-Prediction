@@ -81,7 +81,7 @@ def login_get(request: Request):
     token = request.cookies.get("session_token")
     username = get_session(token) if token else None
     if username:
-        return RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
+        return RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
     return templates.TemplateResponse(
         request=request,
         name="login.html",
@@ -93,7 +93,7 @@ def login_post(request: Request, response: Response, username: str = Form(...), 
     if username in USERS and USERS[username] == password:
         token = str(uuid.uuid4())
         set_session(token, username)
-        redirect = RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
+        redirect = RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
         redirect.set_cookie(
             key="session_token",
             value=token,

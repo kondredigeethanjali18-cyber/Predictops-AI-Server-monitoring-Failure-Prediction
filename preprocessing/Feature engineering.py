@@ -78,15 +78,12 @@ df["cpu_usage_percent"] /
 
 # CPU trend
 
-df["cpu_change"] = (
-df["cpu_usage_percent"].diff()
-)
+df = df.sort_values(by=["server_name"])
+df["cpu_change"] = df.groupby("server_name")["cpu_usage_percent"].diff().fillna(0)
 
 # Memory trend
 
-df["memory_change"] = (
-df["memory_usage_percent"].diff()
-)
+df["memory_change"] = df.groupby("server_name")["memory_usage_percent"].diff().fillna(0)
 
 # Latency per process
 

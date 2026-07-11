@@ -1,5 +1,5 @@
-previous_cpu = 0
-previous_memory = 0
+previous_cpu = {}
+previous_memory = {}
 
 
 def build_features(metric):
@@ -7,8 +7,12 @@ def build_features(metric):
     global previous_cpu
     global previous_memory
 
+    server_name = metric.get("server_name", "Unknown")
     cpu = metric["cpu_usage_percent"]
     memory = metric["memory_usage_percent"]
+
+    prev_cpu = previous_cpu.get(server_name, cpu)
+    prev_memory = previous_memory.get(server_name, memory)
 
     network_total = (
         metric["network_sent_mb"]
@@ -32,17 +36,17 @@ def build_features(metric):
 
     cpu_memory_ratio = cpu / max(memory, 1)
 
-    cpu_change = cpu - previous_cpu
+    cpu_change = cpu - prev_cpu
 
-    memory_change = memory - previous_memory
+    memory_change = memory - prev_memory
 
     latency_per_process = (
         request_latency_ms /
         max(active_processes, 1)
     )
 
-    previous_cpu = cpu
-    previous_memory = memory
+    previous_cpu[server_name] = cpu
+    previous_memory[server_name] = memory
 
     return {
         "cpu_usage_percent": cpu,

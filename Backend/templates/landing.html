@@ -30,7 +30,13 @@
                     <div class="notification-empty">Loading notifications...</div>
                 </div>
             </div>
+            {% if user %}
+            <span class="nav-user" style="color: #cbd5e1; display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600;"><i class="fas fa-user-circle"></i> {{ user }}</span>
             <a href="/dashboard" class="nav-link">Dashboard</a>
+            <a href="/logout" class="nav-link" style="color: #fca5a5; border-color: rgba(239, 68, 68, 0.4);"><i class="fas fa-right-from-bracket"></i> Logout</a>
+            {% else %}
+            <a href="/login" class="nav-link">Sign In</a>
+            {% endif %}
         </div>
     </nav>
 

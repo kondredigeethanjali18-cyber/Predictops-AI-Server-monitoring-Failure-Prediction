@@ -3,7 +3,7 @@ import pandas as pd
 
 # Load trained model
 model = joblib.load(
-    "ml/models/anomaly_model.pkl"
+    "ML/models/anomaly_model.pkl"
 )
 
 features = [
