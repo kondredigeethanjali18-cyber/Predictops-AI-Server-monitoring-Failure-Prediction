@@ -2,53 +2,63 @@
 
 {% block content %}
 
-<div class="dashboard-header">
-
-    <h1>Analytics</h1>
-
-    <p>
-        Infrastructure utilization and anomaly analysis
-    </p>
-
+<div class="dashboard-header page-header-row">
+    <div>
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px;">
+            <h1 style="margin: 0;"><i class="fas fa-chart-bar" style="color: #2563eb;"></i> Analytics & Telemetry</h1>
+            <span class="live-pulse-badge" style="background: #eff6ff; color: #2563eb; border-color: #bfdbfe;"><i class="fas fa-circle live-pulse" style="color: #2563eb;"></i> Live Dynamic Analytics</span>
+        </div>
+        <p>Real-time infrastructure utilization, anomaly ratios, and live distribution streams</p>
+    </div>
 </div>
 
-<div class="cards">
+<div class="cards" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 20px;">
 
     <div class="card total-card">
-        <h3>Total Predictions</h3>
+        <div class="card-header-row">
+            <h3>Total Predictions</h3>
+            <div class="card-icon" style="color: #2563eb; background: #eff6ff;"><i class="fas fa-database"></i></div>
+        </div>
         <div class="metric" id="totalPredictions">0</div>
+        <div class="card-subtext">Cumulative evaluated metrics</div>
     </div>
 
     <div class="card healthy-card">
-        <h3>Normal Predictions</h3>
-        <div class="metric" id="normalPredictions">0</div>
+        <div class="card-header-row">
+            <h3>Normal Predictions</h3>
+            <div class="card-icon" style="color: #16a34a; background: #f0fdf4;"><i class="fas fa-circle-check"></i></div>
+        </div>
+        <div class="metric" id="normalPredictions" style="color: #16a34a;">0</div>
+        <div class="card-subtext">Operating within baseline</div>
     </div>
 
     <div class="card critical-card">
-        <h3>Anomaly Predictions</h3>
-        <div class="metric" id="anomalyPredictions">0</div>
+        <div class="card-header-row">
+            <h3>Anomaly Predictions</h3>
+            <div class="card-icon" style="color: #dc2626; background: #fef2f2;"><i class="fas fa-triangle-exclamation"></i></div>
+        </div>
+        <div class="metric" id="anomalyPredictions" style="color: #dc2626;">0</div>
+        <div class="card-subtext">Detected failure risks</div>
     </div>
 
 </div>
-
-<br>
 
 <div class="charts">
 
     <div class="chart-card">
         <h3>
-            <i class="fas fa-bolt"></i> CPU Utilization Across All Servers
+            <i class="fas fa-bolt" style="color: #f59e0b;"></i> CPU Utilization Across All Servers
         </h3>
-        <div class="chart-container" style="height: 300px; position: relative;">
+        <div class="chart-container" style="height: 320px; position: relative;">
             <canvas id="cpuChart"></canvas>
         </div>
     </div>
 
     <div class="chart-card">
         <h3>
-            <i class="fas fa-memory"></i> Top 5 Memory Utilization Servers
+            <i class="fas fa-memory" style="color: #a855f7;"></i> Top 5 Memory Utilization Servers
         </h3>
-        <div class="chart-container" style="height: 300px; position: relative;">
+        <div class="chart-container" style="height: 320px; position: relative;">
             <canvas id="memoryChart"></canvas>
         </div>
     </div>
@@ -61,18 +71,18 @@
 
     <div class="chart-card">
         <h3>
-            <i class="fas fa-server"></i> Server Resource Allocation (CPU vs Memory)
+            <i class="fas fa-server" style="color: #3b82f6;"></i> Server Resource Allocation (CPU vs Memory)
         </h3>
-        <div class="chart-container" style="height: 300px; position: relative;">
+        <div class="chart-container" style="height: 320px; position: relative;">
             <canvas id="utilizationChart"></canvas>
         </div>
     </div>
 
     <div class="chart-card">
         <h3>
-            <i class="fas fa-network-wired"></i> Network Throughput (MB/s) per Server
+            <i class="fas fa-network-wired" style="color: #f43f5e;"></i> Network Throughput (MB/s) per Server
         </h3>
-        <div class="chart-container" style="height: 300px; position: relative;">
+        <div class="chart-container" style="height: 320px; position: relative;">
             <canvas id="throughputChart"></canvas>
         </div>
     </div>
@@ -85,23 +95,45 @@
 
     <div class="chart-card">
         <h3>
-            <i class="fas fa-clock-rotate-left"></i> Historical Anomaly Distribution
+            <i class="fas fa-chart-pie" style="color: #10b981;"></i> Historical Anomaly Distribution (Dynamic Ratio)
         </h3>
-        <div class="chart-container" style="height: 300px; position: relative;">
+        <div class="chart-container" style="height: 320px; position: relative;">
             <canvas id="predictionChart"></canvas>
         </div>
     </div>
 
     <div class="chart-card">
         <h3>
-            <i class="fas fa-chart-pie"></i> Current Server Status Distribution
+            <i class="fas fa-circle-notch" style="color: #0ea5e9;"></i> Current Fleet Status Distribution (Live)
         </h3>
-        <div class="chart-container" style="height: 300px; position: relative;">
+        <div class="chart-container" style="height: 320px; position: relative;">
             <canvas id="statusDistributionChart"></canvas>
         </div>
     </div>
 
 </div>
+
+<style>
+    .live-pulse-badge {
+        font-size: 12px;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 20px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid #cbd5e1;
+    }
+    .live-pulse {
+        font-size: 8px;
+        animation: pulseBlue 1.5s infinite;
+    }
+    @keyframes pulseBlue {
+        0% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.3; transform: scale(0.85); }
+        100% { opacity: 1; transform: scale(1); }
+    }
+</style>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="/static/js/analytics.js?v={{ asset_version('js/analytics.js') }}"></script>

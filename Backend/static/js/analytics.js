@@ -20,8 +20,8 @@ async function loadAnalytics() {
         const cpuServerNames = cpuServers.map(x => x.server_name);
         const cpuData = cpuServers.map(x => x.cpu_usage_percent);
 
-        // 2. Memory Chart Data
-        const topMemoryServers = [...data]
+        // 2. Memory Chart Data (Top 5 servers by memory)
+        const topMemoryServers = [...serversData]
             .sort((a, b) => b.memory_usage_percent - a.memory_usage_percent)
             .slice(0, 5);
         const memoryServerNames = topMemoryServers.map(x => x.server_name);
@@ -38,9 +38,13 @@ async function loadAnalytics() {
             }
         });
 
+        const totalRecords = data.length || 1; // avoid divide by zero
+        const normalPct = ((normalCount / totalRecords) * 100).toFixed(1);
+        const anomalyPct = ((anomalyCount / totalRecords) * 100).toFixed(1);
+
         document.getElementById("totalPredictions").innerText = data.length;
-        document.getElementById("normalPredictions").innerText = normalCount;
-        document.getElementById("anomalyPredictions").innerText = anomalyCount;
+        document.getElementById("normalPredictions").innerText = `${normalCount} (${normalPct}%)`;
+        document.getElementById("anomalyPredictions").innerText = `${anomalyCount} (${anomalyPct}%)`;
 
         // 4. Latest Status by Server Data (Latest entry per server)
         const latestByServer = {};
@@ -58,8 +62,11 @@ async function loadAnalytics() {
         const throughputLabels = uniqueServers.map(s => s.server_name);
         const throughputData = uniqueServers.map(s => s.network_throughput || 0);
 
-        const serverHealthyCount = Object.values(latestByServer).filter(s => s.prediction === "NORMAL").length;
-        const serverAnomalyCount = Object.values(latestByServer).filter(s => s.prediction === "ANOMALY").length;
+        const serverHealthyCount = uniqueServers.filter(s => s.prediction === "NORMAL").length;
+        const serverAnomalyCount = uniqueServers.filter(s => s.prediction === "ANOMALY").length;
+        const totalUniqueServers = uniqueServers.length || 1;
+        const healthyServerPct = ((serverHealthyCount / totalUniqueServers) * 100).toFixed(1);
+        const anomalyServerPct = ((serverAnomalyCount / totalUniqueServers) * 100).toFixed(1);
 
         // --- DRAW CHARTS ---
 
@@ -247,18 +254,26 @@ async function loadAnalytics() {
             });
         }
 
-        // 5. Historical Anomaly Distribution (Pie Chart)
+        // 5. Dynamic Historical Anomaly Distribution (Pie Chart with Dynamic Labels & Tooltips)
+        const dynamicPredictionLabels = [
+            `Normal: ${normalCount} (${normalPct}%)`,
+            `Anomaly: ${anomalyCount} (${anomalyPct}%)`
+        ];
+
         if (predictionChart) {
+            predictionChart.data.labels = dynamicPredictionLabels;
             predictionChart.data.datasets[0].data = [normalCount, anomalyCount];
             predictionChart.update();
         } else {
             predictionChart = new Chart(document.getElementById("predictionChart"), {
                 type: "pie",
                 data: {
-                    labels: ["NORMAL", "ANOMALY"],
+                    labels: dynamicPredictionLabels,
                     datasets: [{
                         data: [normalCount, anomalyCount],
-                        backgroundColor: ["#22c55e", "#ef4444"]
+                        backgroundColor: ["#16a34a", "#dc2626"],
+                        borderColor: ["#ffffff", "#ffffff"],
+                        borderWidth: 2
                     }]
                 },
                 options: {
@@ -266,33 +281,56 @@ async function loadAnalytics() {
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
-                            position: "bottom"
+                            position: "bottom",
+                            labels: {
+                                boxWidth: 14,
+                                font: {
+                                    size: 12,
+                                    weight: "600"
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = normalCount + anomalyCount;
+                                    const val = context.parsed || 0;
+                                    const pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
+                                    return ` ${context.label.split(':')[0]}: ${val} records (${pct}%)`;
+                                }
+                            }
                         }
                     }
                 }
             });
         }
 
-        // 6. Current Server Status Distribution (Doughnut Chart)
+        // 6. Dynamic Current Server Status Distribution (Doughnut Chart)
+        const dynamicStatusLabels = [
+            `Healthy: ${serverHealthyCount} (${healthyServerPct}%)`,
+            `Anomaly: ${serverAnomalyCount} (${anomalyServerPct}%)`
+        ];
+
         if (statusDistributionChart) {
+            statusDistributionChart.data.labels = dynamicStatusLabels;
             statusDistributionChart.data.datasets[0].data = [serverHealthyCount, serverAnomalyCount];
             statusDistributionChart.update();
         } else {
             statusDistributionChart = new Chart(document.getElementById("statusDistributionChart"), {
                 type: "doughnut",
                 data: {
-                    labels: ["Healthy (NORMAL)", "Anomalous (ANOMALY)"],
+                    labels: dynamicStatusLabels,
                     datasets: [{
                         data: [serverHealthyCount, serverAnomalyCount],
                         backgroundColor: [
-                            "rgba(16, 185, 129, 0.8)",
-                            "rgba(239, 68, 68, 0.8)"
+                            "#0284c7",
+                            "#ef4444"
                         ],
                         borderColor: [
-                            "rgb(16, 185, 129)",
-                            "rgb(239, 68, 68)"
+                            "#ffffff",
+                            "#ffffff"
                         ],
-                        borderWidth: 1
+                        borderWidth: 2
                     }]
                 },
                 options: {
@@ -300,7 +338,24 @@ async function loadAnalytics() {
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
-                            position: "bottom"
+                            position: "bottom",
+                            labels: {
+                                boxWidth: 14,
+                                font: {
+                                    size: 12,
+                                    weight: "600"
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = serverHealthyCount + serverAnomalyCount;
+                                    const val = context.parsed || 0;
+                                    const pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
+                                    return ` ${context.label.split(':')[0]}: ${val} servers (${pct}%)`;
+                                }
+                            }
                         }
                     }
                 }
@@ -312,5 +367,6 @@ async function loadAnalytics() {
     }
 }
 
+// Initial load & real-time 3-second live refresh
 loadAnalytics();
-setInterval(loadAnalytics, 5000);
+setInterval(loadAnalytics, 3000);

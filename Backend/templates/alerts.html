@@ -2,27 +2,106 @@
 
 {% block content %}
 
-<h1>Alerts</h1>
+<div class="dashboard-header page-header-row">
+    <div>
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px;">
+            <h1 style="margin: 0;"><i class="fas fa-tower-broadcast" style="color: #ef4444;"></i> Live Monitoring Alerts</h1>
+            <span class="live-pulse-badge"><i class="fas fa-circle live-pulse"></i> Live Streaming</span>
+        </div>
+        <p>Real-time anomaly detection stream & active incident monitoring across 22 servers</p>
+    </div>
+
+    <div class="page-actions" style="display: flex; align-items: center; gap: 12px;">
+        <input
+            type="text"
+            id="searchAlertBox"
+            placeholder="Search server..."
+            style="padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; outline: none;">
+
+        <button id="exportAlertsBtn" style="padding: 10px 16px; background: #2563eb; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+            <i class="fas fa-file-export"></i>
+            Export Alerts
+        </button>
+    </div>
+</div>
+
+<!-- 4 Live Summary KPI Cards -->
+<div class="cards" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 18px;">
+    <div class="card total-card" style="border-left: 5px solid #ef4444;">
+        <div class="card-header-row">
+            <h3>Active Alerts</h3>
+            <div class="card-icon" style="color: #ef4444; background: #fef2f2;"><i class="fas fa-bell"></i></div>
+        </div>
+        <div class="metric" id="totalActiveAlertsCount" style="color: #ef4444;">0</div>
+        <div class="card-subtext">Total flagged anomalies</div>
+    </div>
+
+    <div class="card critical-card" style="border-left: 5px solid #dc2626;">
+        <div class="card-header-row">
+            <h3>Critical (90%+)</h3>
+            <div class="card-icon" style="color: #dc2626; background: #fee2e2;"><i class="fas fa-triangle-exclamation"></i></div>
+        </div>
+        <div class="metric" id="criticalAlertsCount" style="color: #dc2626;">0</div>
+        <div class="card-subtext">Immediate action required</div>
+    </div>
+
+    <div class="card warning-card" style="border-left: 5px solid #d97706;">
+        <div class="card-header-row">
+            <h3>High (70-89%)</h3>
+            <div class="card-icon" style="color: #d97706; background: #fffbeb;"><i class="fas fa-circle-exclamation"></i></div>
+        </div>
+        <div class="metric" id="highAlertsCount" style="color: #d97706;">0</div>
+        <div class="card-subtext">Elevated failure risk</div>
+    </div>
+
+    <div class="card healthy-card" style="border-left: 5px solid #3b82f6;">
+        <div class="card-header-row">
+            <h3>Moderate (<70%)</h3>
+            <div class="card-icon" style="color: #2563eb; background: #eff6ff;"><i class="fas fa-shield"></i></div>
+        </div>
+        <div class="metric" id="mediumAlertsCount" style="color: #2563eb;">0</div>
+        <div class="card-subtext">Early behavioral variance</div>
+    </div>
+</div>
+
+<!-- Real-time Filter Bar & Notification -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+    <div style="display: flex; gap: 8px;" id="severityFilters">
+        <button class="filter-pill active" data-severity="ALL">All Alerts</button>
+        <button class="filter-pill" data-severity="Critical">Critical</button>
+        <button class="filter-pill" data-severity="High">High</button>
+        <button class="filter-pill" data-severity="Medium">Moderate</button>
+    </div>
+    
+    <div style="font-size: 13px; color: #64748b; font-weight: 500;">
+        <i class="fas fa-clock" style="color: #2563eb;"></i> Live Sync: <strong id="alertsSyncTime" style="color: #0f172a;">--</strong> (3s interval)
+    </div>
+</div>
 
 <div class="notification-bar" id="alertsNotification">
     <i class="fas fa-circle-info"></i>
-    <span>Loading alert notification...</span>
+    <span>Connecting to live incident telemetry stream...</span>
 </div>
 
 <div class="table-section">
-    <table>
+    <table id="liveAlertsTable">
         <thead>
             <tr>
-                <th>Server</th>
-                <th>Prediction</th>
+                <th>Server Name</th>
+                <th>Status</th>
                 <th>Confidence</th>
                 <th>Severity</th>
-                <th>Possible Causes</th>
-                <th>Remark</th>
+                <th>Triggered Causes</th>
+                <th>Operational Remark</th>
+                <th>Detected Time (IST)</th>
             </tr>
         </thead>
 
-        <tbody id="alertsTableBody"></tbody>
+        <tbody id="alertsTableBody">
+            <tr>
+                <td colspan="7" style="text-align: center; color: #94a3b8; padding: 24px;">Loading live alerts...</td>
+            </tr>
+        </tbody>
     </table>
 </div>
 
@@ -31,6 +110,51 @@
     <span id="alertPageNumber">Page 1 of 1</span>
     <button id="nextAlertBtn">Next</button>
 </div>
+
+<style>
+    .live-pulse-badge {
+        background: #fef2f2;
+        color: #ef4444;
+        border: 1px solid #fecaca;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 20px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .live-pulse {
+        font-size: 8px;
+        color: #ef4444;
+        animation: pulseRed 1.5s infinite;
+    }
+    @keyframes pulseRed {
+        0% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.3; transform: scale(0.85); }
+        100% { opacity: 1; transform: scale(1); }
+    }
+    .filter-pill {
+        padding: 6px 14px;
+        border-radius: 20px;
+        border: 1px solid #cbd5e1;
+        background: white;
+        color: #475569;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .filter-pill:hover {
+        background: #f8fafc;
+        border-color: #94a3b8;
+    }
+    .filter-pill.active {
+        background: #0f172a;
+        color: white;
+        border-color: #0f172a;
+    }
+</style>
 
 <script src="/static/js/alerts.js?v={{ asset_version('js/alerts.js') }}"></script>
 
