@@ -1,138 +1,148 @@
+function formatAlertTime(timestamp) {
+    if (!timestamp) return "Time unavailable";
+    const date = new Date(timestamp);
+    if (Number.isNaN(date.getTime())) return timestamp;
+    return date.toLocaleString("en-IN", {
+        timeZone: "Asia/Kolkata",
+        day: "2-digit",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true
+    }) + " (IST)";
+}
+
 async function loadDashboard() {
     try {
         const response = await fetch("/all-predictions");
         const data = await response.json();
 
+        const serversResponse = await fetch("/all-servers");
+        const serversData = await serversResponse.json();
+
+        // 1. Total Metrics
+        document.getElementById("totalServers").innerText = serversData.length;
+        document.getElementById("totalRecords").innerText = data.length;
+
+        // 2. State metrics & Fleet health
         let healthy = 0;
         let warning = 0;
         let critical = 0;
         let totalCpu = 0;
         let totalMemory = 0;
-        let anomalyCount = 0;
-        const serverNames = new Set();
 
-        data.forEach(server => {
-            serverNames.add(server.server_name || "Unknown");
-            totalCpu += Number(server.cpu_usage_percent || 0);
-            totalMemory += Number(server.memory_usage_percent || 0);
-            if (server.prediction === "ANOMALY") {
-                anomalyCount++;
-            }
+        serversData.forEach(s => {
+            const cpu = Number(s.cpu_usage_percent) || 0;
+            const memory = Number(s.memory_usage_percent) || 0;
 
-            const cpu = server.cpu_usage_percent;
-            const memory = server.memory_usage_percent;
+            totalCpu += cpu;
+            totalMemory += memory;
 
-            if (cpu > 90 || memory > 90) {
+            if (cpu > 85 || memory > 85) {
                 critical++;
-            } else if (cpu > 70 || memory > 80) {
+            } else if (cpu > 70 || memory > 75) {
                 warning++;
             } else {
                 healthy++;
             }
         });
 
-        // Set card metrics
-        document.getElementById("totalServers").innerText = serverNames.size;
-        document.getElementById("totalRecords").innerText = data.length;
         document.getElementById("healthyServers").innerText = healthy;
         document.getElementById("warningServers").innerText = warning;
         document.getElementById("criticalServers").innerText = critical;
 
-        const avgCpu = data.length > 0 ? (totalCpu / data.length).toFixed(1) : 0;
-        const avgMemory = data.length > 0 ? (totalMemory / data.length).toFixed(1) : 0;
+        const serverCount = serversData.length || 1;
+        document.getElementById("avgCpuUsage").innerText = (totalCpu / serverCount).toFixed(1) + "%";
+        document.getElementById("avgMemoryUsage").innerText = (totalMemory / serverCount).toFixed(1) + "%";
+
+        // 3. Anomaly Rate
+        const anomalies = data.filter(x => x.prediction === "ANOMALY");
+        const anomalyCount = anomalies.length;
         const anomalyRate = data.length > 0 ? ((anomalyCount / data.length) * 100).toFixed(1) : 0;
+        document.getElementById("anomalyRate").innerText = anomalyRate + "%";
 
-        document.getElementById("avgCpuUsage").innerText = `${avgCpu}%`;
-        document.getElementById("avgMemoryUsage").innerText = `${avgMemory}%`;
-        document.getElementById("anomalyRate").innerText = `${anomalyRate}%`;
+        // 4. Top Risk Server
+        if (serversData.length > 0) {
+            const highestRiskServer = [...serversData].sort(
+                (a, b) => (b.cpu_usage_percent + b.memory_usage_percent) - (a.cpu_usage_percent + a.memory_usage_percent)
+            )[0];
 
-        // Top Risk Server & Latest Prediction
-        if (data.length > 0) {
-            const riskServer = data.reduce((max, current) => {
-                const currentRisk = (Number(current.cpu_usage_percent) || 0) + (Number(current.memory_usage_percent) || 0);
-                const maxRisk = (Number(max.cpu_usage_percent) || 0) + (Number(max.memory_usage_percent) || 0);
-                return currentRisk > maxRisk ? current : max;
-            });
+            document.getElementById("topRiskServer").innerHTML = `<i class="fas fa-server" style="color: #64748b; font-size: 15px;"></i> ${highestRiskServer.server_name}`;
+            document.getElementById("topRiskCpu").innerText = highestRiskServer.cpu_usage_percent + "%";
+            document.getElementById("topRiskMem").innerText = highestRiskServer.memory_usage_percent + "%";
 
-            const topRiskEl = document.getElementById("topRiskServer");
-            if (topRiskEl) topRiskEl.innerText = riskServer.server_name || "Unknown";
+            document.getElementById("topRiskCpuBar").style.width = Math.min(highestRiskServer.cpu_usage_percent, 100) + "%";
+            document.getElementById("topRiskMemBar").style.width = Math.min(highestRiskServer.memory_usage_percent, 100) + "%";
 
-            const cpuVal = Number(riskServer.cpu_usage_percent) || 0;
-            const memVal = Number(riskServer.memory_usage_percent) || 0;
-            const totalRiskScore = cpuVal + memVal;
-
-            const topRiskCpuEl = document.getElementById("topRiskCpu");
-            if (topRiskCpuEl) topRiskCpuEl.innerText = `${cpuVal}%`;
-
-            const topRiskMemEl = document.getElementById("topRiskMem");
-            if (topRiskMemEl) topRiskMemEl.innerText = `${memVal}%`;
-
-            const topRiskCpuBar = document.getElementById("topRiskCpuBar");
-            if (topRiskCpuBar) topRiskCpuBar.style.width = `${Math.min(cpuVal, 100)}%`;
-
-            const topRiskMemBar = document.getElementById("topRiskMemBar");
-            if (topRiskMemBar) topRiskMemBar.style.width = `${Math.min(memVal, 100)}%`;
-
-            const topRiskPill = document.getElementById("topRiskPill");
-            if (topRiskPill) {
-                if (totalRiskScore > 160 || cpuVal > 85 || memVal > 85) {
-                    topRiskPill.innerText = "Critical Risk";
-                    topRiskPill.className = "risk-pill";
-                    topRiskPill.style.background = "#fee2e2";
-                    topRiskPill.style.color = "#991b1b";
-                } else if (totalRiskScore > 120) {
-                    topRiskPill.innerText = "Elevated";
-                    topRiskPill.className = "risk-pill";
-                    topRiskPill.style.background = "#fef3c7";
-                    topRiskPill.style.color = "#92400e";
-                } else {
-                    topRiskPill.innerText = "Moderate";
-                    topRiskPill.className = "risk-pill";
-                    topRiskPill.style.background = "#dcfce7";
-                    topRiskPill.style.color = "#166534";
-                }
+            const riskPill = document.getElementById("topRiskPill");
+            if (highestRiskServer.cpu_usage_percent > 85 || highestRiskServer.memory_usage_percent > 85) {
+                riskPill.innerText = "Critical Risk";
+                riskPill.style.background = "#fee2e2";
+                riskPill.style.color = "#dc2626";
+            } else if (highestRiskServer.cpu_usage_percent > 70) {
+                riskPill.innerText = "Elevated";
+                riskPill.style.background = "#fef3c7";
+                riskPill.style.color = "#d97706";
+            } else {
+                riskPill.innerText = "Optimal";
+                riskPill.style.background = "#dcfce7";
+                riskPill.style.color = "#16a34a";
             }
 
-            // Latest Prediction
-            const latest = data[0];
-            const badgeClass = latest.prediction === "ANOMALY" ? "badge-danger" : "badge-success";
-            const latestPredEl = document.getElementById("latestPrediction");
-            if (latestPredEl) {
-                latestPredEl.innerHTML = `
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-                        <strong style="color: #0f172a; font-size: 16px;">${latest.server_name}</strong>
-                        <span class="${badgeClass}">${latest.prediction}</span>
-                    </div>
-                    <div style="font-size: 12px; color: #64748b; line-height: 1.4;">${latest.remark || 'Operating within expected baseline parameters.'}</div>
-                `;
-            }
+            // Update Card 4: AI Remediation & Insights
+            const recEl = document.getElementById("dashboardRecommendation");
+            const actionEl = document.getElementById("dashboardSuggestedAction");
+            const fleetTagEl = document.getElementById("fleetHealthTag");
 
-            const confScore = latest.confidence !== undefined ? latest.confidence : 100;
-            const confValEl = document.getElementById("confidenceScoreVal");
-            if (confValEl) confValEl.innerText = `${confScore}%`;
-
-            const confBar = document.getElementById("confidenceBar");
-            if (confBar) confBar.style.width = `${Math.min(confScore, 100)}%`;
-
-            // Last Updated
-            const lastUpEl = document.getElementById("lastUpdated");
-            if (lastUpEl) {
-                lastUpEl.innerText = new Date().toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour12: true }) + " (IST)";
+            if (critical > 0) {
+                if (fleetTagEl) fleetTagEl.innerHTML = `<i class="fas fa-triangle-exclamation" style="color: #dc2626;"></i> ${critical} High Stress Nodes`;
+                if (recEl) recEl.innerText = `${highestRiskServer.server_name} is operating at critical capacity (${highestRiskServer.cpu_usage_percent}% CPU, ${highestRiskServer.memory_usage_percent}% MEM).`;
+                if (actionEl) actionEl.innerHTML = `<i class="fas fa-wrench" style="color: #2563eb; margin-right: 6px;"></i> <strong>Recommended Action:</strong> Rebalance traffic from ${highestRiskServer.server_name} and check top process memory leaks.`;
+            } else if (warning > 0) {
+                if (fleetTagEl) fleetTagEl.innerHTML = `<i class="fas fa-circle-exclamation" style="color: #d97706;"></i> Moderate Load`;
+                if (recEl) recEl.innerText = `Fleet load is moderately elevated. ${highestRiskServer.server_name} is currently the highest consumer.`;
+                if (actionEl) actionEl.innerHTML = `<i class="fas fa-shield" style="color: #2563eb; margin-right: 6px;"></i> <strong>Recommended Action:</strong> Monitor compute headroom. Automated mitigation on standby.`;
+            } else {
+                if (fleetTagEl) fleetTagEl.innerHTML = `<i class="fas fa-circle live-pulse" style="color: #22c55e;"></i> All Stable`;
+                if (recEl) recEl.innerText = `All ${serversData.length} monitored servers are operating comfortably within baseline.`;
+                if (actionEl) actionEl.innerHTML = `<i class="fas fa-circle-check" style="color: #16a34a; margin-right: 6px;"></i> <strong>Status:</strong> Zero immediate interventions required. ML guard active.`;
             }
         }
 
-        // Recent Alerts
-        const anomalies = data.filter(x => x.prediction === "ANOMALY");
-        const alertsEl = document.getElementById("recentAlerts");
+        // 5. Latest Prediction Card
+        if (data.length > 0) {
+            const latest = data[0];
+            let conf = latest.confidence !== undefined ? Number(latest.confidence) : 90;
+            if (conf > 100) conf = conf / 100;
+            conf = Math.round(conf * 10) / 10;
 
+            const badge = latest.prediction === "ANOMALY"
+                ? `<span class="badge-danger" style="display:inline-flex; align-items:center; gap:5px;"><i class="fas fa-triangle-exclamation"></i> ANOMALY</span>`
+                : `<span class="badge-success" style="display:inline-flex; align-items:center; gap:5px;"><i class="fas fa-circle-check"></i> NORMAL</span>`;
+
+            document.getElementById("latestPrediction").innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <strong style="font-size: 15px; color: #0f172a;"><i class="fas fa-server" style="color: #64748b; margin-right: 6px;"></i>${latest.server_name}</strong>
+                    ${badge}
+                </div>
+            `;
+
+            document.getElementById("confidenceScoreVal").innerText = conf + "%";
+            document.getElementById("confidenceBar").style.width = Math.min(conf, 100) + "%";
+        }
+
+        // 6. Recent Threat & Anomaly Alerts
+        const alertsEl = document.getElementById("recentAlerts");
         if (alertsEl) {
-            if (anomalies.length > 0) {
-                alertsEl.innerHTML = anomalies
-                    .slice(0, 2)
+            const recentAnomalies = anomalies.slice(0, 3);
+            if (recentAnomalies.length > 0) {
+                alertsEl.innerHTML = recentAnomalies
                     .map(a => {
-                        const severity = a.confidence >= 90 ? "Critical" : (a.confidence >= 70 ? "High" : "Medium");
-                        const fallbackRemark = `${severity}: resource usage deviation (${a.confidence}% confidence).`;
-                        const remark = a.remark || fallbackRemark;
+                        let conf = a.confidence !== undefined ? Number(a.confidence) : 90;
+                        if (conf > 100) conf = conf / 100;
+                        conf = Math.round(conf * 10) / 10;
+                        const remark = a.remark || "Elevated resource deviation detected by ensemble model.";
                         return `
                             <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px dashed #e2e8f0; text-align: left;">
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -140,7 +150,7 @@ async function loadDashboard() {
                                         <i class="fas fa-triangle-exclamation" style="color: #dc2626; margin-right: 4px;"></i> 
                                         ${a.server_name}
                                     </span>
-                                    <span style="font-size: 11px; font-weight: 700; color: #dc2626; background: #fee2e2; padding: 2px 6px; border-radius: 4px;">${a.confidence}%</span>
+                                    <span style="font-size: 11px; font-weight: 700; color: #dc2626; background: #fee2e2; padding: 2px 6px; border-radius: 4px;">${conf}%</span>
                                 </div>
                                 <div style="font-size: 11px; color: #64748b; margin-top: 3px; line-height: 1.3;">${remark}</div>
                             </div>
@@ -157,10 +167,24 @@ async function loadDashboard() {
             }
         }
 
+        // 7. Last Updated Timestamp
+        const now = new Date();
+        const lastUpdatedEl = document.getElementById("lastUpdated");
+        if (lastUpdatedEl) {
+            lastUpdatedEl.innerText = now.toLocaleTimeString("en-IN", {
+                timeZone: "Asia/Kolkata",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: true
+            }) + " (IST)";
+        }
+
     } catch (error) {
         console.error("Error loading dashboard data:", error);
     }
 }
 
+// Initial load & 8-second interval
 loadDashboard();
-setInterval(loadDashboard, 3000);
+setInterval(loadDashboard, 8000);

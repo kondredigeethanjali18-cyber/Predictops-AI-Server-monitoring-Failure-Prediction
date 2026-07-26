@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PredictOps AI - Authentication</title>
+    <title>PredictOps AI - Authentication & OAuth 2.0</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="/static/css/style.css">
     <style>
         body {
@@ -16,13 +17,13 @@
                 linear-gradient(135deg, rgba(8, 13, 26, 0.98), rgba(21, 45, 89, 0.95)),
                 #0f172a;
             margin: 0;
-            padding: 20px;
+            padding: 24px 16px;
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             box-sizing: border-box;
         }
         .login-container {
             width: 100%;
-            max-width: 440px;
+            max-width: 450px;
             position: relative;
         }
         .login-container::before {
@@ -32,47 +33,47 @@
             left: -20px;
             right: -20px;
             bottom: -20px;
-            background: radial-gradient(circle, rgba(37, 99, 235, 0.18) 0%, transparent 70%);
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.22) 0%, transparent 70%);
             z-index: -1;
-            filter: blur(14px);
+            filter: blur(16px);
         }
         .login-card {
-            background: rgba(30, 41, 59, 0.75);
-            backdrop-filter: blur(18px);
-            -webkit-backdrop-filter: blur(18px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 18px;
-            padding: 35px 32px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+            background: rgba(30, 41, 59, 0.82);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 20px;
+            padding: 34px 28px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.65);
             text-align: center;
         }
         .brand-icon {
             width: 56px;
             height: 56px;
             border-radius: 14px;
-            background: linear-gradient(135deg, rgba(37, 99, 235, 0.25), rgba(37, 99, 235, 0.08));
-            border: 1px solid rgba(37, 99, 235, 0.4);
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.3), rgba(37, 99, 235, 0.1));
+            border: 1px solid rgba(37, 99, 235, 0.5);
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 16px;
-            box-shadow: 0 0 25px rgba(37, 99, 235, 0.3);
+            margin-bottom: 14px;
+            box-shadow: 0 0 25px rgba(37, 99, 235, 0.35);
         }
         .brand-icon i {
             font-size: 24px;
-            color: #3b82f6;
+            color: #60a5fa;
             text-shadow: 0 0 12px rgba(59, 130, 246, 0.6);
         }
         .login-card h2 {
             margin: 0 0 6px;
             color: white;
             font-size: 24px;
-            font-weight: 700;
+            font-weight: 800;
             letter-spacing: -0.5px;
         }
         .login-card .app-tagline {
             color: #94a3b8;
-            margin: 0 0 24px;
+            margin: 0 0 20px;
             font-size: 13px;
             line-height: 1.4;
         }
@@ -80,10 +81,10 @@
         /* Auth Mode Switch Tabs */
         .auth-tabs {
             display: flex;
-            background: rgba(15, 23, 42, 0.6);
+            background: rgba(15, 23, 42, 0.65);
             border-radius: 10px;
             padding: 4px;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
             border: 1px solid rgba(255, 255, 255, 0.08);
         }
         .auth-tab-btn {
@@ -92,11 +93,15 @@
             border: none;
             background: transparent;
             color: #94a3b8;
-            font-size: 14px;
-            font-weight: 600;
+            font-size: 13.5px;
+            font-weight: 700;
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
         }
         .auth-tab-btn.active {
             background: #2563eb;
@@ -120,15 +125,15 @@
         }
 
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 18px;
             text-align: left;
         }
         .form-group label {
             display: block;
-            margin-bottom: 7px;
+            margin-bottom: 6px;
             color: #cbd5e1;
             font-weight: 600;
-            font-size: 12px;
+            font-size: 11.5px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
@@ -149,29 +154,28 @@
         }
         .input-wrapper input {
             width: 100%;
-            padding: 13px 44px 13px 42px;
-            border: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 12px 42px 12px 40px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
             border-radius: 10px;
-            font-size: 14px;
+            font-size: 13.5px;
             color: white;
-            background: rgba(15, 23, 42, 0.45);
+            background: rgba(15, 23, 42, 0.5);
             outline: none;
             box-sizing: border-box;
             transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s;
         }
         .input-wrapper input:focus {
             border-color: #3b82f6;
-            background: rgba(15, 23, 42, 0.7);
+            background: rgba(15, 23, 42, 0.75);
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
         }
         .input-wrapper input:focus ~ .input-icon-left {
-            color: #3b82f6;
+            color: #60a5fa;
         }
 
-        /* Action Buttons inside Input (Clear Cross and Eye Toggle) */
         .input-action-btn {
             position: absolute;
-            right: 12px;
+            right: 10px;
             top: 50%;
             transform: translateY(-50%);
             background: transparent;
@@ -192,7 +196,7 @@
         }
         .clear-cross-btn {
             display: none;
-            right: 12px;
+            right: 10px;
             color: #94a3b8;
             font-size: 14px;
         }
@@ -203,13 +207,39 @@
             color: #f87171;
         }
 
+        /* Checkbox row for Remember Me */
+        .form-row-remember {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+            font-size: 13px;
+            color: #94a3b8;
+            text-align: left;
+        }
+        .remember-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            user-select: none;
+            color: #cbd5e1;
+            font-weight: 500;
+        }
+        .remember-label input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #2563eb;
+            cursor: pointer;
+        }
+
         /* Password Validation Checklist */
         .password-checklist {
             background: rgba(15, 23, 42, 0.55);
             border: 1px solid rgba(255, 255, 255, 0.07);
             border-radius: 10px;
             padding: 12px 14px;
-            margin-top: 10px;
+            margin-top: 8px;
             font-size: 12px;
             text-align: left;
         }
@@ -258,11 +288,10 @@
             color: white;
             border: none;
             border-radius: 10px;
-            font-size: 15px;
+            font-size: 14.5px;
             font-weight: 700;
             cursor: pointer;
             transition: transform 0.1s, filter 0.2s, box-shadow 0.2s;
-            margin-top: 6px;
             box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.35);
         }
         .btn-submit:hover {
@@ -272,10 +301,92 @@
         .btn-submit:active {
             transform: scale(0.98);
         }
+
+        /* OAuth 2.0 Divider & Buttons */
+        .auth-divider {
+            display: flex;
+            align-items: center;
+            margin: 20px 0 16px;
+            color: #64748b;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .auth-divider::before,
+        .auth-divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        }
+        .auth-divider span {
+            padding: 0 12px;
+        }
+
+        .oauth-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .btn-oauth {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 14px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 10px;
+            color: #e2e8f0;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .btn-oauth:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.25);
+            transform: translateY(-1px);
+        }
+        .btn-oauth i {
+            font-size: 16px;
+        }
+        .btn-oauth.oauth-google i {
+            color: #ea4335;
+        }
+        .btn-oauth.oauth-github i {
+            color: #ffffff;
+        }
+        
+        .btn-oauth-demo {
+            width: 100%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 14px;
+            background: rgba(37, 99, 235, 0.12);
+            border: 1px solid rgba(37, 99, 235, 0.35);
+            border-radius: 10px;
+            color: #93c5fd;
+            text-decoration: none;
+            font-size: 12.5px;
+            font-weight: 700;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .btn-oauth-demo:hover {
+            background: rgba(37, 99, 235, 0.22);
+            border-color: rgba(37, 99, 235, 0.6);
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
         
         .switch-mode-link {
             display: inline-block;
-            margin-top: 18px;
+            margin-top: 16px;
             color: #94a3b8;
             font-size: 13px;
             text-decoration: none;
@@ -292,13 +403,13 @@
         }
 
         .error-message {
-            background: rgba(239, 68, 68, 0.14);
-            border: 1px solid rgba(239, 68, 68, 0.3);
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.35);
             color: #fca5a5;
             padding: 11px 14px;
             border-radius: 10px;
             font-size: 13px;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
             display: flex;
             align-items: center;
             gap: 10px;
@@ -309,6 +420,21 @@
             color: #f87171;
             flex-shrink: 0;
         }
+
+        /* Mobile Optimization */
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 26px 18px;
+            }
+            .oauth-grid {
+                grid-template-columns: 1fr;
+            }
+            .form-row-remember {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -318,7 +444,7 @@
                 <i class="fas fa-server"></i>
             </div>
             <h2>PredictOps AI</h2>
-            <p class="app-tagline">Infrastructure Health Intelligence & Failure Prediction</p>
+            <p class="app-tagline">Enterprise Server Monitoring & Predictive AI</p>
 
             <!-- Mode Switch Tabs -->
             <div class="auth-tabs">
@@ -361,9 +487,36 @@
                             </button>
                         </div>
                     </div>
+
+                    <!-- Remember Me Option -->
+                    <div class="form-row-remember">
+                        <label class="remember-label">
+                            <input type="checkbox" name="remember_me" id="rememberMeCheckbox" value="true">
+                            <span>Keep me signed in (7 days)</span>
+                        </label>
+                    </div>
                     
-                    <button type="submit" class="btn-submit">Sign In</button>
+                    <button type="submit" class="btn-submit">Sign In to Dashboard</button>
                 </form>
+
+                <!-- OAuth 2.0 Integrations -->
+                <div class="auth-divider">
+                    <span>Or continue with</span>
+                </div>
+
+                <div class="oauth-grid">
+                    <a href="/auth/oauth/google" class="btn-oauth oauth-google" title="Sign in with Google OAuth 2.0">
+                        <i class="fab fa-google"></i> Google
+                    </a>
+                    <a href="/auth/oauth/github" class="btn-oauth oauth-github" title="Sign in with GitHub OAuth 2.0">
+                        <i class="fab fa-github"></i> GitHub
+                    </a>
+                </div>
+
+                <a href="/auth/oauth/demo" class="btn-oauth-demo" title="Instant 1-Click OAuth 2.0 Test Sandbox">
+                    <i class="fas fa-bolt"></i> Instant 1-Click OAuth 2.0 Sandbox
+                </a>
+
                 <div class="switch-mode-link" onclick="switchAuthTab('signup')">
                     Don't have an account? <span>Sign Up</span>
                 </div>
@@ -428,6 +581,21 @@
                     
                     <button type="submit" class="btn-submit" id="btnCreateAccount">Create Account</button>
                 </form>
+
+                <!-- OAuth 2.0 Integrations -->
+                <div class="auth-divider">
+                    <span>Or register with</span>
+                </div>
+
+                <div class="oauth-grid">
+                    <a href="/auth/oauth/google" class="btn-oauth oauth-google">
+                        <i class="fab fa-google"></i> Google
+                    </a>
+                    <a href="/auth/oauth/github" class="btn-oauth oauth-github">
+                        <i class="fab fa-github"></i> GitHub
+                    </a>
+                </div>
+
                 <div class="switch-mode-link" onclick="switchAuthTab('login')">
                     Already have an account? <span>Sign In</span>
                 </div>
@@ -436,7 +604,6 @@
     </div>
 
     <script>
-        // Tab switching function
         function switchAuthTab(mode) {
             const loginSection = document.getElementById('loginSection');
             const signupSection = document.getElementById('signupSection');
@@ -458,7 +625,6 @@
             }
         }
 
-        // Show/Hide Password Toggle helper
         function setupPasswordToggle(inputId, toggleBtnId) {
             const input = document.getElementById(inputId);
             const btn = document.getElementById(toggleBtnId);
@@ -475,7 +641,6 @@
             });
         }
 
-        // Clear Username helper
         function setupClearButton(inputId, clearBtnId) {
             const input = document.getElementById(inputId);
             const btn = document.getElementById(clearBtnId);
@@ -495,21 +660,16 @@
                 updateVisibility();
                 input.focus();
             });
-
-            // Initial check
             updateVisibility();
         }
 
-        // Initialize Password Toggles
         setupPasswordToggle('loginPassword', 'loginPasswordToggle');
         setupPasswordToggle('signupPassword', 'signupPasswordToggle');
         setupPasswordToggle('signupConfirmPassword', 'signupConfirmPasswordToggle');
 
-        // Initialize Clear Username Buttons
         setupClearButton('loginUsername', 'loginUsernameClear');
         setupClearButton('signupUsername', 'signupUsernameClear');
 
-        // Real-time Password Validation
         const signupPasswordInput = document.getElementById('signupPassword');
         const signupConfirmPasswordInput = document.getElementById('signupConfirmPassword');
         const matchNotice = document.getElementById('matchNotice');
@@ -525,14 +685,10 @@
             const icon = element.querySelector('i');
             if (isValid) {
                 element.classList.add('valid');
-                if (icon) {
-                    icon.className = 'fas fa-circle-check';
-                }
+                if (icon) icon.className = 'fas fa-circle-check';
             } else {
                 element.classList.remove('valid');
-                if (icon) {
-                    icon.className = 'fas fa-circle-dot';
-                }
+                if (icon) icon.className = 'fas fa-circle-dot';
             }
         }
 
@@ -575,14 +731,9 @@
             }
         }
 
-        if (signupPasswordInput) {
-            signupPasswordInput.addEventListener('input', validateSignupPassword);
-        }
-        if (signupConfirmPasswordInput) {
-            signupConfirmPasswordInput.addEventListener('input', checkPasswordMatch);
-        }
+        if (signupPasswordInput) signupPasswordInput.addEventListener('input', validateSignupPassword);
+        if (signupConfirmPasswordInput) signupConfirmPasswordInput.addEventListener('input', checkPasswordMatch);
 
-        // Form submission client-side validation
         const signupForm = document.getElementById('signupForm');
         if (signupForm) {
             signupForm.addEventListener('submit', (e) => {

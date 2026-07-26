@@ -1,35 +1,58 @@
 import json
 import logging
+import os
+import time
 
-from kafka import KafkaConsumer
+try:
+    from kafka import KafkaConsumer
+except ImportError:
+    KafkaConsumer = None
 
-from Backend.database.mongodb import metrics_collection
+from Backend.database.mongodb import get_metrics_collection
 from Backend.services.prediction_service import predict_metric
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-consumer = KafkaConsumer(
-    "cpu-metrics",
-    bootstrap_servers="kafka:9092",
-    auto_offset_reset="latest",     
-    value_deserializer=lambda x: json.loads(x.decode("utf-8"))
-)
+kafka_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092,localhost:9092").split(",")
+consumer = None
 
-logger.info("Consumer started...")
+if KafkaConsumer is not None:
+    for attempt in range(1, 31):
+        for server in kafka_servers:
+            server = server.strip()
+            if not server:
+                continue
+            try:
+                consumer = KafkaConsumer(
+                    "cpu-metrics",
+                    bootstrap_servers=[server],
+                    auto_offset_reset="latest",
+                    value_deserializer=lambda x: json.loads(x.decode("utf-8")),
+                    request_timeout_ms=3000
+                )
+                logger.info(f"Kafka Consumer connected successfully to {server} on topic 'cpu-metrics'")
+                break
+            except Exception as e:
+                pass
+        if consumer is not None:
+            break
+        logger.info(f"Waiting for Kafka broker ({attempt}/30)...")
+        time.sleep(3)
 
-if metrics_collection is None:
-    logger.error("metrics_collection is not initialized. MongoDB connection failed.")
-else:
-    for message in consumer:
+if consumer is None:
+    logger.warning("Kafka Consumer could not connect to broker. Exiting gracefully.")
+    exit(0)
+
+logger.info("Kafka Consumer is listening for live telemetry stream...")
+
+for message in consumer:
+    try:
         metric = message.value
-        try:
-            metrics_collection.insert_one(metric)
-        except Exception as exc:
-            logger.error(f"Failed to save metric to MongoDB: {exc}")
-            continue
-
+        col = get_metrics_collection()
+        if col is not None:
+            col.insert_one(dict(metric))
         prediction = predict_metric(metric)
-
-        logger.info(f"Saved Metric: {metric}")
-        logger.info(f"Prediction: {prediction}")
+        logger.info(f"Processed metric for {metric.get('server_name')} -> {prediction.get('prediction')} ({prediction.get('confidence')}%)")
+    except Exception as exc:
+        logger.error(f"Error processing consumed metric: {exc}")

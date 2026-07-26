@@ -1,187 +1,172 @@
-let predictions = [];
+let allPredictions = [];
 let filteredPredictions = [];
-
 let currentPage = 1;
 const recordsPerPage = 10;
+
+function formatPredictionTime(timestamp) {
+    if (!timestamp) return "Time unavailable";
+    const date = new Date(timestamp);
+    if (Number.isNaN(date.getTime())) return timestamp;
+    return date.toLocaleString("en-IN", {
+        timeZone: "Asia/Kolkata",
+        day: "2-digit",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true
+    }) + " (IST)";
+}
 
 async function loadPredictions() {
     try {
         const response = await fetch("/all-predictions");
-        predictions = await response.json();
-
+        allPredictions = await response.json();
         applyPredictionFilter();
         renderTable();
-    } catch(error) {
+    } catch (error) {
         console.error("Error loading predictions:", error);
     }
 }
 
 function applyPredictionFilter() {
     const filter = document.getElementById("predictionFilter").value;
-
-    filteredPredictions = filter === "all"
-        ? predictions
-        : predictions.filter(p => p.prediction === filter);
+    if (filter === "all") {
+        filteredPredictions = [...allPredictions];
+    } else {
+        filteredPredictions = allPredictions.filter(item => item.prediction === filter);
+    }
 }
 
 function renderTable() {
-    const totalPages = Math.max(
-        1,
-        Math.ceil(filteredPredictions.length / recordsPerPage)
-    );
+    const tableBody = document.getElementById("predictionTableBody");
+    const totalPages = Math.max(1, Math.ceil(filteredPredictions.length / recordsPerPage));
 
-    if(currentPage > totalPages) {
+    if (currentPage > totalPages) {
         currentPage = totalPages;
     }
 
-    const start = (currentPage - 1) * recordsPerPage;
-    const end = start + recordsPerPage;
-    const pageData = filteredPredictions.slice(start, end);
+    const startIndex = (currentPage - 1) * recordsPerPage;
+    const paginated = filteredPredictions.slice(startIndex, startIndex + recordsPerPage);
 
-    const html = pageData.map(item => {
+    if (paginated.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #94a3b8; padding: 24px;">No predictions recorded yet.</td></tr>`;
+        renderNumberedPagination("predictionPagination", 1, 1, () => {});
+        return;
+    }
+
+    tableBody.innerHTML = paginated.map(item => {
+        let conf = item.confidence !== undefined ? Number(item.confidence) : 90;
+        if (conf > 100) conf = conf / 100;
+        conf = Math.round(conf * 10) / 10;
+
         const badge = item.prediction === "ANOMALY"
-            ? '<span class="badge-danger">ANOMALY</span>'
-            : '<span class="badge-success">NORMAL</span>';
+            ? `<span class="badge-danger"><i class="fas fa-triangle-exclamation"></i> <span>ANOMALY</span></span>`
+            : `<span class="badge-success"><i class="fas fa-circle-check"></i> <span>NORMAL</span></span>`;
+
+        const cpu = item.cpu_usage_percent !== undefined ? `${item.cpu_usage_percent}%` : "--";
+        const mem = item.memory_usage_percent !== undefined ? `${item.memory_usage_percent}%` : "--";
+        const disk = item.disk_usage_percent !== undefined ? `${item.disk_usage_percent}%` : "--";
+        const throughput = formatThroughput(item.network_throughput);
+        const time = formatPredictionTime(item.timestamp);
 
         return `
             <tr>
-                <td>${item.server_name}</td>
+                <td><strong style="color: #0f172a;"><i class="fas fa-server" style="color: #64748b; margin-right: 6px;"></i>${item.server_name}</strong></td>
                 <td>${badge}</td>
-                <td>${item.confidence}%</td>
-                <td>${formatPercent(item.cpu_usage_percent)}</td>
-                <td>${formatPercent(item.memory_usage_percent)}</td>
-                <td>${formatPercent(item.disk_usage_percent)}</td>
-                <td>${formatNetworkThroughput(item)}</td>
-                <td class="timestamp-cell">${formatPredictionTime(item.timestamp)}</td>
+                <td><strong>${conf}%</strong></td>
+                <td>${cpu}</td>
+                <td>${mem}</td>
+                <td>${disk}</td>
+                <td>${throughput}</td>
+                <td style="font-size: 12px; color: #64748b; white-space: nowrap;"><i class="fas fa-calendar-day" style="color: #2563eb; margin-right: 5px;"></i>${time}</td>
             </tr>
         `;
     }).join("");
 
-    document.getElementById("predictionTableBody").innerHTML = html;
-    document.getElementById("predictionPageNumber").innerText =
-        `Page ${currentPage} of ${totalPages}`;
-
-    document.getElementById("nextPredictionBtn").disabled =
-        currentPage >= totalPages;
-    document.getElementById("prevPredictionBtn").disabled =
-        currentPage <= 1;
+    renderNumberedPagination("predictionPagination", currentPage, totalPages, newPage => {
+        currentPage = newPage;
+        renderTable();
+    });
 }
 
-function formatPredictionTime(timestamp) {
-    if(!timestamp) {
-        return "Time unavailable";
+function formatThroughput(value) {
+    if (value === undefined || value === null || value === "") return "0.00 MB/s";
+    let num = Number(value);
+    if (isNaN(num)) return "0.00 MB/s";
+    if (num > 100000) num = num / (1024 * 1024);
+    return `${num.toFixed(2)} MB/s`;
+}
+
+function renderNumberedPagination(containerId, currPage, totalPages, onPageClick) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    if (totalPages <= 1) {
+        container.innerHTML = `
+            <button class="page-nav-btn" disabled><i class="fas fa-chevron-left"></i> Prev</button>
+            <button class="page-num-btn active">1</button>
+            <button class="page-nav-btn" disabled>Next <i class="fas fa-chevron-right"></i></button>
+            <span class="page-summary">Page 1 of 1</span>
+        `;
+        return;
     }
 
-    const date = new Date(timestamp);
+    let html = "";
+    // Prev button
+    html += `<button class="page-nav-btn" ${currPage === 1 ? "disabled" : ""} data-page="${currPage - 1}"><i class="fas fa-chevron-left"></i> Prev</button>`;
 
-    if(Number.isNaN(date.getTime())) {
-        return timestamp;
+    // Window logic for 10 buttons
+    const maxBtns = 10;
+    let startPage = 1;
+    let endPage = totalPages;
+
+    if (totalPages > maxBtns) {
+        if (currPage <= 6) {
+            startPage = 1;
+            endPage = 9;
+        } else if (currPage + 4 >= totalPages) {
+            startPage = totalPages - 8;
+            endPage = totalPages;
+        } else {
+            startPage = currPage - 4;
+            endPage = currPage + 4;
+        }
     }
 
-    const year =
-        date.getFullYear();
+    if (startPage > 1) {
+        html += `<button class="page-num-btn" data-page="1">1</button>`;
+        if (startPage > 2) {
+            html += `<span class="page-ellipsis">...</span>`;
+        }
+    }
 
-    const month =
-        date.toLocaleString(
-            [],
-            {
-                month: "long"
+    for (let i = startPage; i <= endPage; i++) {
+        html += `<button class="page-num-btn ${i === currPage ? "active" : ""}" data-page="${i}">${i}</button>`;
+    }
+
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            html += `<span class="page-ellipsis">...</span>`;
+        }
+        html += `<button class="page-num-btn" data-page="${totalPages}">${totalPages}</button>`;
+    }
+
+    // Next button
+    html += `<button class="page-nav-btn" ${currPage === totalPages ? "disabled" : ""} data-page="${currPage + 1}">Next <i class="fas fa-chevron-right"></i></button>`;
+
+    html += `<span class="page-summary">Page ${currPage} of ${totalPages}</span>`;
+
+    container.innerHTML = html;
+
+    container.querySelectorAll("button[data-page]").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const p = parseInt(btn.getAttribute("data-page"));
+            if (!isNaN(p) && p >= 1 && p <= totalPages && p !== currPage) {
+                onPageClick(p);
             }
-        );
-
-    const day =
-        date.getDate();
-
-    const time =
-        date.toLocaleString(
-            [],
-            {
-                hour: "2-digit",
-                minute: "2-digit"
-            }
-        );
-
-    return `${year} ${month} ${day}, ${time}`;
-}
-
-function formatPercent(value) {
-    if(value === undefined || value === null || value === "") {
-        return "N/A";
-    }
-
-    const number = Number(value);
-
-    if(Number.isNaN(number)) {
-        return `${value}%`;
-    }
-
-    return `${number.toFixed(1)}%`;
-}
-
-function formatNetworkThroughput(item) {
-    const throughput =
-        item.network_throughput ??
-        item.network_throughput_mb_s ??
-        getThroughputFromNetworkTotal(item) ??
-        getCombinedThroughput(item);
-
-    if(throughput === undefined || throughput === null || throughput === "") {
-        return "N/A";
-    }
-
-    const number = Number(throughput);
-
-    if(Number.isNaN(number)) {
-        return throughput;
-    }
-
-    return `${number.toFixed(2)} MB/s`;
-}
-
-function getThroughputFromNetworkTotal(item) {
-    const total =
-        item.network_total ??
-        item.network_load;
-
-    if(total === undefined || total === null || total === "") {
-        return undefined;
-    }
-
-    return normalizeNetworkVolumeToMb(total) / 5;
-}
-
-function getCombinedThroughput(item) {
-    const sent =
-        item.network_sent_mb;
-
-    const received =
-        item.network_received_mb;
-
-    if(sent !== undefined && received !== undefined) {
-        return (Number(sent) + Number(received)) / 5;
-    }
-
-    if(item.bytes_sent !== undefined && item.bytes_received !== undefined) {
-        return (
-            normalizeNetworkVolumeToMb(item.bytes_sent) +
-            normalizeNetworkVolumeToMb(item.bytes_received)
-        ) / 5;
-    }
-
-    return undefined;
-}
-
-function normalizeNetworkVolumeToMb(value) {
-    const number =
-        Number(value);
-
-    if(Number.isNaN(number)) {
-        return 0;
-    }
-
-    return number > 100000
-        ? number / (1024 * 1024)
-        : number;
+        });
+    });
 }
 
 document.getElementById("predictionFilter").addEventListener("change", () => {
@@ -190,28 +175,5 @@ document.getElementById("predictionFilter").addEventListener("change", () => {
     renderTable();
 });
 
-document.getElementById("nextPredictionBtn").addEventListener("click", () => {
-    const totalPages = Math.max(
-        1,
-        Math.ceil(filteredPredictions.length / recordsPerPage)
-    );
-
-    if(currentPage < totalPages) {
-        currentPage++;
-        renderTable();
-    }
-});
-
-document.getElementById("prevPredictionBtn").addEventListener("click", () => {
-    if(currentPage > 1) {
-        currentPage--;
-        renderTable();
-    }
-});
-
 loadPredictions();
-
-setInterval(
-    loadPredictions,
-    3000
-);
+setInterval(loadPredictions, 8000);
