@@ -35,6 +35,8 @@ def all_predictions():
         p["_id"] = str(p["_id"])
         if "confidence" in p:
             p["confidence"] = clean_confidence(p["confidence"])
+        if "timestamp" in p and hasattr(p["timestamp"], "isoformat"):
+            p["timestamp"] = p["timestamp"].isoformat()
 
     return predictions
 
@@ -53,6 +55,8 @@ def latest_prediction():
         result["_id"] = str(result["_id"])
         if "confidence" in result:
             result["confidence"] = clean_confidence(result["confidence"])
+        if "timestamp" in result and hasattr(result["timestamp"], "isoformat"):
+            result["timestamp"] = result["timestamp"].isoformat()
         return result
 
     return {"message": "No predictions found"}

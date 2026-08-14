@@ -87,6 +87,7 @@
     <table id="liveAlertsTable">
         <thead>
             <tr>
+                <th style="width: 50px; text-align: center;">#</th>
                 <th>Server Name</th>
                 <th>Status</th>
                 <th>Confidence</th>
@@ -94,18 +95,84 @@
                 <th>Triggered Causes</th>
                 <th>Operational Remark</th>
                 <th>Detected Time (IST)</th>
+                <th style="text-align: center;">Action</th>
             </tr>
         </thead>
 
         <tbody id="alertsTableBody">
             <tr>
-                <td colspan="7" style="text-align: center; color: #94a3b8; padding: 24px;">Loading live alerts...</td>
+                <td colspan="9" style="text-align: center; color: #94a3b8; padding: 24px;">Loading live alerts...</td>
             </tr>
         </tbody>
     </table>
 </div>
 
 <div class="pagination" id="alertsPagination"></div>
+
+<!-- Incident / Notification Detail Modal Dialog -->
+<div id="alertDetailModal" class="alert-modal-overlay" style="display: none;">
+    <div class="alert-modal-card">
+        <div class="alert-modal-header">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div class="alert-modal-icon" id="modalSeverityIcon"><i class="fas fa-triangle-exclamation"></i></div>
+                <div>
+                    <h2 id="modalServerName" style="margin: 0; font-size: 18px; color: #0f172a; font-weight: 800;">Server Incident Details</h2>
+                    <span id="modalDetectedTime" style="font-size: 12px; color: #64748b;"><i class="fas fa-clock" style="color: #2563eb; margin-right: 4px;"></i> Detected: --</span>
+                </div>
+            </div>
+            <button type="button" class="alert-modal-close" onclick="closeAlertModal()">&times;</button>
+        </div>
+
+        <div class="alert-modal-body">
+            <!-- Summary Badges -->
+            <div style="display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;">
+                <span id="modalPredictionBadge" class="badge-danger"><i class="fas fa-triangle-exclamation"></i> ANOMALY</span>
+                <span id="modalSeverityBadge" class="severity-critical">Critical Risk</span>
+                <span id="modalConfidenceBadge" style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 12px;">98.5% Confidence</span>
+            </div>
+
+            <!-- Telemetry Metrics Snapshot -->
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; background: #f8fafc; padding: 12px 14px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                <div style="text-align: center;">
+                    <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700;">CPU Load</div>
+                    <div id="modalCpu" style="font-size: 16px; font-weight: 800; color: #0f172a; margin-top: 2px;">--%</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700;">Memory</div>
+                    <div id="modalMem" style="font-size: 16px; font-weight: 800; color: #0f172a; margin-top: 2px;">--%</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700;">Disk</div>
+                    <div id="modalDisk" style="font-size: 16px; font-weight: 800; color: #0f172a; margin-top: 2px;">--%</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700;">Throughput</div>
+                    <div id="modalThroughput" style="font-size: 15px; font-weight: 800; color: #0f172a; margin-top: 2px;">-- MB/s</div>
+                </div>
+            </div>
+
+            <!-- Triggered Causes -->
+            <div style="margin-bottom: 16px;">
+                <h4 style="font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 8px;"><i class="fas fa-list-check" style="color: #ef4444; margin-right: 6px;"></i> Root Causes Identified:</h4>
+                <ul id="modalCausesList" style="margin: 0; padding-left: 20px; font-size: 13px; color: #b91c1c; line-height: 1.6;">
+                    <li>Behavioral Telemetry Anomaly</li>
+                </ul>
+            </div>
+
+            <!-- AI Remark & Remediation -->
+            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 14px; margin-bottom: 8px;">
+                <h4 style="font-size: 13px; font-weight: 700; color: #166534; margin: 0 0 6px 0;"><i class="fas fa-robot" style="color: #16a34a; margin-right: 6px;"></i> AI Diagnostics & Recommendation:</h4>
+                <div id="modalRemark" style="font-size: 13px; color: #14532d; line-height: 1.55;">
+                    Analyzing incident...
+                </div>
+            </div>
+        </div>
+
+        <div class="alert-modal-footer">
+            <button type="button" class="modal-close-btn" onclick="closeAlertModal()">Close</button>
+        </div>
+    </div>
+</div>
 
 <style>
     .card-icon {
@@ -170,6 +237,123 @@
         background: #0f172a;
         color: white;
         border-color: #0f172a;
+    }
+
+    /* View Detail Button */
+    .view-detail-btn {
+        padding: 6px 12px;
+        background: #eff6ff;
+        color: #2563eb;
+        border: 1px solid #bfdbfe;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        transition: all 0.15s ease;
+    }
+    .view-detail-btn:hover {
+        background: #2563eb;
+        color: white;
+        border-color: #2563eb;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+    }
+
+    /* Modal Overlay & Card */
+    .alert-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(15, 23, 42, 0.65);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        padding: 20px;
+        animation: fadeIn 0.2s ease;
+    }
+    .alert-modal-card {
+        background: white;
+        border-radius: 16px;
+        max-width: 540px;
+        width: 100%;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+        animation: scaleUp 0.2s ease;
+    }
+    .alert-modal-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #f8fafc;
+    }
+    .alert-modal-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: #fee2e2;
+        color: #dc2626;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+    }
+    .alert-modal-close {
+        background: transparent;
+        border: none;
+        font-size: 26px;
+        color: #94a3b8;
+        cursor: pointer;
+        line-height: 1;
+        padding: 0 4px;
+        transition: color 0.15s ease;
+    }
+    .alert-modal-close:hover {
+        color: #0f172a;
+    }
+    .alert-modal-body {
+        padding: 20px;
+        max-height: calc(85vh - 120px);
+        overflow-y: auto;
+    }
+    .alert-modal-footer {
+        padding: 12px 20px;
+        background: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: flex-end;
+    }
+    .modal-close-btn {
+        padding: 8px 18px;
+        background: #0f172a;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 13px;
+        cursor: pointer;
+        transition: background 0.15s ease;
+    }
+    .modal-close-btn:hover {
+        background: #334155;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    @keyframes scaleUp {
+        from { opacity: 0; transform: scale(0.95); }
+        to { opacity: 1; transform: scale(1); }
     }
 </style>
 

@@ -1,3 +1,5 @@
+const APP_TIME_SHIFT_MS = (5 * 60 + 29) * 60 * 1000;
+
 let cpuLabels = [];
 let cpuValues = [];
 
@@ -8,18 +10,17 @@ let cpuChart;
 let memoryChart;
 
 async function loadMetrics() {
+    const response = await fetch("/latest-metrics");
+    const data = await response.json();
 
-    const response =
-        await fetch(
-            "/latest-metrics"
-        );
-
-    const data =
-        await response.json();
-
-    const currentTime =
-        new Date()
-        .toLocaleTimeString();
+    const shiftedNow = new Date(Date.now() + APP_TIME_SHIFT_MS);
+    const currentTime = shiftedNow.toLocaleTimeString("en-IN", {
+        timeZone: "Asia/Kolkata",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true
+    });
 
     cpuLabels.push(
         currentTime
@@ -147,9 +148,13 @@ async function loadMetrics() {
     }
 }
 
-loadMetrics();
+function initTrends() {
+    loadMetrics();
+    setInterval(loadMetrics, 3000);
+}
 
-setInterval(
-    loadMetrics,
-    3000
-);
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initTrends);
+} else {
+    initTrends();
+}

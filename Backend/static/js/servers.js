@@ -61,12 +61,13 @@ function renderTable() {
     const paginated = filteredServers.slice(startIndex, startIndex + serversPerPage);
 
     if (paginated.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #94a3b8; padding: 24px;">No servers found.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #94a3b8; padding: 24px;">No servers found.</td></tr>`;
         renderNumberedPagination("serversPagination", 1, 1, () => {});
         return;
     }
 
-    tableBody.innerHTML = paginated.map(server => {
+    tableBody.innerHTML = paginated.map((server, index) => {
+        const sNo = startIndex + index + 1;
         const cpu = Number(server.cpu_usage_percent) || 0;
         const mem = Number(server.memory_usage_percent) || 0;
         const disk = Number(server.disk_usage_percent) || 0;
@@ -76,6 +77,7 @@ function renderTable() {
 
         return `
             <tr>
+                <td style="text-align: center; color: #64748b; font-weight: 700; font-size: 12.5px;">${sNo}</td>
                 <td><strong style="color: #0f172a;"><i class="fas fa-server" style="color: #64748b; margin-right: 6px;"></i>${server.server_name}</strong></td>
                 <td><strong style="color: ${cpuColor};">${cpu}%</strong></td>
                 <td><strong style="color: ${memColor};">${mem}%</strong></td>
@@ -157,25 +159,41 @@ function renderNumberedPagination(containerId, currPage, totalPages, onPageClick
     });
 }
 
-document.getElementById("searchBox").addEventListener("input", () => {
-    applyServerFilter();
-    currentPage = 1;
-    renderTable();
-});
+function initServers() {
+    const searchBox = document.getElementById("searchBox");
+    if (searchBox) {
+        searchBox.addEventListener("input", () => {
+            applyServerFilter();
+            currentPage = 1;
+            renderTable();
+        });
+    }
 
-document.getElementById("exportBtn").addEventListener("click", () => {
-    let csv = "Server,CPU,Memory,Disk\n";
-    filteredServers.forEach(server => {
-        csv += `${server.server_name},${server.cpu_usage_percent},${server.memory_usage_percent},${server.disk_usage_percent}\n`;
-    });
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `server_inventory_${Date.now()}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-});
+    const exportBtn = document.getElementById("exportBtn");
+    if (exportBtn) {
+        exportBtn.addEventListener("click", () => {
+            let csv = "S.No,Server,CPU,Memory,Disk\n";
+            filteredServers.forEach((server, index) => {
+                csv += `${index + 1},${server.server_name},${server.cpu_usage_percent},${server.memory_usage_percent},${server.disk_usage_percent}\n`;
+            });
+            const blob = new Blob([csv], { type: "text/csv" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `server_inventory_${Date.now()}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+    }
 
-loadServers();
-setInterval(loadServers, 8000);
+    loadServers();
+    setInterval(loadServers, 8000);
+}
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initServers);
+} else {
+    initServers();
+}

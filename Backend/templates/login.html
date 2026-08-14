@@ -334,24 +334,24 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
-            padding: 10px 14px;
+            padding: 11px 14px;
             background: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.14);
             border-radius: 10px;
             color: #e2e8f0;
             text-decoration: none;
-            font-size: 13px;
+            font-size: 13.5px;
             font-weight: 600;
             transition: all 0.2s ease;
             cursor: pointer;
         }
         .btn-oauth:hover {
             background: rgba(255, 255, 255, 0.1);
-            border-color: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.3);
             transform: translateY(-1px);
         }
         .btn-oauth i {
-            font-size: 16px;
+            font-size: 17px;
         }
         .btn-oauth.oauth-google i {
             color: #ea4335;
@@ -403,10 +403,10 @@
         }
 
         .error-message {
-            background: rgba(239, 68, 68, 0.15);
-            border: 1px solid rgba(239, 68, 68, 0.35);
+            background: rgba(239, 68, 68, 0.18);
+            border: 1px solid rgba(239, 68, 68, 0.4);
             color: #fca5a5;
-            padding: 11px 14px;
+            padding: 12px 15px;
             border-radius: 10px;
             font-size: 13px;
             margin-bottom: 18px;
@@ -419,6 +419,132 @@
             font-size: 16px;
             color: #f87171;
             flex-shrink: 0;
+        }
+
+        .success-message {
+            background: rgba(34, 197, 94, 0.18);
+            border: 1px solid rgba(34, 197, 94, 0.4);
+            color: #86efac;
+            padding: 12px 15px;
+            border-radius: 10px;
+            font-size: 13px;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-align: left;
+            animation: fadeIn 0.3s ease;
+        }
+        .success-message i {
+            font-size: 16px;
+            color: #22c55e;
+            flex-shrink: 0;
+        }
+
+        /* OAuth Account Selector Modal */
+        .oauth-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(10, 15, 30, 0.82);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            box-sizing: border-box;
+        }
+        .oauth-modal-overlay.active {
+            display: flex;
+            animation: fadeIn 0.2s ease-in-out;
+        }
+        .oauth-modal-box {
+            background: #1e293b;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 18px;
+            padding: 28px 24px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85);
+            text-align: center;
+            position: relative;
+        }
+        .oauth-modal-close {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 6px;
+            transition: color 0.15s, background 0.15s;
+        }
+        .oauth-modal-close:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .oauth-modal-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            margin-bottom: 12px;
+        }
+        .oauth-modal-icon.google-icon {
+            background: rgba(234, 67, 53, 0.12);
+            border: 1px solid rgba(234, 67, 53, 0.35);
+            color: #ea4335;
+        }
+        .oauth-modal-icon.github-icon {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            color: #ffffff;
+        }
+        .oauth-modal-title {
+            color: white;
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0 0 4px;
+        }
+        .oauth-modal-subtitle {
+            color: #94a3b8;
+            font-size: 13px;
+            margin: 0 0 20px;
+        }
+        .oauth-modal-btn {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: none;
+            color: white;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 12px;
+            transition: all 0.2s ease;
+        }
+        .oauth-modal-btn.google-btn {
+            background: linear-gradient(135deg, #ea4335, #c5221f);
+            box-shadow: 0 4px 14px rgba(234, 67, 53, 0.35);
+        }
+        .oauth-modal-btn.github-btn {
+            background: linear-gradient(135deg, #24292e, #0d1117);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+        }
+        .oauth-modal-btn:hover {
+            filter: brightness(1.15);
+            transform: translateY(-1px);
         }
 
         /* Mobile Optimization */
@@ -456,6 +582,13 @@
                 </button>
             </div>
             
+            {% if success %}
+            <div class="success-message">
+                <i class="fas fa-circle-check"></i>
+                <span>{{ success }}</span>
+            </div>
+            {% endif %}
+
             {% if error %}
             <div class="error-message">
                 <i class="fas fa-triangle-exclamation"></i>
@@ -505,12 +638,12 @@
                 </div>
 
                 <div class="oauth-grid">
-                    <a href="/auth/oauth/google" class="btn-oauth oauth-google" title="Sign in with Google OAuth 2.0">
+                    <button type="button" class="btn-oauth oauth-google" onclick="openOAuthPrompt('google')" title="Sign in with Google Account">
                         <i class="fab fa-google"></i> Google
-                    </a>
-                    <a href="/auth/oauth/github" class="btn-oauth oauth-github" title="Sign in with GitHub OAuth 2.0">
+                    </button>
+                    <button type="button" class="btn-oauth oauth-github" onclick="openOAuthPrompt('github')" title="Sign in with GitHub Account">
                         <i class="fab fa-github"></i> GitHub
-                    </a>
+                    </button>
                 </div>
 
                 <a href="/auth/oauth/demo" class="btn-oauth-demo" title="Instant 1-Click OAuth 2.0 Test Sandbox">
@@ -588,18 +721,48 @@
                 </div>
 
                 <div class="oauth-grid">
-                    <a href="/auth/oauth/google" class="btn-oauth oauth-google">
+                    <button type="button" class="btn-oauth oauth-google" onclick="openOAuthPrompt('google')">
                         <i class="fab fa-google"></i> Google
-                    </a>
-                    <a href="/auth/oauth/github" class="btn-oauth oauth-github">
+                    </button>
+                    <button type="button" class="btn-oauth oauth-github" onclick="openOAuthPrompt('github')">
                         <i class="fab fa-github"></i> GitHub
-                    </a>
+                    </button>
                 </div>
 
                 <div class="switch-mode-link" onclick="switchAuthTab('login')">
                     Already have an account? <span>Sign In</span>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- OAUTH ACCOUNT PROMPT MODAL -->
+    <div id="oauthModal" class="oauth-modal-overlay">
+        <div class="oauth-modal-box">
+            <button type="button" class="oauth-modal-close" onclick="closeOAuthModal()">
+                <i class="fas fa-xmark"></i>
+            </button>
+            <div id="oauthModalIcon" class="oauth-modal-icon google-icon">
+                <i class="fab fa-google"></i>
+            </div>
+            <h3 id="oauthModalTitle" class="oauth-modal-title">Sign in with Google</h3>
+            <p id="oauthModalSubtitle" class="oauth-modal-subtitle">Choose or enter your account to continue to PredictOps AI</p>
+
+            <form action="/auth/oauth/prompt-submit" method="POST" id="oauthPromptForm">
+                <input type="hidden" name="provider" id="oauthProviderInput" value="google">
+                
+                <div class="form-group">
+                    <label id="oauthInputLabel" for="oauthAccountInput">Google Email or Phone</label>
+                    <div class="input-wrapper">
+                        <i id="oauthInputIcon" class="fas fa-envelope input-icon-left"></i>
+                        <input type="text" id="oauthAccountInput" name="account_input" placeholder="e.g. user@gmail.com" required autocomplete="email">
+                    </div>
+                </div>
+
+                <button type="submit" id="oauthSubmitBtn" class="oauth-modal-btn google-btn">
+                    Continue with Google
+                </button>
+            </form>
         </div>
     </div>
 
@@ -623,6 +786,58 @@
                 tabBtnLogin.classList.add('active');
                 document.getElementById('loginUsername').focus();
             }
+        }
+
+        // OAuth Account Prompt Logic
+        function openOAuthPrompt(provider) {
+            const modal = document.getElementById('oauthModal');
+            const icon = document.getElementById('oauthModalIcon');
+            const title = document.getElementById('oauthModalTitle');
+            const subtitle = document.getElementById('oauthModalSubtitle');
+            const providerInput = document.getElementById('oauthProviderInput');
+            const inputLabel = document.getElementById('oauthInputLabel');
+            const accountInput = document.getElementById('oauthAccountInput');
+            const submitBtn = document.getElementById('oauthSubmitBtn');
+            const inputIcon = document.getElementById('oauthInputIcon');
+
+            providerInput.value = provider;
+
+            if (provider === 'google') {
+                icon.className = 'oauth-modal-icon google-icon';
+                icon.innerHTML = '<i class="fab fa-google"></i>';
+                title.innerText = 'Sign in with Google';
+                subtitle.innerText = 'to continue to PredictOps AI';
+                inputLabel.innerText = 'Google Email address';
+                accountInput.placeholder = 'e.g. yourname@gmail.com';
+                inputIcon.className = 'fas fa-envelope input-icon-left';
+                submitBtn.className = 'oauth-modal-btn google-btn';
+                submitBtn.innerHTML = '<i class="fab fa-google"></i> Continue with Google';
+            } else {
+                icon.className = 'oauth-modal-icon github-icon';
+                icon.innerHTML = '<i class="fab fa-github"></i>';
+                title.innerText = 'Sign in to GitHub';
+                subtitle.innerText = 'to continue to PredictOps AI';
+                inputLabel.innerText = 'GitHub Username or Email';
+                accountInput.placeholder = 'e.g. your_github_handle';
+                inputIcon.className = 'fab fa-github input-icon-left';
+                submitBtn.className = 'oauth-modal-btn github-btn';
+                submitBtn.innerHTML = '<i class="fab fa-github"></i> Continue with GitHub';
+            }
+
+            modal.classList.add('active');
+            setTimeout(() => accountInput.focus(), 100);
+        }
+
+        function closeOAuthModal() {
+            const modal = document.getElementById('oauthModal');
+            if (modal) modal.classList.remove('active');
+        }
+
+        // Check if query param requests prompt
+        const urlParams = new URLSearchParams(window.location.search);
+        const requestedPrompt = urlParams.get('oauth_prompt');
+        if (requestedPrompt === 'google' || requestedPrompt === 'github') {
+            openOAuthPrompt(requestedPrompt);
         }
 
         function setupPasswordToggle(inputId, toggleBtnId) {
