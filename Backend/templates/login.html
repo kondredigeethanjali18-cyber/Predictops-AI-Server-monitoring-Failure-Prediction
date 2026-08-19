@@ -547,6 +547,206 @@
             transform: translateY(-1px);
         }
 
+        /* Google Account Chooser Styling */
+        .google-accounts-list {
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+            margin-bottom: 12px;
+        }
+        .google-account-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: left;
+            user-select: none;
+        }
+        .google-account-item:hover {
+            background: rgba(37, 99, 235, 0.18);
+            border-color: rgba(59, 130, 246, 0.45);
+            transform: translateY(-1px);
+        }
+        .google-account-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 15px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        .google-account-avatar.custom-avatar {
+            background: rgba(255, 255, 255, 0.1);
+            color: #94a3b8;
+            border: 1px dashed rgba(255, 255, 255, 0.25);
+        }
+        .google-account-info {
+            flex: 1;
+            overflow: hidden;
+        }
+        .google-account-name {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #f1f5f9;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .google-account-email {
+            font-size: 11.5px;
+            color: #94a3b8;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .google-account-arrow {
+            color: #64748b;
+            font-size: 12px;
+            transition: transform 0.2s ease, color 0.2s ease;
+        }
+        .google-account-item:hover .google-account-arrow {
+            color: #60a5fa;
+            transform: translateX(2px);
+        }
+
+        /* 2-Step OTP Verification Styling */
+        .selected-email-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 20px;
+            font-size: 12.5px;
+            color: #e2e8f0;
+            margin-bottom: 14px;
+            max-width: 100%;
+        }
+        .selected-email-badge span {
+            font-weight: 600;
+            color: #ffffff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .change-email-btn {
+            background: transparent;
+            border: none;
+            color: #60a5fa;
+            font-size: 11.5px;
+            cursor: pointer;
+            padding: 2px 4px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: color 0.2s;
+        }
+        .change-email-btn:hover {
+            color: #93c5fd;
+            text-decoration: underline;
+        }
+        .otp-dev-toast {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: rgba(37, 99, 235, 0.16);
+            border: 1px solid rgba(37, 99, 235, 0.45);
+            border-radius: 10px;
+            padding: 10px 12px;
+            color: #93c5fd;
+            font-size: 12.5px;
+            margin-bottom: 14px;
+            animation: fadeIn 0.3s ease;
+        }
+        .otp-dev-toast strong {
+            color: #ffffff;
+            font-family: monospace;
+            font-size: 14px;
+            letter-spacing: 1.5px;
+            background: rgba(15, 23, 42, 0.6);
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid rgba(59, 130, 246, 0.5);
+        }
+        .otp-boxes-container {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+        .otp-box {
+            width: 44px;
+            height: 52px;
+            text-align: center;
+            font-size: 22px;
+            font-weight: 800;
+            color: #ffffff;
+            background: rgba(15, 23, 42, 0.85);
+            border: 1.5px solid rgba(255, 255, 255, 0.18);
+            border-radius: 10px;
+            outline: none;
+            box-sizing: border-box;
+            transition: all 0.2s ease;
+            font-family: monospace;
+        }
+        .otp-box:focus {
+            border-color: #3b82f6;
+            background: rgba(15, 23, 42, 0.98);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.35);
+        }
+        .otp-box.filled {
+            border-color: #60a5fa;
+            background: rgba(37, 99, 235, 0.15);
+        }
+        .otp-timer-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+        .otp-timer {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            color: #94a3b8;
+        }
+        .btn-resend-otp {
+            background: none;
+            border: none;
+            color: #60a5fa;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: color 0.2s;
+        }
+        .btn-resend-otp:hover:not(:disabled) {
+            color: #93c5fd;
+            text-decoration: underline;
+        }
+        .btn-resend-otp:disabled {
+            color: #64748b;
+            cursor: not-allowed;
+            text-decoration: none;
+        }
+
         /* Mobile Optimization */
         @media (max-width: 480px) {
             .login-card {
@@ -559,6 +759,14 @@
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 8px;
+            }
+            .otp-box {
+                width: 38px;
+                height: 46px;
+                font-size: 19px;
+            }
+            .otp-boxes-container {
+                gap: 5px;
             }
         }
     </style>
@@ -620,14 +828,6 @@
                             </button>
                         </div>
                     </div>
-
-                    <!-- Remember Me Option -->
-                    <div class="form-row-remember">
-                        <label class="remember-label">
-                            <input type="checkbox" name="remember_me" id="rememberMeCheckbox" value="true">
-                            <span>Keep me signed in (7 days)</span>
-                        </label>
-                    </div>
                     
                     <button type="submit" class="btn-submit">Sign In to Dashboard</button>
                 </form>
@@ -664,6 +864,17 @@
                             <i class="fas fa-user input-icon-left"></i>
                             <input type="text" id="signupUsername" name="username" value="{{ username or '' }}" placeholder="Choose username (3+ chars)" required autocomplete="username">
                             <button type="button" class="input-action-btn clear-cross-btn" id="signupUsernameClear" title="Clear username" tabindex="-1">
+                                <i class="fas fa-xmark"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="signupEmail">Email Address</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-envelope input-icon-left"></i>
+                            <input type="email" id="signupEmail" name="email" value="{{ email or '' }}" placeholder="Enter email (e.g. user@example.com)" required autocomplete="email">
+                            <button type="button" class="input-action-btn clear-cross-btn" id="signupEmailClear" title="Clear email" tabindex="-1">
                                 <i class="fas fa-xmark"></i>
                             </button>
                         </div>
@@ -736,37 +947,155 @@
         </div>
     </div>
 
-    <!-- OAUTH ACCOUNT PROMPT MODAL -->
+    <!-- GOOGLE ACCOUNT CHOOSER & 2-STEP OTP VERIFICATION MODAL -->
     <div id="oauthModal" class="oauth-modal-overlay">
         <div class="oauth-modal-box">
             <button type="button" class="oauth-modal-close" onclick="closeOAuthModal()">
                 <i class="fas fa-xmark"></i>
             </button>
-            <div id="oauthModalIcon" class="oauth-modal-icon google-icon">
-                <i class="fab fa-google"></i>
-            </div>
-            <h3 id="oauthModalTitle" class="oauth-modal-title">Sign in with Google</h3>
-            <p id="oauthModalSubtitle" class="oauth-modal-subtitle">Choose or enter your account to continue to PredictOps AI</p>
 
-            <form action="/auth/oauth/prompt-submit" method="POST" id="oauthPromptForm">
-                <input type="hidden" name="provider" id="oauthProviderInput" value="google">
-                
-                <div class="form-group">
-                    <label id="oauthInputLabel" for="oauthAccountInput">Google Email or Phone</label>
-                    <div class="input-wrapper">
-                        <i id="oauthInputIcon" class="fas fa-envelope input-icon-left"></i>
-                        <input type="text" id="oauthAccountInput" name="account_input" placeholder="e.g. user@gmail.com" required autocomplete="email">
+            <!-- STEP 1: GOOGLE ACCOUNT CHOOSER -->
+            <div id="googleStepAccount" class="google-auth-step">
+                <div class="oauth-modal-icon google-icon">
+                    <i class="fab fa-google"></i>
+                </div>
+                <h3 class="oauth-modal-title">Sign in with Google</h3>
+                <p class="oauth-modal-subtitle">Choose an account from your browser to continue</p>
+
+                <div class="google-accounts-list">
+                    <div class="google-account-item" onclick="selectGoogleAccount('vamsi.predictops@gmail.com', 'Vamsi (Infrastructure Lead)')">
+                        <div class="google-account-avatar" style="background: #2563eb;">V</div>
+                        <div class="google-account-info">
+                            <div class="google-account-name">Vamsi (Lead Architect)</div>
+                            <div class="google-account-email">vamsi.predictops@gmail.com</div>
+                        </div>
+                        <i class="fas fa-chevron-right google-account-arrow"></i>
+                    </div>
+
+                    <div class="google-account-item" onclick="selectGoogleAccount('geethanjali.ops@gmail.com', 'Geethanjali (SRE Lead)')">
+                        <div class="google-account-avatar" style="background: #8b5cf6;">G</div>
+                        <div class="google-account-info">
+                            <div class="google-account-name">Geethanjali (SRE Lead)</div>
+                            <div class="google-account-email">geethanjali.ops@gmail.com</div>
+                        </div>
+                        <i class="fas fa-chevron-right google-account-arrow"></i>
+                    </div>
+
+                    <div class="google-account-item" onclick="selectGoogleAccount('admin.predictops@gmail.com', 'PredictOps Admin')">
+                        <div class="google-account-avatar" style="background: #059669;">P</div>
+                        <div class="google-account-info">
+                            <div class="google-account-name">PredictOps Operations Admin</div>
+                            <div class="google-account-email">admin.predictops@gmail.com</div>
+                        </div>
+                        <i class="fas fa-chevron-right google-account-arrow"></i>
+                    </div>
+
+                    <div class="google-account-item" id="useCustomAccountBtn" onclick="toggleCustomGoogleInput()">
+                        <div class="google-account-avatar custom-avatar"><i class="fas fa-user-plus"></i></div>
+                        <div class="google-account-info">
+                            <div class="google-account-name">Use another Google account</div>
+                            <div class="google-account-email">Enter custom Gmail or Workspace email</div>
+                        </div>
+                        <i class="fas fa-plus google-account-arrow" id="customInputArrow"></i>
                     </div>
                 </div>
 
-                <button type="submit" id="oauthSubmitBtn" class="oauth-modal-btn google-btn">
-                    Continue with Google
+                <!-- Collapsible Custom Email Input -->
+                <div id="customGoogleInputBox" style="display: none; margin-top: 10px; text-align: left;">
+                    <div class="form-group" style="margin-bottom: 8px;">
+                        <label for="customGoogleEmail">Enter Google Email</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-envelope input-icon-left"></i>
+                            <input type="email" id="customGoogleEmail" placeholder="yourname@gmail.com" autocomplete="email">
+                        </div>
+                    </div>
+                    <button type="button" class="oauth-modal-btn google-btn" onclick="submitCustomGoogleAccount()">
+                        <i class="fas fa-arrow-right"></i> Send Verification Code
+                    </button>
+                </div>
+            </div>
+
+            <!-- STEP 2: GOOGLE EMAIL VERIFICATION CODE ENTRY -->
+            <div id="googleStepVerify" class="google-auth-step" style="display: none;">
+                <div class="oauth-modal-icon google-icon" style="background: rgba(37, 99, 235, 0.15); border-color: rgba(37, 99, 235, 0.4); color: #3b82f6;">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <h3 class="oauth-modal-title">Verify it's you</h3>
+                <p class="oauth-modal-subtitle" style="margin-bottom: 12px;">Enter the 6-digit verification code sent to</p>
+                
+                <div class="selected-email-badge">
+                    <i class="fab fa-google" style="color: #ea4335;"></i>
+                    <span id="targetGoogleEmail">user@gmail.com</span>
+                    <button type="button" class="change-email-btn" onclick="backToAccountChooser()" title="Change account">
+                        <i class="fas fa-pen-to-square"></i> Change
+                    </button>
+                </div>
+
+                <div id="otpDeliveryNotice" class="otp-dev-toast" style="display: none;">
+                    <i class="fas fa-key"></i>
+                    <span>Verification Code: <strong id="otpPreviewCode">123456</strong></span>
+                </div>
+
+                <div id="verifyErrorNotice" class="error-message" style="display: none; margin-bottom: 14px;">
+                    <i class="fas fa-circle-exclamation"></i>
+                    <span id="verifyErrorText">Invalid verification code.</span>
+                </div>
+
+                <div class="otp-boxes-container">
+                    <input type="text" maxlength="1" class="otp-box" id="otp_0" inputmode="numeric" autocomplete="one-time-code">
+                    <input type="text" maxlength="1" class="otp-box" id="otp_1" inputmode="numeric">
+                    <input type="text" maxlength="1" class="otp-box" id="otp_2" inputmode="numeric">
+                    <input type="text" maxlength="1" class="otp-box" id="otp_3" inputmode="numeric">
+                    <input type="text" maxlength="1" class="otp-box" id="otp_4" inputmode="numeric">
+                    <input type="text" maxlength="1" class="otp-box" id="otp_5" inputmode="numeric">
+                </div>
+
+                <div class="otp-timer-row">
+                    <div class="otp-timer">
+                        <i class="fas fa-clock"></i> Expires in: <span id="otpCountdown" style="font-weight: 700; color: #cbd5e1;">10:00</span>
+                    </div>
+                    <button type="button" class="btn-resend-otp" id="btnResendOtp" onclick="resendGoogleOtp()">
+                        <i class="fas fa-rotate-right"></i> Resend code
+                    </button>
+                </div>
+
+                <button type="button" class="oauth-modal-btn google-btn" id="btnConfirmOtp" onclick="submitGoogleOtp()">
+                    <i class="fas fa-circle-check"></i> Confirm & Sign In
                 </button>
-            </form>
+            </div>
+
+            <!-- STEP 3: GITHUB ACCOUNT PROMPT -->
+            <div id="githubStepAccount" class="google-auth-step" style="display: none;">
+                <div class="oauth-modal-icon github-icon">
+                    <i class="fab fa-github"></i>
+                </div>
+                <h3 class="oauth-modal-title">Sign in with GitHub</h3>
+                <p class="oauth-modal-subtitle">Enter your handle or username to continue</p>
+
+                <form action="/auth/oauth/prompt-submit" method="POST" id="githubPromptForm">
+                    <input type="hidden" name="provider" value="github">
+                    <div class="form-group" style="text-align: left;">
+                        <label for="githubAccountInput">GitHub Username or Email</label>
+                        <div class="input-wrapper">
+                            <i class="fab fa-github input-icon-left"></i>
+                            <input type="text" id="githubAccountInput" name="account_input" placeholder="e.g. your_github_handle" required autocomplete="username">
+                        </div>
+                    </div>
+                    <button type="submit" class="oauth-modal-btn github-btn">
+                        <i class="fab fa-github"></i> Continue with GitHub
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
 
     <script>
+        let currentSelectedEmail = '';
+        let otpCountdownSeconds = 600;
+        let otpCountdownInterval = null;
+        let resendCooldownSeconds = 0;
+        let resendCooldownInterval = null;
+
         function switchAuthTab(mode) {
             const loginSection = document.getElementById('loginSection');
             const signupSection = document.getElementById('signupSection');
@@ -788,50 +1117,367 @@
             }
         }
 
-        // OAuth Account Prompt Logic
+        // Open OAuth Modal
         function openOAuthPrompt(provider) {
             const modal = document.getElementById('oauthModal');
-            const icon = document.getElementById('oauthModalIcon');
-            const title = document.getElementById('oauthModalTitle');
-            const subtitle = document.getElementById('oauthModalSubtitle');
-            const providerInput = document.getElementById('oauthProviderInput');
-            const inputLabel = document.getElementById('oauthInputLabel');
-            const accountInput = document.getElementById('oauthAccountInput');
-            const submitBtn = document.getElementById('oauthSubmitBtn');
-            const inputIcon = document.getElementById('oauthInputIcon');
-
-            providerInput.value = provider;
+            const googleStepAccount = document.getElementById('googleStepAccount');
+            const googleStepVerify = document.getElementById('googleStepVerify');
+            const githubStepAccount = document.getElementById('githubStepAccount');
 
             if (provider === 'google') {
-                icon.className = 'oauth-modal-icon google-icon';
-                icon.innerHTML = '<i class="fab fa-google"></i>';
-                title.innerText = 'Sign in with Google';
-                subtitle.innerText = 'to continue to PredictOps AI';
-                inputLabel.innerText = 'Google Email address';
-                accountInput.placeholder = 'e.g. yourname@gmail.com';
-                inputIcon.className = 'fas fa-envelope input-icon-left';
-                submitBtn.className = 'oauth-modal-btn google-btn';
-                submitBtn.innerHTML = '<i class="fab fa-google"></i> Continue with Google';
+                googleStepAccount.style.display = 'block';
+                googleStepVerify.style.display = 'none';
+                githubStepAccount.style.display = 'none';
             } else {
-                icon.className = 'oauth-modal-icon github-icon';
-                icon.innerHTML = '<i class="fab fa-github"></i>';
-                title.innerText = 'Sign in to GitHub';
-                subtitle.innerText = 'to continue to PredictOps AI';
-                inputLabel.innerText = 'GitHub Username or Email';
-                accountInput.placeholder = 'e.g. your_github_handle';
-                inputIcon.className = 'fab fa-github input-icon-left';
-                submitBtn.className = 'oauth-modal-btn github-btn';
-                submitBtn.innerHTML = '<i class="fab fa-github"></i> Continue with GitHub';
+                googleStepAccount.style.display = 'none';
+                googleStepVerify.style.display = 'none';
+                githubStepAccount.style.display = 'block';
+                setTimeout(() => {
+                    const ghInput = document.getElementById('githubAccountInput');
+                    if (ghInput) ghInput.focus();
+                }, 100);
             }
 
             modal.classList.add('active');
-            setTimeout(() => accountInput.focus(), 100);
         }
 
         function closeOAuthModal() {
             const modal = document.getElementById('oauthModal');
             if (modal) modal.classList.remove('active');
+            if (otpCountdownInterval) clearInterval(otpCountdownInterval);
         }
+
+        // Toggle custom email input box
+        function toggleCustomGoogleInput() {
+            const box = document.getElementById('customGoogleInputBox');
+            const arrow = document.getElementById('customInputArrow');
+            if (!box) return;
+
+            const isShown = box.style.display !== 'none';
+            box.style.display = isShown ? 'none' : 'block';
+            if (arrow) {
+                arrow.className = isShown ? 'fas fa-plus google-account-arrow' : 'fas fa-chevron-up google-account-arrow';
+            }
+            if (!isShown) {
+                setTimeout(() => document.getElementById('customGoogleEmail').focus(), 50);
+            }
+        }
+
+        function submitCustomGoogleAccount() {
+            const input = document.getElementById('customGoogleEmail');
+            if (!input) return;
+            const val = input.value.trim();
+            if (!val || !val.includes('@')) {
+                alert('Please enter a valid Google email address.');
+                input.focus();
+                return;
+            }
+            selectGoogleAccount(val, val);
+        }
+
+        // Select Account & Dispatch OTP
+        async function selectGoogleAccount(email, displayName) {
+            currentSelectedEmail = email.trim();
+            const googleStepAccount = document.getElementById('googleStepAccount');
+            const googleStepVerify = document.getElementById('googleStepVerify');
+            const targetGoogleEmail = document.getElementById('targetGoogleEmail');
+            const otpDeliveryNotice = document.getElementById('otpDeliveryNotice');
+            const otpPreviewCode = document.getElementById('otpPreviewCode');
+            const verifyErrorNotice = document.getElementById('verifyErrorNotice');
+
+            if (verifyErrorNotice) verifyErrorNotice.style.display = 'none';
+            if (targetGoogleEmail) targetGoogleEmail.innerText = currentSelectedEmail;
+
+            try {
+                // Show loading state
+                const res = await fetch('/auth/oauth/google/send-code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: currentSelectedEmail })
+                });
+
+                const data = await res.json();
+                if (!res.ok || !data.success) {
+                    alert(data.error || 'Failed to send verification code.');
+                    return;
+                }
+
+                // Show OTP preview in notification toast
+                if (data.code_preview) {
+                    if (otpPreviewCode) otpPreviewCode.innerText = data.code_preview;
+                    if (otpDeliveryNotice) otpDeliveryNotice.style.display = 'flex';
+                }
+
+                // Transition to Step 2
+                googleStepAccount.style.display = 'none';
+                googleStepVerify.style.display = 'block';
+
+                // Reset OTP digit inputs
+                clearOtpInputs();
+                startOtpTimer(data.expires_in_seconds || 600);
+
+                setTimeout(() => {
+                    const firstInput = document.getElementById('otp_0');
+                    if (firstInput) firstInput.focus();
+                }, 100);
+
+            } catch (err) {
+                console.error('Error sending Google verification code:', err);
+                alert('Connection error while requesting verification code.');
+            }
+        }
+
+        function backToAccountChooser() {
+            if (otpCountdownInterval) clearInterval(otpCountdownInterval);
+            document.getElementById('googleStepVerify').style.display = 'none';
+            document.getElementById('googleStepAccount').style.display = 'block';
+        }
+
+        function clearOtpInputs() {
+            for (let i = 0; i < 6; i++) {
+                const el = document.getElementById(`otp_${i}`);
+                if (el) {
+                    el.value = '';
+                    el.classList.remove('filled');
+                }
+            }
+        }
+
+        function getEnteredOtp() {
+            let code = '';
+            for (let i = 0; i < 6; i++) {
+                const el = document.getElementById(`otp_${i}`);
+                if (el) code += el.value.trim();
+            }
+            return code;
+        }
+
+        function startOtpTimer(seconds) {
+            if (otpCountdownInterval) clearInterval(otpCountdownInterval);
+            otpCountdownSeconds = seconds;
+
+            const timerEl = document.getElementById('otpCountdown');
+            const btnConfirm = document.getElementById('btnConfirmOtp');
+
+            function update() {
+                const mins = Math.floor(otpCountdownSeconds / 60);
+                const secs = otpCountdownSeconds % 60;
+                if (timerEl) {
+                    timerEl.innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                }
+
+                if (otpCountdownSeconds <= 0) {
+                    clearInterval(otpCountdownInterval);
+                    if (timerEl) timerEl.innerText = 'Expired';
+                    if (btnConfirm) btnConfirm.disabled = true;
+                    showVerifyError('Verification code has expired. Please click "Resend code".');
+                }
+                otpCountdownSeconds--;
+            }
+
+            if (btnConfirm) btnConfirm.disabled = false;
+            update();
+            otpCountdownInterval = setInterval(update, 1000);
+        }
+
+        async function resendGoogleOtp() {
+            const btnResend = document.getElementById('btnResendOtp');
+            if (btnResend && btnResend.disabled) return;
+
+            if (!currentSelectedEmail) {
+                backToAccountChooser();
+                return;
+            }
+
+            try {
+                if (btnResend) {
+                    btnResend.disabled = true;
+                    btnResend.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+                }
+
+                const res = await fetch('/auth/oauth/google/send-code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: currentSelectedEmail })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    if (data.code_preview) {
+                        const otpPreviewCode = document.getElementById('otpPreviewCode');
+                        const otpDeliveryNotice = document.getElementById('otpDeliveryNotice');
+                        if (otpPreviewCode) otpPreviewCode.innerText = data.code_preview;
+                        if (otpDeliveryNotice) otpDeliveryNotice.style.display = 'flex';
+                    }
+                    hideVerifyError();
+                    clearOtpInputs();
+                    startOtpTimer(600);
+
+                    // 30-second cooldown on resend button
+                    let cd = 30;
+                    if (resendCooldownInterval) clearInterval(resendCooldownInterval);
+                    resendCooldownInterval = setInterval(() => {
+                        if (cd <= 0) {
+                            clearInterval(resendCooldownInterval);
+                            if (btnResend) {
+                                btnResend.disabled = false;
+                                btnResend.innerHTML = '<i class="fas fa-rotate-right"></i> Resend code';
+                            }
+                        } else {
+                            if (btnResend) {
+                                btnResend.innerHTML = `<i class="fas fa-clock"></i> Resend in ${cd}s`;
+                            }
+                            cd--;
+                        }
+                    }, 1000);
+                } else {
+                    alert(data.error || 'Failed to resend code.');
+                    if (btnResend) {
+                        btnResend.disabled = false;
+                        btnResend.innerHTML = '<i class="fas fa-rotate-right"></i> Resend code';
+                    }
+                }
+            } catch (err) {
+                console.error('Resend error:', err);
+                if (btnResend) {
+                    btnResend.disabled = false;
+                    btnResend.innerHTML = '<i class="fas fa-rotate-right"></i> Resend code';
+                }
+            }
+        }
+
+        function showVerifyError(msg) {
+            const el = document.getElementById('verifyErrorNotice');
+            const txt = document.getElementById('verifyErrorText');
+            if (el && txt) {
+                txt.innerText = msg;
+                el.style.display = 'flex';
+            }
+        }
+
+        function hideVerifyError() {
+            const el = document.getElementById('verifyErrorNotice');
+            if (el) el.style.display = 'none';
+        }
+
+        // Submit & Verify OTP Code
+        async function submitGoogleOtp() {
+            const code = getEnteredOtp();
+            if (code.length !== 6) {
+                showVerifyError('Please enter all 6 digits of the verification code.');
+                const firstEmpty = document.querySelector('.otp-box:not(.filled)') || document.getElementById('otp_0');
+                if (firstEmpty) firstEmpty.focus();
+                return;
+            }
+
+            hideVerifyError();
+            const btnConfirm = document.getElementById('btnConfirmOtp');
+            if (btnConfirm) {
+                btnConfirm.disabled = true;
+                btnConfirm.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+            }
+
+            try {
+                const res = await fetch('/auth/oauth/google/verify-code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: currentSelectedEmail, code: code })
+                });
+
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    if (btnConfirm) {
+                        btnConfirm.innerHTML = '<i class="fas fa-check"></i> Verified! Redirecting...';
+                        btnConfirm.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                    }
+                    setTimeout(() => {
+                        window.location.href = data.redirect_url || '/dashboard';
+                    }, 400);
+                } else {
+                    showVerifyError(data.error || 'Invalid verification code. Please check and try again.');
+                    if (btnConfirm) {
+                        btnConfirm.disabled = false;
+                        btnConfirm.innerHTML = '<i class="fas fa-circle-check"></i> Confirm & Sign In';
+                    }
+                    // Highlight boxes in error state
+                    document.querySelectorAll('.otp-box').forEach(b => {
+                        b.style.borderColor = '#ef4444';
+                        setTimeout(() => b.style.borderColor = '', 1500);
+                    });
+                }
+            } catch (err) {
+                console.error('Verification error:', err);
+                showVerifyError('Unable to connect to server. Please try again.');
+                if (btnConfirm) {
+                    btnConfirm.disabled = false;
+                    btnConfirm.innerHTML = '<i class="fas fa-circle-check"></i> Confirm & Sign In';
+                }
+            }
+        }
+
+        // Setup OTP auto-advance, backspace, and paste handlers
+        function setupOtpInputs() {
+            const boxes = document.querySelectorAll('.otp-box');
+            boxes.forEach((box, idx) => {
+                box.addEventListener('input', (e) => {
+                    const val = e.target.value.replace(/[^0-9]/g, '');
+                    e.target.value = val ? val[0] : '';
+
+                    if (val) {
+                        box.classList.add('filled');
+                        if (idx < 5) {
+                            const next = document.getElementById(`otp_${idx + 1}`);
+                            if (next) next.focus();
+                        } else if (idx === 5) {
+                            // Auto-submit on 6th digit entered
+                            setTimeout(submitGoogleOtp, 150);
+                        }
+                    } else {
+                        box.classList.remove('filled');
+                    }
+                });
+
+                box.addEventListener('keydown', (e) => {
+                    if (e.key === 'Backspace' && !box.value && idx > 0) {
+                        const prev = document.getElementById(`otp_${idx - 1}`);
+                        if (prev) {
+                            prev.value = '';
+                            prev.classList.remove('filled');
+                            prev.focus();
+                        }
+                    } else if (e.key === 'Enter') {
+                        submitGoogleOtp();
+                    }
+                });
+
+                box.addEventListener('paste', (e) => {
+                    e.preventDefault();
+                    const text = (e.clipboardData || window.clipboardData).getData('text');
+                    const digits = text.replace(/[^0-9]/g, '').slice(0, 6);
+                    if (!digits) return;
+
+                    for (let i = 0; i < 6; i++) {
+                        const b = document.getElementById(`otp_${i}`);
+                        if (b) {
+                            b.value = digits[i] || '';
+                            if (digits[i]) b.classList.add('filled');
+                            else b.classList.remove('filled');
+                        }
+                    }
+
+                    if (digits.length === 6) {
+                        const last = document.getElementById('otp_5');
+                        if (last) last.focus();
+                        setTimeout(submitGoogleOtp, 200);
+                    } else {
+                        const next = document.getElementById(`otp_${digits.length}`);
+                        if (next) next.focus();
+                    }
+                });
+            });
+        }
+
+        setupOtpInputs();
 
         // Check if query param requests prompt
         const urlParams = new URLSearchParams(window.location.search);
@@ -884,6 +1530,7 @@
 
         setupClearButton('loginUsername', 'loginUsernameClear');
         setupClearButton('signupUsername', 'signupUsernameClear');
+        setupClearButton('signupEmail', 'signupEmailClear');
 
         const signupPasswordInput = document.getElementById('signupPassword');
         const signupConfirmPasswordInput = document.getElementById('signupConfirmPassword');

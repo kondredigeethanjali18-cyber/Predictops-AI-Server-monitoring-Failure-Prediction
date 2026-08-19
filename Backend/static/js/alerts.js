@@ -7,15 +7,16 @@ const recordsPerPage = 10;
 let currentSeverityFilter = "ALL";
 let searchQuery = "";
 
-const APP_TIME_SHIFT_MS = (5 * 60 + 29) * 60 * 1000;
-
 function formatAlertTime(timestamp) {
     if (!timestamp) return "Time unavailable";
-    const date = new Date(timestamp);
+    let ts = String(timestamp).trim();
+    if (ts.includes("T") && !ts.endsWith("Z") && !ts.includes("+") && !ts.includes("-", 10)) {
+        ts += "Z";
+    }
+    const date = new Date(ts);
     if (Number.isNaN(date.getTime())) return timestamp;
 
-    const shiftedDate = new Date(date.getTime() + APP_TIME_SHIFT_MS);
-    return shiftedDate.toLocaleString("en-IN", {
+    return date.toLocaleString("en-IN", {
         timeZone: "Asia/Kolkata",
         day: "2-digit",
         month: "short",
@@ -74,8 +75,7 @@ async function loadAlerts() {
         const syncEl = document.getElementById("alertsSyncTime");
         if (syncEl) {
             const now = new Date();
-            const shiftedNow = new Date(now.getTime() + APP_TIME_SHIFT_MS);
-            syncEl.innerText = shiftedNow.toLocaleTimeString("en-IN", {
+            syncEl.innerText = now.toLocaleTimeString("en-IN", {
                 timeZone: "Asia/Kolkata",
                 hour: "2-digit",
                 minute: "2-digit",
@@ -255,14 +255,28 @@ function initAlerts() {
         });
     }
 
+    function setSeverityFilter(severity) {
+        currentSeverityFilter = severity;
+        currentPage = 1;
+        document.querySelectorAll("#severityFilters .filter-pill").forEach(p => {
+            p.classList.toggle("active", p.getAttribute("data-severity") === severity);
+        });
+        document.querySelectorAll(".alert-filter-card").forEach(c => {
+            c.classList.toggle("active", c.getAttribute("data-severity-card") === severity);
+        });
+        applyFilters();
+        renderAlertsTable();
+    }
+
     document.querySelectorAll("#severityFilters .filter-pill").forEach(pill => {
         pill.addEventListener("click", () => {
-            document.querySelectorAll("#severityFilters .filter-pill").forEach(p => p.classList.remove("active"));
-            pill.classList.add("active");
-            currentSeverityFilter = pill.getAttribute("data-severity");
-            currentPage = 1;
-            applyFilters();
-            renderAlertsTable();
+            setSeverityFilter(pill.getAttribute("data-severity"));
+        });
+    });
+
+    document.querySelectorAll(".alert-filter-card").forEach(card => {
+        card.addEventListener("click", () => {
+            setSeverityFilter(card.getAttribute("data-severity-card"));
         });
     });
 

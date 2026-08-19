@@ -4,7 +4,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Optional
 from fastapi import APIRouter, Request, Form, Response, HTTPException, status, Query
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
 from Backend.database.mongodb import db
@@ -23,6 +23,11 @@ from Backend.services.oauth_service import (
     get_sandbox_user,
     GOOGLE_CLIENT_ID,
     GITHUB_CLIENT_ID
+)
+from Backend.services.email_verification_service import (
+    create_verification_record,
+    send_verification_email,
+    verify_email_code
 )
 
 logger = logging.getLogger(__name__)
@@ -125,6 +130,18 @@ def validate_username(username: str) -> tuple[bool, str]:
     return True, ""
 
 
+def validate_email(email: str) -> tuple[bool, str]:
+    """Validate email address format."""
+    e = email.strip()
+    if not e:
+        return False, "Email address is required."
+    # Standard RFC-compliant email regex pattern
+    pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
+    if not re.match(pattern, e):
+        return False, "Please enter a valid email address (e.g., user@example.com)."
+    return True, ""
+
+
 def validate_password(password: str) -> tuple[bool, str]:
     """Validate password strength (length, uppercase, lowercase, number, special character)."""
     if len(password) < 8:
@@ -210,15 +227,13 @@ def login_post(
     request: Request,
     response: Response,
     username: str = Form(...),
-    password: str = Form(...),
-    remember_me: Optional[str] = Form(None)
+    password: str = Form(...)
 ):
     u = username.strip()
     user_doc = find_user(u)
 
     if user_doc and user_doc.get("password") == password:
-        is_remember = remember_me in ["on", "true", "1", "yes"]
-        token, max_age = create_session(u, remember_me=is_remember, provider="local")
+        token, max_age = create_session(u, remember_me=False, provider="local")
 
         redirect = RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
         redirect.set_cookie(
@@ -260,10 +275,12 @@ def signup_post(
     request: Request,
     response: Response,
     username: str = Form(...),
+    email: str = Form(...),
     password: str = Form(...),
     confirm_password: Optional[str] = Form(None)
 ):
     u = username.strip()
+    e = email.strip()
 
     # Validate username
     valid_u, u_err = validate_username(u)
@@ -271,7 +288,16 @@ def signup_post(
         return templates.TemplateResponse(
             request=request,
             name="login.html",
-            context={"error": u_err, "mode": "signup", "username": u}
+            context={"error": u_err, "mode": "signup", "username": u, "email": e}
+        )
+
+    # Validate email
+    valid_e, e_err = validate_email(e)
+    if not valid_e:
+        return templates.TemplateResponse(
+            request=request,
+            name="login.html",
+            context={"error": e_err, "mode": "signup", "username": u, "email": e}
         )
 
     # Check if username exists
@@ -282,7 +308,8 @@ def signup_post(
             context={
                 "error": f"Username '{u}' is already registered. Please sign in.",
                 "mode": "signup",
-                "username": u
+                "username": u,
+                "email": e
             }
         )
 
@@ -291,7 +318,7 @@ def signup_post(
         return templates.TemplateResponse(
             request=request,
             name="login.html",
-            context={"error": "Passwords do not match.", "mode": "signup", "username": u}
+            context={"error": "Passwords do not match.", "mode": "signup", "username": u, "email": e}
         )
 
     # Validate password requirements
@@ -300,11 +327,11 @@ def signup_post(
         return templates.TemplateResponse(
             request=request,
             name="login.html",
-            context={"error": p_err, "mode": "signup", "username": u}
+            context={"error": p_err, "mode": "signup", "username": u, "email": e}
         )
 
-    # Create the user in database
-    create_user(u, password=password, auth_type="local")
+    # Create the user in database with email
+    create_user(u, password=password, auth_type="local", email=e)
 
     # Redirect to Login Page with Success message as requested
     return templates.TemplateResponse(
@@ -332,8 +359,113 @@ def logout(request: Request, response: Response):
 
 
 # =========================================================================
-# OAuth 2.0 Authentication Routes
+# OAuth 2.0 & Google 2-Step Verification Routes
 # =========================================================================
+
+@router.post("/auth/oauth/google/send-code")
+async def google_send_verification_code(request: Request):
+    """
+    Generates and sends a 6-digit OTP verification code for the selected Google email.
+    """
+    try:
+        content_type = request.headers.get("content-type", "")
+        if "application/json" in content_type:
+            data = await request.json()
+            email = data.get("email", "").strip()
+        else:
+            form = await request.form()
+            email = form.get("email", "").strip()
+    except Exception:
+        email = ""
+
+    if not email or "@" not in email:
+        return JSONResponse(
+            status_code=400,
+            content={"success": False, "error": "Please provide a valid Google email address."}
+        )
+
+    code, expires_at = create_verification_record(email)
+    sent, msg = send_verification_email(email, code)
+
+    # Mask email for privacy (e.g., va***ops@gmail.com)
+    parts = email.split("@")
+    local_part = parts[0]
+    domain_part = parts[1]
+    if len(local_part) <= 3:
+        masked = f"{local_part[0]}***@{domain_part}"
+    else:
+        masked = f"{local_part[:2]}***{local_part[-2:]}@{domain_part}"
+
+    return JSONResponse(content={
+        "success": True,
+        "message": f"Verification code sent to {email}.",
+        "email": email,
+        "masked_email": masked,
+        "code_preview": code,
+        "expires_in_seconds": 600
+    })
+
+
+@router.post("/auth/oauth/google/verify-code")
+async def google_verify_code(request: Request, response: Response):
+    """
+    Validates the 6-digit verification code, provisions user in MongoDB,
+    establishes an authenticated session, and returns login redirection.
+    """
+    try:
+        content_type = request.headers.get("content-type", "")
+        if "application/json" in content_type:
+            data = await request.json()
+            email = data.get("email", "").strip()
+            code = data.get("code", "").strip()
+        else:
+            form = await request.form()
+            email = form.get("email", "").strip()
+            code = form.get("code", "").strip()
+    except Exception:
+        return JSONResponse(
+            status_code=400,
+            content={"success": False, "error": "Invalid request payload."}
+        )
+
+    if not email or not code:
+        return JSONResponse(
+            status_code=400,
+            content={"success": False, "error": "Email address and 6-digit code are required."}
+        )
+
+    is_valid, err_msg = verify_email_code(email, code)
+    if not is_valid:
+        return JSONResponse(
+            status_code=400,
+            content={"success": False, "error": err_msg}
+        )
+
+    # Email verified! Provision or update user
+    username = email.split("@")[0].replace(".", "_").lower()
+    create_user(username, auth_type="google", email=email)
+
+    # Create active session
+    token, max_age = create_session(username, remember_me=True, provider="google")
+
+    res = JSONResponse(content={
+        "success": True,
+        "message": "Account verified successfully! Logging you in...",
+        "redirect_url": "/dashboard",
+        "username": username,
+        "email": email
+    })
+    res.set_cookie(
+        key="session_token",
+        value=token,
+        max_age=max_age,
+        httponly=True,
+        samesite="lax",
+        path="/"
+    )
+    logger.info(f"Google 2-Step OTP login successful for {username} ({email})")
+    return res
+
 
 @router.post("/auth/oauth/prompt-submit")
 def oauth_prompt_submit(

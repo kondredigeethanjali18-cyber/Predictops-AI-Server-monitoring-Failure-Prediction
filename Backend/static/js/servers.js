@@ -2,34 +2,62 @@ let allServers = [];
 let filteredServers = [];
 let currentPage = 1;
 const serversPerPage = 10;
+let currentFilter = "ALL";
+let searchQuery = "";
 
 async function loadServers() {
     try {
         const response = await fetch("/all-servers");
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         allServers = await response.json();
 
-        document.getElementById("serverTotalCount").innerText = allServers.length;
-
+        const count = allServers.length || 1;
         let totalCpu = 0;
+        let totalMem = 0;
         let highCount = 0;
+        let normalCount = 0;
 
         allServers.forEach(server => {
             const cpu = Number(server.cpu_usage_percent) || 0;
+            const mem = Number(server.memory_usage_percent) || 0;
             totalCpu += cpu;
-            if (cpu > 80) highCount++;
+            totalMem += mem;
+
+            if (cpu > 80 || mem > 80) {
+                highCount++;
+            } else {
+                normalCount++;
+            }
         });
 
-        const count = allServers.length || 1;
-        document.getElementById("serverAverageCpu").innerText = (totalCpu / count).toFixed(1) + "%";
-        document.getElementById("serverHighCpuCount").innerText = highCount;
+        const totalCountEl = document.getElementById("serverTotalCount");
+        const avgCpuEl = document.getElementById("serverAverageCpu");
+        const avgMemEl = document.getElementById("serverAverageMem");
+        const highCountEl = document.getElementById("serverHighCpuCount");
+
+        if (totalCountEl) totalCountEl.innerText = allServers.length;
+        if (avgCpuEl) avgCpuEl.innerText = (totalCpu / count).toFixed(1) + "%";
+        if (avgMemEl) avgMemEl.innerText = (totalMem / count).toFixed(1) + "%";
+        if (highCountEl) highCountEl.innerText = highCount;
+
+        // Update filter pills counters
+        const pillAll = document.getElementById("pillAllCount");
+        const pillHigh = document.getElementById("pillHighCount");
+        const pillNormal = document.getElementById("pillNormalCount");
+
+        if (pillAll) pillAll.innerText = allServers.length;
+        if (pillHigh) pillHigh.innerText = highCount;
+        if (pillNormal) pillNormal.innerText = normalCount;
 
         const notif = document.getElementById("serverNotification");
-        if (highCount > 0) {
-            notif.className = "notification-bar notification-warning";
-            notif.innerHTML = `<i class="fas fa-triangle-exclamation"></i> <span><strong>${highCount} servers</strong> are currently experiencing high utilization (>80%).</span>`;
-        } else {
-            notif.className = "notification-bar notification-success";
-            notif.innerHTML = `<i class="fas fa-circle-check"></i> <span>All ${allServers.length} servers are operating within healthy resource parameters.</span>`;
+        if (notif) {
+            if (highCount > 0) {
+                notif.className = "notification-bar notification-warning";
+                notif.innerHTML = `<i class="fas fa-triangle-exclamation"></i> <span><strong>${highCount} servers</strong> are currently experiencing high utilization (>80%).</span>`;
+            } else {
+                notif.className = "notification-bar notification-success";
+                notif.innerHTML = `<i class="fas fa-circle-check"></i> <span>All ${allServers.length} servers are operating within healthy resource parameters.</span>`;
+            }
         }
 
         applyServerFilter();
@@ -41,16 +69,27 @@ async function loadServers() {
 }
 
 function applyServerFilter() {
-    const searchVal = document.getElementById("searchBox").value.toLowerCase();
-    if (!searchVal) {
-        filteredServers = [...allServers];
-    } else {
-        filteredServers = allServers.filter(s => s.server_name.toLowerCase().includes(searchVal));
-    }
+    filteredServers = allServers.filter(s => {
+        const cpu = Number(s.cpu_usage_percent) || 0;
+        const mem = Number(s.memory_usage_percent) || 0;
+
+        let matchesType = true;
+        if (currentFilter === "HIGH") {
+            matchesType = (cpu > 80 || mem > 80);
+        } else if (currentFilter === "NORMAL") {
+            matchesType = (cpu <= 80 && mem <= 80);
+        }
+
+        const matchesSearch = !searchQuery || (s.server_name && s.server_name.toLowerCase().includes(searchQuery.toLowerCase()));
+
+        return matchesType && matchesSearch;
+    });
 }
 
 function renderTable() {
     const tableBody = document.getElementById("serverTableBody");
+    if (!tableBody) return;
+
     const totalPages = Math.max(1, Math.ceil(filteredServers.length / serversPerPage));
 
     if (currentPage > totalPages) {
@@ -61,7 +100,7 @@ function renderTable() {
     const paginated = filteredServers.slice(startIndex, startIndex + serversPerPage);
 
     if (paginated.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #94a3b8; padding: 24px;">No servers found.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #94a3b8; padding: 24px;">No servers found matching criteria.</td></tr>`;
         renderNumberedPagination("serversPagination", 1, 1, () => {});
         return;
     }
@@ -159,24 +198,58 @@ function renderNumberedPagination(containerId, currPage, totalPages, onPageClick
     });
 }
 
+function setServerFilter(filter) {
+    currentFilter = filter;
+    currentPage = 1;
+
+    document.querySelectorAll("#serverFilterPills .filter-pill").forEach(p => {
+        p.classList.toggle("active", p.getAttribute("data-filter") === filter);
+    });
+
+    document.querySelectorAll(".server-filter-card").forEach(c => {
+        c.classList.toggle("active", c.getAttribute("data-server-filter") === filter);
+    });
+
+    applyServerFilter();
+    renderTable();
+}
+
 function initServers() {
     const searchBox = document.getElementById("searchBox");
     if (searchBox) {
-        searchBox.addEventListener("input", () => {
-            applyServerFilter();
+        searchBox.addEventListener("input", e => {
+            searchQuery = e.target.value;
             currentPage = 1;
+            applyServerFilter();
             renderTable();
         });
     }
 
+    document.querySelectorAll("#serverFilterPills .filter-pill").forEach(pill => {
+        pill.addEventListener("click", () => {
+            setServerFilter(pill.getAttribute("data-filter") || "ALL");
+        });
+    });
+
+    document.querySelectorAll(".server-filter-card").forEach(card => {
+        card.addEventListener("click", () => {
+            setServerFilter(card.getAttribute("data-server-filter") || "ALL");
+        });
+    });
+
     const exportBtn = document.getElementById("exportBtn");
     if (exportBtn) {
         exportBtn.addEventListener("click", () => {
-            let csv = "S.No,Server,CPU,Memory,Disk\n";
+            if (filteredServers.length === 0) {
+                alert("No servers to export.");
+                return;
+            }
+
+            let csv = "S.No,Server,CPU (%),Memory (%),Disk (%)\n";
             filteredServers.forEach((server, index) => {
                 csv += `${index + 1},${server.server_name},${server.cpu_usage_percent},${server.memory_usage_percent},${server.disk_usage_percent}\n`;
             });
-            const blob = new Blob([csv], { type: "text/csv" });
+            const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;

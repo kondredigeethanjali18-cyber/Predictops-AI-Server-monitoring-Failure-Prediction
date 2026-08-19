@@ -13,79 +13,100 @@
     </div>
 </div>
 
-<!-- 8 KPI Metrics Cards - Uniform, Beautiful & Cohesive -->
-<div class="cards">
+<!-- 4 Unified Thematic Metric Clusters -->
+<div class="cards kpi-clusters">
 
-    <div class="card">
+    <!-- Cluster 1: Infrastructure Scope & Telemetry Scale -->
+    <div class="card cluster-card">
         <div class="card-header-row">
-            <h3>Total Servers</h3>
+            <span class="cluster-title"><i class="fas fa-network-wired" style="color: #3b82f6;"></i> Infrastructure Scope</span>
             <div class="card-icon"><i class="fas fa-server"></i></div>
         </div>
-        <div class="metric" id="totalServers">0</div>
-        <div class="card-subtext">Monitored infrastructure</div>
+        <div class="cluster-main-metric">
+            <div>
+                <span class="cluster-label">Monitored Nodes</span>
+                <div class="metric cluster-number" id="totalServers">0</div>
+            </div>
+            <div class="cluster-sub-metric">
+                <span class="cluster-label">Telemetry Ingested</span>
+                <strong id="totalRecords">0</strong>
+            </div>
+        </div>
+        <div class="card-subtext"><i class="fas fa-database" style="color: #2563eb; margin-right: 4px;"></i> Live Atlas cloud telemetry stream</div>
     </div>
 
-    <div class="card">
+    <!-- Cluster 2: Fleet Health & Tri-State Distribution -->
+    <div class="card cluster-card cluster-card-clickable" onclick="window.location.href='/servers'" title="Click to view Server Inventory">
         <div class="card-header-row">
-            <h3>Total Records</h3>
-            <div class="card-icon"><i class="fas fa-database"></i></div>
+            <span class="cluster-title"><i class="fas fa-heart-pulse" style="color: #10b981;"></i> Fleet Health State</span>
+            <span class="cluster-link-badge">Inventory &rarr;</span>
         </div>
-        <div class="metric" id="totalRecords">0</div>
-        <div class="card-subtext">Telemetry points processed</div>
+        <div class="tri-state-row">
+            <div class="state-col state-healthy">
+                <span class="state-dot dot-green"></span>
+                <span class="state-name">Healthy</span>
+                <strong class="state-count" id="healthyServers">0</strong>
+            </div>
+            <div class="state-col state-warning">
+                <span class="state-dot dot-yellow"></span>
+                <span class="state-name">Warning</span>
+                <strong class="state-count" id="warningServers">0</strong>
+            </div>
+            <div class="state-col state-critical">
+                <span class="state-dot dot-red"></span>
+                <span class="state-name">Critical</span>
+                <strong class="state-count" id="criticalServers">0</strong>
+            </div>
+        </div>
+        <div class="tri-state-progress-bar">
+            <div class="bar-segment bar-healthy" id="barHealthy" style="width: 100%;"></div>
+            <div class="bar-segment bar-warning" id="barWarning" style="width: 0%;"></div>
+            <div class="bar-segment bar-critical" id="barCritical" style="width: 0%;"></div>
+        </div>
     </div>
 
-    <div class="card">
+    <!-- Cluster 3: Fleet Resource Load -->
+    <div class="card cluster-card">
         <div class="card-header-row">
-            <h3>Healthy Servers</h3>
-            <div class="card-icon"><i class="fas fa-circle-check"></i></div>
+            <span class="cluster-title"><i class="fas fa-microchip" style="color: #8b5cf6;"></i> Fleet Resource Load</span>
+            <div class="card-icon"><i class="fas fa-chart-line"></i></div>
         </div>
-        <div class="metric" id="healthyServers">0</div>
-        <div class="card-subtext">Operating within bounds</div>
+        <div class="dual-gauge-row">
+            <div class="gauge-item">
+                <div class="gauge-header">
+                    <span>Avg CPU</span>
+                    <strong id="avgCpuUsage">0%</strong>
+                </div>
+                <div class="progress-track"><div class="progress-fill fill-cpu" id="barAvgCpu" style="width: 0%;"></div></div>
+            </div>
+            <div class="gauge-item">
+                <div class="gauge-header">
+                    <span>Avg RAM</span>
+                    <strong id="avgMemoryUsage">0%</strong>
+                </div>
+                <div class="progress-track"><div class="progress-fill fill-mem" id="barAvgMem" style="width: 0%;"></div></div>
+            </div>
+        </div>
+        <div class="card-subtext"><i class="fas fa-gauge" style="color: #8b5cf6; margin-right: 4px;"></i> Cluster-wide compute & memory headroom</div>
     </div>
 
-    <div class="card">
+    <!-- Cluster 4: Predictive Anomaly & Failure Rate -->
+    <div class="card cluster-card cluster-card-clickable" onclick="window.location.href='/alerts'" title="Click to view Live Alerts">
         <div class="card-header-row">
-            <h3>Warning State</h3>
-            <div class="card-icon"><i class="fas fa-triangle-exclamation"></i></div>
+            <span class="cluster-title"><i class="fas fa-triangle-exclamation" style="color: #ef4444;"></i> Predictive Anomaly Rate</span>
+            <span class="cluster-link-badge">Live Alerts &rarr;</span>
         </div>
-        <div class="metric" id="warningServers">0</div>
-        <div class="card-subtext">Elevated resource load</div>
-    </div>
-
-    <div class="card">
-        <div class="card-header-row">
-            <h3>Critical State</h3>
-            <div class="card-icon"><i class="fas fa-circle-exclamation"></i></div>
+        <div class="cluster-main-metric">
+            <div>
+                <span class="cluster-label">Anomaly Ratio</span>
+                <div class="metric cluster-number" id="anomalyRate" style="color: #dc2626;">0%</div>
+            </div>
+            <div class="cluster-sub-metric">
+                <span class="cluster-label">Flagged Incidents</span>
+                <strong id="totalAnomaliesCount" style="color: #dc2626;">0 Active</strong>
+            </div>
         </div>
-        <div class="metric" id="criticalServers">0</div>
-        <div class="card-subtext">Severe threshold breaches</div>
-    </div>
-
-    <div class="card">
-        <div class="card-header-row">
-            <h3>Avg CPU Usage</h3>
-            <div class="card-icon"><i class="fas fa-microchip"></i></div>
-        </div>
-        <div class="metric" id="avgCpuUsage">0%</div>
-        <div class="card-subtext">Fleet-wide compute load</div>
-    </div>
-
-    <div class="card">
-        <div class="card-header-row">
-            <h3>Avg Memory</h3>
-            <div class="card-icon"><i class="fas fa-memory"></i></div>
-        </div>
-        <div class="metric" id="avgMemoryUsage">0%</div>
-        <div class="card-subtext">Fleet-wide RAM allocation</div>
-    </div>
-
-    <div class="card">
-        <div class="card-header-row">
-            <h3>Anomaly Rate</h3>
-            <div class="card-icon"><i class="fas fa-chart-pie"></i></div>
-        </div>
-        <div class="metric" id="anomalyRate">0%</div>
-        <div class="card-subtext">Percentage of flagged anomalies</div>
+        <div class="card-subtext" id="anomalySubtext"><i class="fas fa-shield-halved" style="color: #16a34a; margin-right: 4px;"></i> ML Ensemble calibrated guard</div>
     </div>
 
 </div>
@@ -150,22 +171,43 @@
         </div>
     </div>
 
-    <!-- Card 4: AI Remediation & Fleet Insights (Replaced System Sync) -->
+    <!-- Card 4: Predictive Reliability & Action Center -->
     <div class="info-card">
         <div class="info-card-header">
-            <h3><i class="fas fa-robot" style="color: #8b5cf6;"></i> AI Remediation & Insights</h3>
-            <span class="live-tag live-tag-success" id="fleetHealthTag"><i class="fas fa-circle live-pulse"></i> Operational</span>
+            <h3><i class="fas fa-shield-halved" style="color: #6366f1;"></i> Predictive Reliability & Action Center</h3>
+            <span class="live-tag live-tag-success" id="fleetHealthTag"><i class="fas fa-circle live-pulse"></i> SLA: 99.9% Optimal</span>
         </div>
-        <div class="info-card-body">
-            <div style="font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 6px;" id="dashboardRecommendation">
-                Analyzing fleet telemetry patterns...
+        <div class="info-card-body action-center-body">
+            <div class="action-center-stats">
+                <div class="stat-pill">
+                    <span class="stat-label">Fleet Health Index</span>
+                    <strong class="stat-value" id="fleetHealthScore">99.8%</strong>
+                </div>
+                <div class="stat-pill">
+                    <span class="stat-label">AI Anomaly Guard</span>
+                    <strong class="stat-value text-success" id="aiGuardStatus"><i class="fas fa-shield-check"></i> Active</strong>
+                </div>
             </div>
-            <div style="font-size: 12px; color: #475569; line-height: 1.45; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px;" id="dashboardSuggestedAction">
-                <i class="fas fa-lightbulb" style="color: #f59e0b; margin-right: 6px;"></i> Recommended: Check process resource allocation and load balance high-traffic nodes.
+
+            <div class="action-dispatch-box" id="dashboardSuggestedAction">
+                <div class="dispatch-title"><i class="fas fa-bolt" style="color: #f59e0b;"></i> Live Operations Dispatch:</div>
+                <div class="dispatch-text" id="dashboardRecommendation">
+                    All monitored infrastructure nodes operating comfortably within baseline.
+                </div>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; color: #64748b;">
+
+            <div class="action-buttons-row">
+                <a href="/insights" class="action-btn action-btn-primary" title="Deep AI Root Cause Diagnostics">
+                    <i class="fas fa-brain"></i> Root Cause Insights &rarr;
+                </a>
+                <a href="/alerts" class="action-btn action-btn-secondary" title="View Full Anomaly Incident Feed">
+                    <i class="fas fa-tower-broadcast"></i> Live Incidents
+                </a>
+            </div>
+
+            <div class="action-footer">
                 <span><i class="fas fa-clock" style="color: #2563eb; margin-right: 4px;"></i> Synced: <strong id="lastUpdated" style="color: #0f172a;">--</strong></span>
-                <span style="color: #16a34a; font-weight: 700;"><i class="fas fa-shield-check"></i> Real-time AI Guard</span>
+                <span class="engine-badge"><i class="fas fa-microchip"></i> Ensemble ML Guard Active</span>
             </div>
         </div>
     </div>
