@@ -2,16 +2,27 @@ let allPredictions = [];
 let filteredPredictions = [];
 let currentPage = 1;
 const recordsPerPage = 10;
+let currentDatePreset = "all";
+let customStartDate = null;
+let customEndDate = null;
+let currentStatusFilter = "all";
+let searchQuery = "";
 
-function formatPredictionTime(timestamp) {
-    if (!timestamp) return "Time unavailable";
+function parseRecordDate(timestamp) {
+    if (!timestamp) return null;
     let ts = String(timestamp).trim();
     if (ts.includes("T") && !ts.endsWith("Z") && !ts.includes("+") && !ts.includes("-", 10)) {
         ts += "Z";
     }
-    const date = new Date(ts);
-    if (Number.isNaN(date.getTime())) return timestamp;
-    return date.toLocaleString("en-IN", {
+    const d = new Date(ts);
+    return isNaN(d.getTime()) ? null : d;
+}
+
+function formatPredictionTime(timestamp) {
+    const d = parseRecordDate(timestamp);
+    if (!d) return timestamp || "Time unavailable";
+
+    return d.toLocaleString("en-IN", {
         timeZone: "Asia/Kolkata",
         day: "2-digit",
         month: "short",
@@ -25,7 +36,10 @@ function formatPredictionTime(timestamp) {
 async function loadPredictions() {
     try {
         const response = await fetch("/all-predictions");
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         allPredictions = await response.json();
+
+        updatePresetCounts();
         applyPredictionFilter();
         renderTable();
     } catch (error) {
@@ -33,17 +47,81 @@ async function loadPredictions() {
     }
 }
 
-function applyPredictionFilter() {
-    const filter = document.getElementById("predictionFilter").value;
-    if (filter === "all") {
-        filteredPredictions = [...allPredictions];
-    } else {
-        filteredPredictions = allPredictions.filter(item => item.prediction === filter);
+function updatePresetCounts() {
+    const countAllEl = document.getElementById("countRangeAll");
+    const countTodayEl = document.getElementById("countRangeToday");
+
+    if (countAllEl) countAllEl.innerText = allPredictions.length;
+
+    if (countTodayEl) {
+        const todayStr = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD in local
+        let todayCount = 0;
+        allPredictions.forEach(p => {
+            const d = parseRecordDate(p.timestamp);
+            if (d && d.toLocaleDateString("en-CA") === todayStr) {
+                todayCount++;
+            }
+        });
+        countTodayEl.innerText = todayCount;
     }
+}
+
+function applyPredictionFilter() {
+    const now = new Date();
+    const todayStr = now.toLocaleDateString("en-CA");
+
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    const yesterdayStr = yesterday.toLocaleDateString("en-CA");
+
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setDate(now.getDate() - 7);
+
+    filteredPredictions = allPredictions.filter(item => {
+        // 1. Status Filter
+        if (currentStatusFilter !== "all" && item.prediction !== currentStatusFilter) {
+            return false;
+        }
+
+        // 2. Search Query (Server name)
+        if (searchQuery) {
+            const sName = (item.server_name || "").toLowerCase();
+            if (!sName.includes(searchQuery.toLowerCase())) {
+                return false;
+            }
+        }
+
+        // 3. Date Range Filter
+        const recordDate = parseRecordDate(item.timestamp);
+        if (!recordDate) return true;
+
+        if (currentDatePreset === "today") {
+            return recordDate.toLocaleDateString("en-CA") === todayStr;
+        } else if (currentDatePreset === "yesterday") {
+            return recordDate.toLocaleDateString("en-CA") === yesterdayStr;
+        } else if (currentDatePreset === "7days") {
+            return recordDate >= sevenDaysAgo;
+        } else if (currentDatePreset === "custom") {
+            if (customStartDate && customEndDate) {
+                const recDay = recordDate.toLocaleDateString("en-CA");
+                return recDay >= customStartDate && recDay <= customEndDate;
+            } else if (customStartDate) {
+                const recDay = recordDate.toLocaleDateString("en-CA");
+                return recDay >= customStartDate;
+            } else if (customEndDate) {
+                const recDay = recordDate.toLocaleDateString("en-CA");
+                return recDay <= customEndDate;
+            }
+        }
+
+        return true;
+    });
 }
 
 function renderTable() {
     const tableBody = document.getElementById("predictionTableBody");
+    if (!tableBody) return;
+
     const totalPages = Math.max(1, Math.ceil(filteredPredictions.length / recordsPerPage));
 
     if (currentPage > totalPages) {
@@ -54,7 +132,7 @@ function renderTable() {
     const paginated = filteredPredictions.slice(startIndex, startIndex + recordsPerPage);
 
     if (paginated.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #94a3b8; padding: 24px;">No predictions recorded yet.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #94a3b8; padding: 28px;">No prediction records matching the selected date or risk filter.</td></tr>`;
         renderNumberedPagination("predictionPagination", 1, 1, () => {});
         return;
     }
@@ -78,7 +156,12 @@ function renderTable() {
         return `
             <tr>
                 <td style="text-align: center; color: #64748b; font-weight: 700; font-size: 12.5px;">${sNo}</td>
-                <td><strong style="color: #0f172a;"><i class="fas fa-server" style="color: #64748b; margin-right: 6px;"></i>${item.server_name}</strong></td>
+                <td class="server-cell">
+                    <div class="server-cell-badge">
+                        <span class="server-icon-box"><i class="fas fa-server"></i></span>
+                        <span class="server-name-text">${item.server_name}</span>
+                    </div>
+                </td>
                 <td>${badge}</td>
                 <td><strong>${conf}%</strong></td>
                 <td>${cpu}</td>
@@ -104,6 +187,62 @@ function formatThroughput(value) {
     return `${num.toFixed(2)} MB/s`;
 }
 
+function getTodayDateStr() {
+    return new Date().toLocaleDateString("en-CA");
+}
+
+function showDateValidationError(msg) {
+    const msgEl = document.getElementById("dateValidationMessage");
+    const textEl = document.getElementById("dateValidationText");
+    const startInput = document.getElementById("predStartDate");
+    const endInput = document.getElementById("predEndDate");
+
+    if (textEl) textEl.innerText = msg;
+    if (msgEl) msgEl.classList.add("active");
+    if (startInput) startInput.classList.add("date-input-error");
+    if (endInput) endInput.classList.add("date-input-error");
+}
+
+function clearDateValidationError() {
+    const msgEl = document.getElementById("dateValidationMessage");
+    const textEl = document.getElementById("dateValidationText");
+    const startInput = document.getElementById("predStartDate");
+    const endInput = document.getElementById("predEndDate");
+
+    if (textEl) textEl.innerText = "";
+    if (msgEl) msgEl.classList.remove("active");
+    if (startInput) startInput.classList.remove("date-input-error");
+    if (endInput) endInput.classList.remove("date-input-error");
+}
+
+function setupDatePickerConstraints() {
+    const today = getTodayDateStr();
+    const startInput = document.getElementById("predStartDate");
+    const endInput = document.getElementById("predEndDate");
+
+    if (startInput) {
+        startInput.max = today;
+        startInput.addEventListener("input", () => {
+            clearDateValidationError();
+            const sVal = startInput.value;
+            if (endInput) {
+                endInput.min = sVal || "";
+            }
+        });
+    }
+
+    if (endInput) {
+        endInput.max = today;
+        endInput.addEventListener("input", () => {
+            clearDateValidationError();
+            const eVal = endInput.value;
+            if (startInput) {
+                startInput.max = eVal || today;
+            }
+        });
+    }
+}
+
 function renderNumberedPagination(containerId, currPage, totalPages, onPageClick) {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -119,10 +258,8 @@ function renderNumberedPagination(containerId, currPage, totalPages, onPageClick
     }
 
     let html = "";
-    // Prev button
     html += `<button class="page-nav-btn" ${currPage === 1 ? "disabled" : ""} data-page="${currPage - 1}"><i class="fas fa-chevron-left"></i> Prev</button>`;
 
-    // Window logic for 10 buttons
     const maxBtns = 10;
     let startPage = 1;
     let endPage = totalPages;
@@ -158,9 +295,7 @@ function renderNumberedPagination(containerId, currPage, totalPages, onPageClick
         html += `<button class="page-num-btn" data-page="${totalPages}">${totalPages}</button>`;
     }
 
-    // Next button
     html += `<button class="page-nav-btn" ${currPage === totalPages ? "disabled" : ""} data-page="${currPage + 1}">Next <i class="fas fa-chevron-right"></i></button>`;
-
     html += `<span class="page-summary">Page ${currPage} of ${totalPages}</span>`;
 
     container.innerHTML = html;
@@ -175,13 +310,173 @@ function renderNumberedPagination(containerId, currPage, totalPages, onPageClick
     });
 }
 
+function setDatePreset(range) {
+    currentDatePreset = range;
+    currentPage = 1;
+
+    document.querySelectorAll("#datePresetGroup .filter-pill").forEach(p => {
+        p.classList.toggle("active", p.getAttribute("data-range") === range);
+    });
+
+    const customRow = document.getElementById("customDateRangeRow");
+    if (customRow) {
+        customRow.style.display = range === "custom" ? "flex" : "none";
+    }
+
+    const summaryEl = document.getElementById("dateFilterSummary");
+    if (summaryEl) {
+        if (range === "today") summaryEl.innerText = "Showing today's telemetry";
+        else if (range === "yesterday") summaryEl.innerText = "Showing yesterday's telemetry";
+        else if (range === "7days") summaryEl.innerText = "Showing last 7 days";
+        else if (range === "all") summaryEl.innerText = "";
+    }
+
+    applyPredictionFilter();
+    renderTable();
+}
+
 function initPredictions() {
+    setupDatePickerConstraints();
+
+    // 1. Status Filter
     const filterEl = document.getElementById("predictionFilter");
     if (filterEl) {
-        filterEl.addEventListener("change", () => {
-            applyPredictionFilter();
+        filterEl.addEventListener("change", e => {
+            currentStatusFilter = e.target.value;
             currentPage = 1;
+            applyPredictionFilter();
             renderTable();
+        });
+    }
+
+    // 2. Search Box
+    const searchEl = document.getElementById("predSearchBox");
+    if (searchEl) {
+        searchEl.addEventListener("input", e => {
+            searchQuery = e.target.value.trim();
+            currentPage = 1;
+            applyPredictionFilter();
+            renderTable();
+        });
+    }
+
+    // 3. Preset Date Buttons
+    document.querySelectorAll("#datePresetGroup .filter-pill").forEach(btn => {
+        btn.addEventListener("click", () => {
+            clearDateValidationError();
+            setDatePreset(btn.getAttribute("data-range") || "all");
+        });
+    });
+
+    // 4. Custom Date Range Pickers
+    const btnApply = document.getElementById("btnApplyCustomDate");
+    if (btnApply) {
+        btnApply.addEventListener("click", () => {
+            clearDateValidationError();
+            const startInput = document.getElementById("predStartDate");
+            const endInput = document.getElementById("predEndDate");
+            const sVal = startInput ? startInput.value : "";
+            const eVal = endInput ? endInput.value : "";
+            const today = getTodayDateStr();
+
+            if (!sVal && !eVal) {
+                showDateValidationError("Please select at least a Start Date or an End Date.");
+                return;
+            }
+
+            if (sVal && sVal > today) {
+                showDateValidationError("Start date cannot be in the future. Please select today or an earlier date.");
+                return;
+            }
+
+            if (eVal && eVal > today) {
+                showDateValidationError("End date cannot be in the future. Please select today or an earlier date.");
+                return;
+            }
+
+            if (sVal && eVal && sVal > eVal) {
+                showDateValidationError("Start Date cannot be after End Date. Please specify a valid chronological range.");
+                return;
+            }
+
+            customStartDate = sVal || null;
+            customEndDate = eVal || null;
+
+            const summaryEl = document.getElementById("dateFilterSummary");
+            if (summaryEl) {
+                if (sVal && eVal) summaryEl.innerText = `Filtered: ${sVal} to ${eVal}`;
+                else if (sVal) summaryEl.innerText = `Filtered from ${sVal}`;
+                else if (eVal) summaryEl.innerText = `Filtered up to ${eVal}`;
+            }
+
+            currentPage = 1;
+            applyPredictionFilter();
+            renderTable();
+        });
+    }
+
+    const btnReset = document.getElementById("btnResetDateFilter");
+    if (btnReset) {
+        btnReset.addEventListener("click", () => {
+            const today = getTodayDateStr();
+            const startInput = document.getElementById("predStartDate");
+            const endInput = document.getElementById("predEndDate");
+
+            if (startInput) {
+                startInput.value = "";
+                startInput.max = today;
+                startInput.min = "";
+            }
+            if (endInput) {
+                endInput.value = "";
+                endInput.max = today;
+                endInput.min = "";
+            }
+
+            clearDateValidationError();
+            customStartDate = null;
+            customEndDate = null;
+            setDatePreset("all");
+        });
+    }
+
+    // 5. CSV Export
+    const exportBtn = document.getElementById("exportPredictionsBtn");
+    if (exportBtn) {
+        exportBtn.addEventListener("click", () => {
+            if (filteredPredictions.length === 0) {
+                alert("No prediction records to export matching current filter.");
+                return;
+            }
+
+            const headers = ["#", "Server Name", "Prediction", "Confidence (%)", "CPU (%)", "Memory (%)", "Disk (%)", "Network Throughput", "Timestamp (IST)"];
+            const rows = filteredPredictions.map((p, index) => {
+                let conf = Number(p.confidence) || 0;
+                if (conf > 100) conf = conf / 100;
+                conf = Math.round(conf * 10) / 10;
+                const time = formatPredictionTime(p.timestamp);
+                const tp = formatThroughput(p.network_throughput);
+                return [
+                    index + 1,
+                    p.server_name,
+                    p.prediction,
+                    `${conf}%`,
+                    `${p.cpu_usage_percent || 0}%`,
+                    `${p.memory_usage_percent || 0}%`,
+                    `${p.disk_usage_percent || 0}%`,
+                    `"${tp}"`,
+                    `"${time}"`
+                ].join(",");
+            });
+
+            const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows].join("\n");
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `predictions_report_${Date.now()}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         });
     }
 

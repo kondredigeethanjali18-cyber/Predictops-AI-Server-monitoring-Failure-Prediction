@@ -155,7 +155,12 @@ function renderAlertsTable() {
         return `
             <tr>
                 <td style="text-align: center; color: #64748b; font-weight: 700; font-size: 12.5px;">${sNo}</td>
-                <td><strong style="color: #0f172a;"><i class="fas fa-server" style="color: #64748b; margin-right: 6px;"></i>${item.server_name}</strong></td>
+                <td class="server-cell">
+                    <div class="server-cell-badge">
+                        <span class="server-icon-box"><i class="fas fa-server"></i></span>
+                        <span class="server-name-text">${item.server_name}</span>
+                    </div>
+                </td>
                 <td><span class="badge-danger"><i class="fas fa-triangle-exclamation"></i><span>${item.prediction}</span></span></td>
                 <td><strong>${conf}%</strong></td>
                 <td><span class="${severityClass}">${severity}</span></td>

@@ -117,7 +117,12 @@ function renderTable() {
         return `
             <tr>
                 <td style="text-align: center; color: #64748b; font-weight: 700; font-size: 12.5px;">${sNo}</td>
-                <td><strong style="color: #0f172a;"><i class="fas fa-server" style="color: #64748b; margin-right: 6px;"></i>${server.server_name}</strong></td>
+                <td class="server-cell">
+                    <div class="server-cell-badge">
+                        <span class="server-icon-box"><i class="fas fa-server"></i></span>
+                        <span class="server-name-text">${server.server_name}</span>
+                    </div>
+                </td>
                 <td><strong style="color: ${cpuColor};">${cpu}%</strong></td>
                 <td><strong style="color: ${memColor};">${mem}%</strong></td>
                 <td>${disk}%</td>
