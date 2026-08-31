@@ -5,7 +5,7 @@ from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
 
 model = joblib.load(
-    "ml/models/anomaly_model.pkl"
+    "ML/models/anomaly_model.pkl"
 )
 
 df = pd.read_csv(

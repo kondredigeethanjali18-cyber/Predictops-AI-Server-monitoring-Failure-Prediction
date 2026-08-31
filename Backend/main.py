@@ -140,13 +140,18 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 @app.get("/")
 def landing(request: Request):
+    token = request.cookies.get("session_token")
+    from Backend.routes.auth import get_session
+    username = get_session(token) if token else None
+    if not username:
+        return RedirectResponse(url="/login", status_code=302)
     try:
         if not templates:
             return JSONResponse(status_code=500, content={"detail": "Templates not initialized"})
         return templates.TemplateResponse(
             request=request,
             name="landing.html",
-            context={}
+            context={"user": username}
         )
     except Exception as e:
         logger.error(f"Error rendering landing page: {e}")
