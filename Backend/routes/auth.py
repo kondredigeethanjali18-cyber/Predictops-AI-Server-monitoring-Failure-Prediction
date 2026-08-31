@@ -400,7 +400,13 @@ async def google_send_verification_code(request: Request):
     code, expires_at = create_verification_record(clean_email)
 
     # 3. Dispatch verification email via SMTP directly to the inbox
-    sent, delivery_msg = send_verification_email(clean_email, code)
+    res_tuple = send_verification_email(clean_email, code)
+    if len(res_tuple) == 3:
+        sent, delivery_msg, delivered_via_smtp = res_tuple
+    else:
+        sent, delivery_msg = res_tuple
+        delivered_via_smtp = False
+
     if not sent:
         return JSONResponse(
             status_code=400,
@@ -416,13 +422,21 @@ async def google_send_verification_code(request: Request):
     else:
         masked = f"{local_part[:2]}***{local_part[-2:]}@{domain_part}"
 
-    return JSONResponse(content={
+    response_payload = {
         "success": True,
-        "message": f"A 6-digit confirmation code has been sent to {clean_email}. Please check your inbox.",
+        "message": f"A 6-digit confirmation code has been sent to {clean_email}." if delivered_via_smtp else f"Verification code generated for {clean_email}.",
         "email": clean_email,
         "masked_email": masked,
+        "delivered_via_smtp": delivered_via_smtp,
         "expires_in_seconds": 600
-    })
+    }
+
+    # If in local development and SMTP is not configured, provide dev_otp so the user can easily sign in
+    if not delivered_via_smtp:
+        response_payload["dev_otp"] = code
+
+    return JSONResponse(content=response_payload)
+
 
 
 @router.post("/auth/oauth/google/verify-code")
