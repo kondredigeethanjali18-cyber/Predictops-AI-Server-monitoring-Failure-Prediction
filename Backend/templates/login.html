@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - PredictOps AI</title>
+    <title>PredictOps AI - Authentication</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/static/css/style.css">
     <style>
@@ -18,10 +18,11 @@
             margin: 0;
             padding: 20px;
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            box-sizing: border-box;
         }
         .login-container {
             width: 100%;
-            max-width: 420px;
+            max-width: 440px;
             position: relative;
         }
         .login-container::before {
@@ -31,97 +32,228 @@
             left: -20px;
             right: -20px;
             bottom: -20px;
-            background: radial-gradient(circle, rgba(37, 99, 235, 0.15) 0%, transparent 70%);
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.18) 0%, transparent 70%);
             z-index: -1;
-            filter: blur(10px);
+            filter: blur(14px);
         }
         .login-card {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 16px;
-            padding: 40px 35px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            background: rgba(30, 41, 59, 0.75);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 18px;
+            padding: 35px 32px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
             text-align: center;
         }
         .brand-icon {
-            width: 60px;
-            height: 60px;
-            border-radius: 12px;
-            background: linear-gradient(135deg, rgba(37, 99, 235, 0.2), rgba(37, 99, 235, 0.05));
-            border: 1px solid rgba(37, 99, 235, 0.3);
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.25), rgba(37, 99, 235, 0.08));
+            border: 1px solid rgba(37, 99, 235, 0.4);
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 20px;
-            box-shadow: 0 0 20px rgba(37, 99, 235, 0.2);
+            margin-bottom: 16px;
+            box-shadow: 0 0 25px rgba(37, 99, 235, 0.3);
         }
         .brand-icon i {
-            font-size: 26px;
+            font-size: 24px;
             color: #3b82f6;
-            text-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+            text-shadow: 0 0 12px rgba(59, 130, 246, 0.6);
         }
         .login-card h2 {
-            margin: 0 0 8px;
+            margin: 0 0 6px;
             color: white;
-            font-size: 26px;
+            font-size: 24px;
             font-weight: 700;
             letter-spacing: -0.5px;
         }
-        .login-card p {
+        .login-card .app-tagline {
             color: #94a3b8;
-            margin: 0 0 32px;
-            font-size: 14px;
-            line-height: 1.5;
+            margin: 0 0 24px;
+            font-size: 13px;
+            line-height: 1.4;
         }
-        .form-group {
+        
+        /* Auth Mode Switch Tabs */
+        .auth-tabs {
+            display: flex;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 10px;
+            padding: 4px;
             margin-bottom: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .auth-tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            color: #94a3b8;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .auth-tab-btn.active {
+            background: #2563eb;
+            color: white;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+        }
+        .auth-tab-btn:hover:not(.active) {
+            color: #e2e8f0;
+        }
+
+        .form-section {
+            display: none;
+        }
+        .form-section.active {
+            display: block;
+            animation: fadeIn 0.25s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-group {
+            margin-bottom: 20px;
             text-align: left;
         }
         .form-group label {
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 7px;
             color: #cbd5e1;
             font-weight: 600;
-            font-size: 13px;
+            font-size: 12px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
         .input-wrapper {
             position: relative;
+            display: flex;
+            align-items: center;
         }
-        .input-wrapper i {
+        .input-wrapper .input-icon-left {
             position: absolute;
             left: 14px;
             top: 50%;
             transform: translateY(-50%);
             color: #94a3b8;
-            font-size: 16px;
+            font-size: 15px;
+            pointer-events: none;
             transition: color 0.2s;
         }
         .input-wrapper input {
             width: 100%;
-            padding: 14px 14px 14px 44px;
+            padding: 13px 44px 13px 42px;
             border: 1px solid rgba(255, 255, 255, 0.12);
             border-radius: 10px;
-            font-size: 15px;
+            font-size: 14px;
             color: white;
-            background: rgba(15, 23, 42, 0.4);
+            background: rgba(15, 23, 42, 0.45);
             outline: none;
+            box-sizing: border-box;
             transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s;
         }
         .input-wrapper input:focus {
             border-color: #3b82f6;
-            background: rgba(15, 23, 42, 0.6);
+            background: rgba(15, 23, 42, 0.7);
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
         }
-        .input-wrapper input:focus + i {
+        .input-wrapper input:focus ~ .input-icon-left {
             color: #3b82f6;
         }
+
+        /* Action Buttons inside Input (Clear Cross and Eye Toggle) */
+        .input-action-btn {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            border-radius: 6px;
+            transition: color 0.15s, background 0.15s;
+        }
+        .input-action-btn:hover {
+            color: #f1f5f9;
+            background: rgba(255, 255, 255, 0.08);
+        }
+        .clear-cross-btn {
+            display: none;
+            right: 12px;
+            color: #94a3b8;
+            font-size: 14px;
+        }
+        .clear-cross-btn.visible {
+            display: inline-flex;
+        }
+        .clear-cross-btn:hover {
+            color: #f87171;
+        }
+
+        /* Password Validation Checklist */
+        .password-checklist {
+            background: rgba(15, 23, 42, 0.55);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin-top: 10px;
+            font-size: 12px;
+            text-align: left;
+        }
+        .checklist-title {
+            color: #94a3b8;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.4px;
+        }
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #64748b;
+            margin-bottom: 5px;
+            transition: color 0.2s ease;
+        }
+        .checklist-item:last-child {
+            margin-bottom: 0;
+        }
+        .checklist-item i {
+            font-size: 12px;
+            width: 14px;
+            text-align: center;
+            color: #475569;
+            transition: color 0.2s ease, transform 0.2s ease;
+        }
+        .checklist-item.valid {
+            color: #86efac;
+            font-weight: 500;
+        }
+        .checklist-item.valid i {
+            color: #22c55e;
+            transform: scale(1.1);
+        }
+
         .btn-submit {
             width: 100%;
-            padding: 14px;
+            padding: 13px;
             background: linear-gradient(135deg, #3b82f6, #1d4ed8);
             color: white;
             border: none;
@@ -130,24 +262,43 @@
             font-weight: 700;
             cursor: pointer;
             transition: transform 0.1s, filter 0.2s, box-shadow 0.2s;
-            margin-top: 8px;
-            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+            margin-top: 6px;
+            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.35);
         }
         .btn-submit:hover {
             filter: brightness(1.1);
-            box-shadow: 0 10px 20px -3px rgba(37, 99, 235, 0.4);
+            box-shadow: 0 10px 20px -3px rgba(37, 99, 235, 0.45);
         }
         .btn-submit:active {
             transform: scale(0.98);
         }
+        
+        .switch-mode-link {
+            display: inline-block;
+            margin-top: 18px;
+            color: #94a3b8;
+            font-size: 13px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .switch-mode-link span {
+            color: #60a5fa;
+            font-weight: 600;
+            text-decoration: underline;
+        }
+        .switch-mode-link:hover span {
+            color: #93c5fd;
+        }
+
         .error-message {
-            background: rgba(239, 68, 68, 0.12);
-            border: 1px solid rgba(239, 68, 68, 0.25);
+            background: rgba(239, 68, 68, 0.14);
+            border: 1px solid rgba(239, 68, 68, 0.3);
             color: #fca5a5;
-            padding: 12px 14px;
+            padding: 11px 14px;
             border-radius: 10px;
             font-size: 13px;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
             display: flex;
             align-items: center;
             gap: 10px;
@@ -156,6 +307,7 @@
         .error-message i {
             font-size: 16px;
             color: #f87171;
+            flex-shrink: 0;
         }
     </style>
 </head>
@@ -166,7 +318,17 @@
                 <i class="fas fa-server"></i>
             </div>
             <h2>PredictOps AI</h2>
-            <p>AI Powered Server Monitoring & Predictive Analytics</p>
+            <p class="app-tagline">Infrastructure Health Intelligence & Failure Prediction</p>
+
+            <!-- Mode Switch Tabs -->
+            <div class="auth-tabs">
+                <button type="button" class="auth-tab-btn {% if mode != 'signup' %}active{% endif %}" id="tabBtnLogin" onclick="switchAuthTab('login')">
+                    <i class="fas fa-right-to-bracket"></i> Sign In
+                </button>
+                <button type="button" class="auth-tab-btn {% if mode == 'signup' %}active{% endif %}" id="tabBtnSignup" onclick="switchAuthTab('signup')">
+                    <i class="fas fa-user-plus"></i> Sign Up
+                </button>
+            </div>
             
             {% if error %}
             <div class="error-message">
@@ -175,26 +337,278 @@
             </div>
             {% endif %}
             
-            <form action="/login" method="POST">
-                <div class="form-group">
-                    <label for="username">Username</label>
-                    <div class="input-wrapper">
-                        <i class="fas fa-user"></i>
-                        <input type="text" id="username" name="username" placeholder="Enter username" required>
+            <!-- SIGN IN FORM -->
+            <div id="loginSection" class="form-section {% if mode != 'signup' %}active{% endif %}">
+                <form action="/login" method="POST" id="loginForm">
+                    <div class="form-group">
+                        <label for="loginUsername">Username</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-user input-icon-left"></i>
+                            <input type="text" id="loginUsername" name="username" value="{{ username or '' }}" placeholder="Enter username" required autocomplete="username">
+                            <button type="button" class="input-action-btn clear-cross-btn" id="loginUsernameClear" title="Clear username" tabindex="-1">
+                                <i class="fas fa-xmark"></i>
+                            </button>
+                        </div>
                     </div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <div class="input-wrapper">
-                        <i class="fas fa-lock"></i>
-                        <input type="password" id="password" name="password" placeholder="Enter password" required>
+                    
+                    <div class="form-group">
+                        <label for="loginPassword">Password</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-lock input-icon-left"></i>
+                            <input type="password" id="loginPassword" name="password" placeholder="Enter password" required autocomplete="current-password">
+                            <button type="button" class="input-action-btn" id="loginPasswordToggle" title="Show or hide password" tabindex="-1">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
                     </div>
+                    
+                    <button type="submit" class="btn-submit">Sign In</button>
+                </form>
+                <div class="switch-mode-link" onclick="switchAuthTab('signup')">
+                    Don't have an account? <span>Sign Up</span>
                 </div>
-                
-                <button type="submit" class="btn-submit">Sign In</button>
-            </form>
+            </div>
+
+            <!-- SIGN UP FORM -->
+            <div id="signupSection" class="form-section {% if mode == 'signup' %}active{% endif %}">
+                <form action="/signup" method="POST" id="signupForm">
+                    <div class="form-group">
+                        <label for="signupUsername">Username</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-user input-icon-left"></i>
+                            <input type="text" id="signupUsername" name="username" value="{{ username or '' }}" placeholder="Choose username (3+ chars)" required autocomplete="username">
+                            <button type="button" class="input-action-btn clear-cross-btn" id="signupUsernameClear" title="Clear username" tabindex="-1">
+                                <i class="fas fa-xmark"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="signupPassword">Password</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-lock input-icon-left"></i>
+                            <input type="password" id="signupPassword" name="password" placeholder="Create strong password" required autocomplete="new-password">
+                            <button type="button" class="input-action-btn" id="signupPasswordToggle" title="Show or hide password" tabindex="-1">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+
+                        <!-- Live Password Validation Checklist -->
+                        <div class="password-checklist">
+                            <div class="checklist-title"><i class="fas fa-shield"></i> Password Requirements</div>
+                            <div class="checklist-item" id="chkLength">
+                                <i class="fas fa-circle-dot"></i> At least 8 characters
+                            </div>
+                            <div class="checklist-item" id="chkCaps">
+                                <i class="fas fa-circle-dot"></i> At least one uppercase letter (A-Z)
+                            </div>
+                            <div class="checklist-item" id="chkLower">
+                                <i class="fas fa-circle-dot"></i> At least one lowercase letter (a-z)
+                            </div>
+                            <div class="checklist-item" id="chkNumber">
+                                <i class="fas fa-circle-dot"></i> At least one number (0-9)
+                            </div>
+                            <div class="checklist-item" id="chkSpecial">
+                                <i class="fas fa-circle-dot"></i> At least one special character (!@#$%^&*)
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="signupConfirmPassword">Confirm Password</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-shield-halved input-icon-left"></i>
+                            <input type="password" id="signupConfirmPassword" name="confirm_password" placeholder="Confirm your password" required autocomplete="new-password">
+                            <button type="button" class="input-action-btn" id="signupConfirmPasswordToggle" title="Show or hide password" tabindex="-1">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div id="matchNotice" style="font-size: 12px; margin-top: 6px; display: none;"></div>
+                    </div>
+                    
+                    <button type="submit" class="btn-submit" id="btnCreateAccount">Create Account</button>
+                </form>
+                <div class="switch-mode-link" onclick="switchAuthTab('login')">
+                    Already have an account? <span>Sign In</span>
+                </div>
+            </div>
         </div>
     </div>
+
+    <script>
+        // Tab switching function
+        function switchAuthTab(mode) {
+            const loginSection = document.getElementById('loginSection');
+            const signupSection = document.getElementById('signupSection');
+            const tabBtnLogin = document.getElementById('tabBtnLogin');
+            const tabBtnSignup = document.getElementById('tabBtnSignup');
+
+            if (mode === 'signup') {
+                loginSection.classList.remove('active');
+                signupSection.classList.add('active');
+                tabBtnLogin.classList.remove('active');
+                tabBtnSignup.classList.add('active');
+                document.getElementById('signupUsername').focus();
+            } else {
+                signupSection.classList.remove('active');
+                loginSection.classList.add('active');
+                tabBtnSignup.classList.remove('active');
+                tabBtnLogin.classList.add('active');
+                document.getElementById('loginUsername').focus();
+            }
+        }
+
+        // Show/Hide Password Toggle helper
+        function setupPasswordToggle(inputId, toggleBtnId) {
+            const input = document.getElementById(inputId);
+            const btn = document.getElementById(toggleBtnId);
+            if (!input || !btn) return;
+
+            btn.addEventListener('click', () => {
+                const isPassword = input.type === 'password';
+                input.type = isPassword ? 'text' : 'password';
+                const icon = btn.querySelector('i');
+                if (icon) {
+                    icon.classList.toggle('fa-eye', !isPassword);
+                    icon.classList.toggle('fa-eye-slash', isPassword);
+                }
+            });
+        }
+
+        // Clear Username helper
+        function setupClearButton(inputId, clearBtnId) {
+            const input = document.getElementById(inputId);
+            const btn = document.getElementById(clearBtnId);
+            if (!input || !btn) return;
+
+            function updateVisibility() {
+                if (input.value.trim().length > 0) {
+                    btn.classList.add('visible');
+                } else {
+                    btn.classList.remove('visible');
+                }
+            }
+
+            input.addEventListener('input', updateVisibility);
+            btn.addEventListener('click', () => {
+                input.value = '';
+                updateVisibility();
+                input.focus();
+            });
+
+            // Initial check
+            updateVisibility();
+        }
+
+        // Initialize Password Toggles
+        setupPasswordToggle('loginPassword', 'loginPasswordToggle');
+        setupPasswordToggle('signupPassword', 'signupPasswordToggle');
+        setupPasswordToggle('signupConfirmPassword', 'signupConfirmPasswordToggle');
+
+        // Initialize Clear Username Buttons
+        setupClearButton('loginUsername', 'loginUsernameClear');
+        setupClearButton('signupUsername', 'signupUsernameClear');
+
+        // Real-time Password Validation
+        const signupPasswordInput = document.getElementById('signupPassword');
+        const signupConfirmPasswordInput = document.getElementById('signupConfirmPassword');
+        const matchNotice = document.getElementById('matchNotice');
+
+        const chkLength = document.getElementById('chkLength');
+        const chkCaps = document.getElementById('chkCaps');
+        const chkLower = document.getElementById('chkLower');
+        const chkNumber = document.getElementById('chkNumber');
+        const chkSpecial = document.getElementById('chkSpecial');
+
+        function updateCheckItem(element, isValid) {
+            if (!element) return;
+            const icon = element.querySelector('i');
+            if (isValid) {
+                element.classList.add('valid');
+                if (icon) {
+                    icon.className = 'fas fa-circle-check';
+                }
+            } else {
+                element.classList.remove('valid');
+                if (icon) {
+                    icon.className = 'fas fa-circle-dot';
+                }
+            }
+        }
+
+        function validateSignupPassword() {
+            if (!signupPasswordInput) return;
+            const pwd = signupPasswordInput.value;
+
+            const isLengthValid = pwd.length >= 8;
+            const isCapsValid = /[A-Z]/.test(pwd);
+            const isLowerValid = /[a-z]/.test(pwd);
+            const isNumberValid = /[0-9]/.test(pwd);
+            const isSpecialValid = /[!@#$%^&*()_+\-=\[\]{}|;':",.\/<>?`~]/.test(pwd);
+
+            updateCheckItem(chkLength, isLengthValid);
+            updateCheckItem(chkCaps, isCapsValid);
+            updateCheckItem(chkLower, isLowerValid);
+            updateCheckItem(chkNumber, isNumberValid);
+            updateCheckItem(chkSpecial, isSpecialValid);
+
+            checkPasswordMatch();
+        }
+
+        function checkPasswordMatch() {
+            if (!signupConfirmPasswordInput || !signupPasswordInput || !matchNotice) return;
+            const p1 = signupPasswordInput.value;
+            const p2 = signupConfirmPasswordInput.value;
+
+            if (p2.length === 0) {
+                matchNotice.style.display = 'none';
+                return;
+            }
+
+            matchNotice.style.display = 'block';
+            if (p1 === p2) {
+                matchNotice.style.color = '#86efac';
+                matchNotice.innerHTML = '<i class="fas fa-check"></i> Passwords match';
+            } else {
+                matchNotice.style.color = '#fca5a5';
+                matchNotice.innerHTML = '<i class="fas fa-xmark"></i> Passwords do not match';
+            }
+        }
+
+        if (signupPasswordInput) {
+            signupPasswordInput.addEventListener('input', validateSignupPassword);
+        }
+        if (signupConfirmPasswordInput) {
+            signupConfirmPasswordInput.addEventListener('input', checkPasswordMatch);
+        }
+
+        // Form submission client-side validation
+        const signupForm = document.getElementById('signupForm');
+        if (signupForm) {
+            signupForm.addEventListener('submit', (e) => {
+                const pwd = signupPasswordInput.value;
+                const confirm = signupConfirmPasswordInput.value;
+
+                if (pwd !== confirm) {
+                    e.preventDefault();
+                    alert('Passwords do not match.');
+                    signupConfirmPasswordInput.focus();
+                    return;
+                }
+
+                const isLengthValid = pwd.length >= 8;
+                const isCapsValid = /[A-Z]/.test(pwd);
+                const isLowerValid = /[a-z]/.test(pwd);
+                const isNumberValid = /[0-9]/.test(pwd);
+                const isSpecialValid = /[!@#$%^&*()_+\-=\[\]{}|;':",.\/<>?`~]/.test(pwd);
+
+                if (!isLengthValid || !isCapsValid || !isLowerValid || !isNumberValid || !isSpecialValid) {
+                    e.preventDefault();
+                    alert('Please satisfy all password strength requirements before submitting.');
+                    signupPasswordInput.focus();
+                }
+            });
+        }
+    </script>
 </body>
 </html>

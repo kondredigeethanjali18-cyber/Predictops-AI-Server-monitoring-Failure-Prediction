@@ -212,12 +212,8 @@ def analytics(request: Request, user: str = Depends(get_current_user_page)):
     )
 
 @app.get("/trends")
-def trends(request: Request, user: str = Depends(get_current_user_page)):
-    return templates.TemplateResponse(
-        request=request,
-        name="trends.html",
-        context={"user": user}
-    )
+def trends():
+    return RedirectResponse(url="/analytics", status_code=302)
 
 @app.get("/favicon.ico")
 def favicon() -> RedirectResponse:

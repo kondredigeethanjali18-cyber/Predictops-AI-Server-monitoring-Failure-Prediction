@@ -103,15 +103,21 @@ function formatNotificationTime(timestamp) {
         return timestamp;
     }
 
-    return date.toLocaleString(
-        [],
+    // Format explicitly in Indian Standard Time (Asia/Kolkata)
+    const formattedIST = date.toLocaleString(
+        "en-IN",
         {
+            timeZone: "Asia/Kolkata",
+            day: "2-digit",
             month: "short",
-            day: "numeric",
             hour: "2-digit",
-            minute: "2-digit"
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: true
         }
     );
+
+    return `${formattedIST} (IST)`;
 }
 
 const notificationBell =
