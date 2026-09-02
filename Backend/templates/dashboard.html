@@ -23,88 +23,88 @@
     </div>
 </div>
 
-<!-- 8 KPI Metrics Cards Organized in a Balanced 4x2 Grid -->
+<!-- 8 KPI Metrics Cards - Uniform, Beautiful & Cohesive -->
 <div class="cards">
 
-    <div class="card total-card">
+    <div class="card">
         <div class="card-header-row">
             <h3>Total Servers</h3>
-            <div class="card-icon" style="color: #2563eb; background: #eff6ff;"><i class="fas fa-server"></i></div>
+            <div class="card-icon"><i class="fas fa-server"></i></div>
         </div>
         <div class="metric" id="totalServers">0</div>
         <div class="card-subtext">Monitored infrastructure</div>
     </div>
 
-    <div class="card records-card">
+    <div class="card">
         <div class="card-header-row">
             <h3>Total Records</h3>
-            <div class="card-icon" style="color: #7c3aed; background: #f5f3ff;"><i class="fas fa-database"></i></div>
+            <div class="card-icon"><i class="fas fa-database"></i></div>
         </div>
         <div class="metric" id="totalRecords">0</div>
         <div class="card-subtext">Telemetry points processed</div>
     </div>
 
-    <div class="card healthy-card">
+    <div class="card">
         <div class="card-header-row">
             <h3>Healthy Servers</h3>
-            <div class="card-icon" style="color: #16a34a; background: #f0fdf4;"><i class="fas fa-circle-check"></i></div>
+            <div class="card-icon"><i class="fas fa-circle-check"></i></div>
         </div>
-        <div class="metric" id="healthyServers" style="color: #16a34a;">0</div>
+        <div class="metric" id="healthyServers">0</div>
         <div class="card-subtext">Operating within bounds</div>
     </div>
 
-    <div class="card warning-card">
+    <div class="card">
         <div class="card-header-row">
             <h3>Warning State</h3>
-            <div class="card-icon" style="color: #d97706; background: #fffbeb;"><i class="fas fa-triangle-exclamation"></i></div>
+            <div class="card-icon"><i class="fas fa-triangle-exclamation"></i></div>
         </div>
-        <div class="metric" id="warningServers" style="color: #d97706;">0</div>
+        <div class="metric" id="warningServers">0</div>
         <div class="card-subtext">Elevated resource load</div>
     </div>
 
-    <div class="card critical-card">
+    <div class="card">
         <div class="card-header-row">
             <h3>Critical State</h3>
-            <div class="card-icon" style="color: #dc2626; background: #fef2f2;"><i class="fas fa-circle-exclamation"></i></div>
+            <div class="card-icon"><i class="fas fa-circle-exclamation"></i></div>
         </div>
-        <div class="metric" id="criticalServers" style="color: #dc2626;">0</div>
+        <div class="metric" id="criticalServers">0</div>
         <div class="card-subtext">Severe threshold breaches</div>
     </div>
 
-    <div class="card avg-cpu-card">
+    <div class="card">
         <div class="card-header-row">
             <h3>Avg CPU Usage</h3>
-            <div class="card-icon" style="color: #0284c7; background: #f0f9ff;"><i class="fas fa-microchip"></i></div>
+            <div class="card-icon"><i class="fas fa-microchip"></i></div>
         </div>
-        <div class="metric" id="avgCpuUsage" style="color: #0284c7;">0%</div>
+        <div class="metric" id="avgCpuUsage">0%</div>
         <div class="card-subtext">Fleet-wide compute load</div>
     </div>
 
-    <div class="card avg-mem-card">
+    <div class="card">
         <div class="card-header-row">
             <h3>Avg Memory</h3>
-            <div class="card-icon" style="color: #c026d3; background: #fdf4ff;"><i class="fas fa-memory"></i></div>
+            <div class="card-icon"><i class="fas fa-memory"></i></div>
         </div>
-        <div class="metric" id="avgMemoryUsage" style="color: #c026d3;">0%</div>
+        <div class="metric" id="avgMemoryUsage">0%</div>
         <div class="card-subtext">Fleet-wide RAM allocation</div>
     </div>
 
-    <div class="card anomaly-rate-card">
+    <div class="card">
         <div class="card-header-row">
             <h3>Anomaly Rate</h3>
-            <div class="card-icon" style="color: #e11d48; background: #fff1f2;"><i class="fas fa-chart-pie"></i></div>
+            <div class="card-icon"><i class="fas fa-chart-pie"></i></div>
         </div>
-        <div class="metric" id="anomalyRate" style="color: #e11d48;">0%</div>
+        <div class="metric" id="anomalyRate">0%</div>
         <div class="card-subtext">Percentage of flagged anomalies</div>
     </div>
 
 </div>
 
-<!-- Content-Rich, Space-Efficient 4 Info Cards -->
+<!-- 4 Actionable Info Cards -->
 <div class="info-grid">
 
     <!-- Card 1: Top Risk Server -->
-    <div class="info-card risk-focus-card">
+    <div class="info-card">
         <div class="info-card-header">
             <h3><i class="fas fa-fire" style="color: #ef4444;"></i> Top Risk Server</h3>
             <span class="live-tag live-tag-danger">Critical Focus</span>
@@ -130,7 +130,7 @@
     </div>
 
     <!-- Card 2: Latest AI Prediction -->
-    <div class="info-card prediction-focus-card">
+    <div class="info-card">
         <div class="info-card-header">
             <h3><i class="fas fa-brain" style="color: #3b82f6;"></i> Latest AI Prediction</h3>
             <span class="live-tag live-tag-info">Inference Stream</span>
@@ -150,7 +150,7 @@
     </div>
 
     <!-- Card 3: Recent Threat & Anomaly Alerts -->
-    <div class="info-card alerts-focus-card">
+    <div class="info-card">
         <div class="info-card-header">
             <h3><i class="fas fa-triangle-exclamation" style="color: #f59e0b;"></i> Recent Alerts</h3>
             <span class="live-tag live-tag-warning">Live Threat Monitor</span>
@@ -160,24 +160,22 @@
         </div>
     </div>
 
-    <!-- Card 4: System Sync & Health Status -->
-    <div class="info-card sync-focus-card">
+    <!-- Card 4: AI Remediation & Fleet Insights (Replaced System Sync) -->
+    <div class="info-card">
         <div class="info-card-header">
-            <h3><i class="fas fa-clock" style="color: #8b5cf6;"></i> System Status & Sync</h3>
-            <span class="live-tag live-tag-success"><i class="fas fa-circle live-pulse"></i> Live Sync</span>
+            <h3><i class="fas fa-robot" style="color: #8b5cf6;"></i> AI Remediation & Insights</h3>
+            <span class="live-tag live-tag-success" id="fleetHealthTag"><i class="fas fa-circle live-pulse"></i> Operational</span>
         </div>
         <div class="info-card-body">
-            <div class="sync-status-row">
-                <span class="sync-label"><i class="fas fa-rotate"></i> Last Updated:</span>
-                <strong id="lastUpdated" class="sync-value">Loading...</strong>
+            <div style="font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 6px;" id="dashboardRecommendation">
+                Analyzing fleet telemetry patterns...
             </div>
-            <div class="sync-status-row">
-                <span class="sync-label"><i class="fas fa-network-wired"></i> Kafka Broker:</span>
-                <span class="sync-badge-online"><i class="fas fa-circle-check"></i> Connected (cpu-metrics)</span>
+            <div style="font-size: 12px; color: #475569; line-height: 1.45; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px;" id="dashboardSuggestedAction">
+                <i class="fas fa-lightbulb" style="color: #f59e0b; margin-right: 6px;"></i> Recommended: Check process resource allocation and load balance high-traffic nodes.
             </div>
-            <div class="sync-status-row">
-                <span class="sync-label"><i class="fas fa-bolt"></i> Polling Interval:</span>
-                <span class="sync-value-dim">3-second real-time loop</span>
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; color: #64748b;">
+                <span><i class="fas fa-clock" style="color: #2563eb; margin-right: 4px;"></i> Synced: <strong id="lastUpdated" style="color: #0f172a;">--</strong></span>
+                <span style="color: #16a34a; font-weight: 700;"><i class="fas fa-shield-check"></i> Real-time AI Guard</span>
             </div>
         </div>
     </div>

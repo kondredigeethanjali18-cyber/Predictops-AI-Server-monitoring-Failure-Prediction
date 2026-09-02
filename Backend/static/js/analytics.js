@@ -27,9 +27,10 @@ async function loadAnalytics() {
         const memoryServerNames = topMemoryServers.map(x => x.server_name);
         const memoryData = topMemoryServers.map(x => x.memory_usage_percent);
 
-        // 3. Historical Anomaly Counts (All predictions)
+        // 3. Historical Anomaly & Normal Counts
         let normalCount = 0;
         let anomalyCount = 0;
+
         data.forEach(item => {
             if (item.prediction === "NORMAL") {
                 normalCount++;
@@ -38,15 +39,11 @@ async function loadAnalytics() {
             }
         });
 
-        const totalRecords = data.length || 1; // avoid divide by zero
-        const normalPct = ((normalCount / totalRecords) * 100).toFixed(1);
-        const anomalyPct = ((anomalyCount / totalRecords) * 100).toFixed(1);
-
         document.getElementById("totalPredictions").innerText = data.length;
-        document.getElementById("normalPredictions").innerText = `${normalCount} (${normalPct}%)`;
-        document.getElementById("anomalyPredictions").innerText = `${anomalyCount} (${anomalyPct}%)`;
+        document.getElementById("normalPredictions").innerText = normalCount;
+        document.getElementById("anomalyPredictions").innerText = anomalyCount;
 
-        // 4. Latest Status by Server Data (Latest entry per server)
+        // 4. Latest Status by Server Data
         const latestByServer = {};
         data.forEach(item => {
             if (!latestByServer[item.server_name]) {
@@ -64,9 +61,6 @@ async function loadAnalytics() {
 
         const serverHealthyCount = uniqueServers.filter(s => s.prediction === "NORMAL").length;
         const serverAnomalyCount = uniqueServers.filter(s => s.prediction === "ANOMALY").length;
-        const totalUniqueServers = uniqueServers.length || 1;
-        const healthyServerPct = ((serverHealthyCount / totalUniqueServers) * 100).toFixed(1);
-        const anomalyServerPct = ((serverAnomalyCount / totalUniqueServers) * 100).toFixed(1);
 
         // --- DRAW CHARTS ---
 
@@ -254,26 +248,18 @@ async function loadAnalytics() {
             });
         }
 
-        // 5. Dynamic Historical Anomaly Distribution (Pie Chart with Dynamic Labels & Tooltips)
-        const dynamicPredictionLabels = [
-            `Normal: ${normalCount} (${normalPct}%)`,
-            `Anomaly: ${anomalyCount} (${anomalyPct}%)`
-        ];
-
+        // 5. Historical Anomaly Distribution (Pie Chart)
         if (predictionChart) {
-            predictionChart.data.labels = dynamicPredictionLabels;
             predictionChart.data.datasets[0].data = [normalCount, anomalyCount];
             predictionChart.update();
         } else {
             predictionChart = new Chart(document.getElementById("predictionChart"), {
                 type: "pie",
                 data: {
-                    labels: dynamicPredictionLabels,
+                    labels: ["NORMAL", "ANOMALY"],
                     datasets: [{
                         data: [normalCount, anomalyCount],
-                        backgroundColor: ["#16a34a", "#dc2626"],
-                        borderColor: ["#ffffff", "#ffffff"],
-                        borderWidth: 2
+                        backgroundColor: ["#22c55e", "#ef4444"]
                     }]
                 },
                 options: {
@@ -283,20 +269,10 @@ async function loadAnalytics() {
                         legend: {
                             position: "bottom",
                             labels: {
-                                boxWidth: 14,
+                                boxWidth: 12,
                                 font: {
-                                    size: 12,
+                                    size: 11.5,
                                     weight: "600"
-                                }
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const total = normalCount + anomalyCount;
-                                    const val = context.parsed || 0;
-                                    const pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
-                                    return ` ${context.label.split(':')[0]}: ${val} records (${pct}%)`;
                                 }
                             }
                         }
@@ -305,32 +281,26 @@ async function loadAnalytics() {
             });
         }
 
-        // 6. Dynamic Current Server Status Distribution (Doughnut Chart)
-        const dynamicStatusLabels = [
-            `Healthy: ${serverHealthyCount} (${healthyServerPct}%)`,
-            `Anomaly: ${serverAnomalyCount} (${anomalyServerPct}%)`
-        ];
-
+        // 6. Current Server Status Distribution (Doughnut Chart)
         if (statusDistributionChart) {
-            statusDistributionChart.data.labels = dynamicStatusLabels;
             statusDistributionChart.data.datasets[0].data = [serverHealthyCount, serverAnomalyCount];
             statusDistributionChart.update();
         } else {
             statusDistributionChart = new Chart(document.getElementById("statusDistributionChart"), {
                 type: "doughnut",
                 data: {
-                    labels: dynamicStatusLabels,
+                    labels: ["Healthy (NORMAL)", "Anomalous (ANOMALY)"],
                     datasets: [{
                         data: [serverHealthyCount, serverAnomalyCount],
                         backgroundColor: [
-                            "#0284c7",
-                            "#ef4444"
+                            "rgba(16, 185, 129, 0.85)",
+                            "rgba(239, 68, 68, 0.85)"
                         ],
                         borderColor: [
-                            "#ffffff",
-                            "#ffffff"
+                            "rgb(16, 185, 129)",
+                            "rgb(239, 68, 68)"
                         ],
-                        borderWidth: 2
+                        borderWidth: 1
                     }]
                 },
                 options: {
@@ -340,20 +310,10 @@ async function loadAnalytics() {
                         legend: {
                             position: "bottom",
                             labels: {
-                                boxWidth: 14,
+                                boxWidth: 12,
                                 font: {
-                                    size: 12,
+                                    size: 11.5,
                                     weight: "600"
-                                }
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const total = serverHealthyCount + serverAnomalyCount;
-                                    const val = context.parsed || 0;
-                                    const pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
-                                    return ` ${context.label.split(':')[0]}: ${val} servers (${pct}%)`;
                                 }
                             }
                         }
@@ -367,6 +327,6 @@ async function loadAnalytics() {
     }
 }
 
-// Initial load & real-time 3-second live refresh
+// Initial load & 8-second interval
 loadAnalytics();
-setInterval(loadAnalytics, 3000);
+setInterval(loadAnalytics, 8000);

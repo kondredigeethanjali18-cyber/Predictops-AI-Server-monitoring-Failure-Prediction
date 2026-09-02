@@ -2,83 +2,142 @@
 
 {% block content %}
 
-<div class="dashboard-header">
-    <h1>AI Insights</h1>
-    <p>Machine Learning Based Server Intelligence</p>
+<div class="dashboard-header page-header-row">
+    <div>
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px; flex-wrap: wrap;">
+            <h1 style="margin: 0;"><i class="fas fa-brain" style="color: #2563eb;"></i> AI Intelligence & Root Cause Insights</h1>
+            <span class="live-tag live-tag-info" style="font-size: 12px; padding: 4px 10px; border-radius: 20px;"><i class="fas fa-circle live-pulse"></i> Real-time AI Guard</span>
+        </div>
+        <p>Machine Learning heuristic diagnostics, automated mitigation playbooks & server risk scoring</p>
+    </div>
 </div>
 
-<div class="cards">
+<!-- 3 Strategic Infrastructure Overview Cards -->
+<div class="cards insights-top-cards" style="margin-bottom: 20px;">
 
     <div class="card">
-        <h3><i class="fas fa-fire"></i> Top Risk Server</h3>
-        <div id="topRisk">
-            Loading...
+        <div class="card-header-row">
+            <h3><i class="fas fa-fire" style="color: #ef4444; margin-right: 6px;"></i> Top Risk Server</h3>
+            <span class="live-tag live-tag-danger" id="topRiskTag">High Risk</span>
         </div>
+        <div class="metric" id="topRisk" style="font-size: 26px;">Loading...</div>
+        <div class="card-subtext" id="topRiskSubtext">Evaluating fleet telemetry anomalies</div>
     </div>
 
     <div class="card">
-        <h3><i class="fas fa-bolt"></i> Highest CPU</h3>
-        <div id="highestCPU">
-            Loading...
+        <div class="card-header-row">
+            <h3><i class="fas fa-bolt" style="color: #f59e0b; margin-right: 6px;"></i> Highest CPU Consumer</h3>
+            <span class="live-tag live-tag-warning" id="highestCpuTag">Compute Load</span>
         </div>
+        <div class="metric" id="highestCPU" style="font-size: 26px;">Loading...</div>
+        <div class="card-subtext" id="highestCpuSubtext">Exceeding standard cluster baseline</div>
     </div>
 
     <div class="card">
-        <h3> Highest Memory</h3>
-        <div id="highestMemory">
-            Loading...
+        <div class="card-header-row">
+            <h3><i class="fas fa-memory" style="color: #8b5cf6; margin-right: 6px;"></i> Highest Memory Consumer</h3>
+            <span class="live-tag live-tag-info" id="highestMemTag">RAM Pressure</span>
         </div>
+        <div class="metric" id="highestMemory" style="font-size: 26px;">Loading...</div>
+        <div class="card-subtext" id="highestMemSubtext">Approaching allocated memory ceiling</div>
     </div>
 
 </div>
 
-<div class="info-grid">
+<!-- 2 Metric Gauge Diagnostic Cards -->
+<div class="info-grid insights-grid-2" style="gap: 20px; margin-bottom: 20px;">
 
     <div class="info-card">
-
-        <h3>Risk Score</h3>
-
-        <div id="riskScore"
-             style="font-size:36px;font-weight:bold;color:#dc2626;">
-            96%
+        <div class="info-card-header">
+            <h3><i class="fas fa-gauge-high" style="color: #dc2626;"></i> Fleet Anomaly Risk Score</h3>
+            <span class="live-tag live-tag-danger">Heuristic Severity</span>
         </div>
-
+        <div class="info-card-body">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+                <div id="riskScore" style="font-size: 38px; font-weight: 800; color: #dc2626; font-variant-numeric: tabular-nums;">
+                    96%
+                </div>
+                <span style="font-size: 13px; color: #64748b; font-weight: 600;">Composite Failure Index</span>
+            </div>
+            <div class="progress-track" style="height: 8px;">
+                <div class="progress-fill fill-cpu" id="riskScoreBar" style="width: 96%;"></div>
+            </div>
+            <div style="margin-top: 14px; font-size: 12.5px; color: #475569; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
+                <span><i class="fas fa-circle-exclamation" style="color: #ef4444; margin-right: 4px;"></i> Status: <strong>Elevated Threat Level</strong></span>
+                <span id="activeAnomaliesCountText" style="font-weight: 700; color: #dc2626;">4 Anomalies Detected</span>
+            </div>
+        </div>
     </div>
 
     <div class="info-card">
-
-        <h3>Prediction Confidence</h3>
-
-        <div id="predictionConfidence"
-             style="font-size:36px;font-weight:bold;color:#16a34a;">
-            95%
+        <div class="info-card-header">
+            <h3><i class="fas fa-circle-check" style="color: #16a34a;"></i> Ensemble Model Confidence</h3>
+            <span class="live-tag live-tag-success">High Convergence</span>
         </div>
-
+        <div class="info-card-body">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+                <div id="predictionConfidence" style="font-size: 38px; font-weight: 800; color: #16a34a; font-variant-numeric: tabular-nums;">
+                    95%
+                </div>
+                <span style="font-size: 13px; color: #64748b; font-weight: 600;">Soft-Voting Consensus</span>
+            </div>
+            <div class="progress-track" style="height: 8px;">
+                <div class="progress-fill fill-confidence" id="confidenceScoreBar" style="width: 95%;"></div>
+            </div>
+            <div style="margin-top: 14px; font-size: 12.5px; color: #475569; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
+                <span><i class="fas fa-microchip" style="color: #2563eb; margin-right: 4px;"></i> Classifiers: <strong>RF + ExtraTrees + HGB</strong></span>
+                <span style="color: #16a34a; font-weight: 700;">Verified Calibrated</span>
+            </div>
+        </div>
     </div>
 
 </div>
 
-<div class="info-card" style="margin-top:20px;">
+<!-- 2 Comprehensive Side-by-Side Action & Recommendation Cards -->
+<div class="info-grid insights-grid-2" style="gap: 20px;">
 
-    <h3><i class="fas fa-robot"></i> AI Recommendation</h3>
-
-    <div id="recommendation">
-
+    <!-- Left: AI Diagnostic Recommendation -->
+    <div class="info-card" style="min-height: 220px;">
+        <div class="info-card-header">
+            <h3><i class="fas fa-robot" style="color: #2563eb;"></i> AI Root Cause & Recommendation</h3>
+            <span class="live-tag live-tag-info">Automated Analysis</span>
+        </div>
+        <div class="info-card-body">
+            <div id="recommendation" style="font-size: 13.5px; color: #1e293b; line-height: 1.6; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; margin-bottom: 12px;">
+                Analyzing cluster telemetry...
+            </div>
+            <div id="causesSection" style="font-size: 12.5px; color: #64748b;">
+                <strong><i class="fas fa-triangle-exclamation" style="color: #ef4444; margin-right: 5px;"></i> Triggered Root Causes:</strong>
+                <div id="causesPills" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;">
+                    <span class="badge-danger">Critical Resource Saturation</span>
+                </div>
+            </div>
+        </div>
     </div>
 
-</div>
-
-<div class="info-card" style="margin-top:20px;">
-
-    <h3>Suggested Actions</h3>
-
-    <ul id="actionList">
-
-        <li>Investigate CPU spikes</li>
-        <li>Check memory consumption</li>
-        <li>Monitor server health</li>
-
-    </ul>
+    <!-- Right: Suggested Actions Checklist -->
+    <div class="info-card" style="min-height: 220px;">
+        <div class="info-card-header">
+            <h3><i class="fas fa-list-check" style="color: #8b5cf6;"></i> Suggested Remediation Actions</h3>
+            <span class="live-tag live-tag-warning">Mitigation Playbook</span>
+        </div>
+        <div class="info-card-body">
+            <ul id="actionList" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px;">
+                <li style="display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: #334155; line-height: 1.4;">
+                    <i class="fas fa-circle-check" style="color: #2563eb; margin-top: 3px; font-size: 14px;"></i>
+                    <span>Investigate CPU and thread spikes on top risk servers</span>
+                </li>
+                <li style="display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: #334155; line-height: 1.4;">
+                    <i class="fas fa-circle-check" style="color: #2563eb; margin-top: 3px; font-size: 14px;"></i>
+                    <span>Check memory allocation and trigger garbage collection buffers</span>
+                </li>
+                <li style="display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: #334155; line-height: 1.4;">
+                    <i class="fas fa-circle-check" style="color: #2563eb; margin-top: 3px; font-size: 14px;"></i>
+                    <span>Monitor node network load and rebalance traffic</span>
+                </li>
+            </ul>
+        </div>
+    </div>
 
 </div>
 

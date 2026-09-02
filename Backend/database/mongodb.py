@@ -1,75 +1,85 @@
 import logging
-from os import getenv
-from time import sleep
-
+import os
+from dotenv import load_dotenv
 from pymongo import MongoClient, ReadPreference
+
+# Load environment variables
+load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-MONGO_URI = getenv(
-    "MONGO_URI",
-    getenv("MONGODB_URI", "mongodb://localhost:27017"),
-)
-MONGO_DB = getenv("MONGO_DB", "predictops")
-LOCAL_MONGO_URI = getenv("LOCAL_MONGO_URI", "mongodb://localhost:27017")
-MONGO_CONNECT_RETRIES = int(getenv("MONGO_CONNECT_RETRIES", "6"))
-MONGO_CONNECT_RETRY_DELAY = int(getenv("MONGO_CONNECT_RETRY_DELAY", "5"))
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
+MONGO_DB = os.getenv("MONGO_DB", "predictops")
+LOCAL_MONGO_URI = os.getenv("LOCAL_MONGO_URI", "mongodb://localhost:27017")
 
-
-def create_mongo_client(uri: str) -> MongoClient:
-    connect_kwargs = {
-        "serverSelectionTimeoutMS": 10000,
-        "connectTimeoutMS": 10000,
-        "appName": "PredictOpsAI",
-        "tls": uri.startswith("mongodb+srv://"),
-    }
-
-    return MongoClient(uri, **connect_kwargs)
+client = None
+db = None
+metrics_collection = None
+predictions_collection = None
 
 
 def connect_mongo() -> MongoClient | None:
-    for attempt in range(1, MONGO_CONNECT_RETRIES + 1):
+    global client, db, metrics_collection, predictions_collection
+
+    candidate_uris = [
+        MONGO_URI,
+        LOCAL_MONGO_URI,
+        "mongodb://localhost:27017",
+        "mongodb://127.0.0.1:27017"
+    ]
+
+    # Remove duplicates while preserving order
+    seen = set()
+    uris_to_try = []
+    for u in candidate_uris:
+        if u and u not in seen:
+            seen.add(u)
+            uris_to_try.append(u)
+
+    for uri in uris_to_try:
         try:
-            client = create_mongo_client(MONGO_URI)
-            client.admin.command("ping")
-            logger.info("MongoDB connected using MONGO_URI")
+            connect_kwargs = {
+                "serverSelectionTimeoutMS": 2000,
+                "connectTimeoutMS": 2000,
+                "appName": "PredictOpsAI",
+                "tls": uri.startswith("mongodb+srv://"),
+            }
+            c = MongoClient(uri, **connect_kwargs)
+            c.admin.command("ping")
+            logger.info(f"MongoDB connected successfully to {uri.split('@')[-1] if '@' in uri else uri}")
+            client = c
+            db = client[MONGO_DB]
+            metrics_collection = db["metrics"]
+            predictions_collection = db["predictions"]
             return client
         except Exception as exc:
-            logger.warning(
-                "MongoDB connection failed using MONGO_URI "
-                f"(attempt {attempt}/{MONGO_CONNECT_RETRIES})"
-            )
-            logger.warning(str(exc))
+            logger.warning(f"Connection to {uri.split('@')[-1] if '@' in uri else uri} failed: {exc}")
 
-            if attempt < MONGO_CONNECT_RETRIES:
-                sleep(MONGO_CONNECT_RETRY_DELAY)
-
-    if MONGO_URI.startswith("mongodb+srv://"):
-        try:
-            client = create_mongo_client(LOCAL_MONGO_URI)
-            client.admin.command("ping")
-            logger.info("MongoDB connected using LOCAL_MONGO_URI")
-            return client
-        except Exception as exc:
-            logger.error("Local MongoDB fallback failed")
-            logger.error(str(exc))
-
+    logger.error("All MongoDB connection attempts failed.")
     return None
 
 
-client = connect_mongo()
+# Initialize on import
+connect_mongo()
 
-if client is not None:
-    db = client[MONGO_DB]
-    metrics_collection = db["metrics"]
-    predictions_collection = db.get_collection(
-        "predictions",
-        read_preference=ReadPreference.SECONDARY_PREFERRED,
-    )
-    logger.info("MongoDB collections initialized")
-else:
-    db = None
-    metrics_collection = None
-    predictions_collection = None
-    logger.error("MongoDB is not available. Collections are set to None.")
+
+def get_db():
+    global db
+    if db is None:
+        connect_mongo()
+    return db
+
+
+def get_metrics_collection():
+    global metrics_collection
+    if metrics_collection is None:
+        connect_mongo()
+    return metrics_collection
+
+
+def get_predictions_collection():
+    global predictions_collection
+    if predictions_collection is None:
+        connect_mongo()
+    return predictions_collection

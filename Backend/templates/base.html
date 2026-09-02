@@ -12,6 +12,7 @@
     {% block styles %}{% endblock %}
 </head>
 <body>
+    <div class="nav-overlay" id="navOverlay"></div>
     <nav class="navbar">
         <div class="navbar-container">
             <a href="/" class="navbar-brand">PredictOps AI</a>
@@ -42,20 +43,40 @@
         document.addEventListener('DOMContentLoaded', () => {
             const toggle = document.getElementById('navbarToggle');
             const menu = document.getElementById('navMenu');
+            const overlay = document.getElementById('navOverlay');
+
+            function toggleMobileMenu(open) {
+                const isOpen = open !== undefined ? open : !menu.classList.contains('active');
+                menu.classList.toggle('active', isOpen);
+                if (overlay) overlay.classList.toggle('active', isOpen);
+                const icon = toggle ? toggle.querySelector('i') : null;
+                if (icon) {
+                    icon.classList.toggle('fa-bars', !isOpen);
+                    icon.classList.toggle('fa-xmark', isOpen);
+                }
+            }
+
             if (toggle && menu) {
-                toggle.addEventListener('click', () => {
-                    menu.classList.toggle('active');
-                    const icon = toggle.querySelector('i');
-                    if (icon) {
-                        if (menu.classList.contains('active')) {
-                            icon.classList.remove('fa-bars');
-                            icon.classList.add('fa-xmark');
-                        } else {
-                            icon.classList.remove('fa-xmark');
-                            icon.classList.add('fa-bars');
-                        }
-                    }
-                });
+                toggle.addEventListener('click', () => toggleMobileMenu());
+            }
+
+            if (overlay) {
+                overlay.addEventListener('click', () => toggleMobileMenu(false));
+            }
+
+            // Highlight Active Link
+            const currentPath = window.location.pathname;
+            document.querySelectorAll('.nav-menu a').forEach(link => {
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('active');
+                }
+            });
+        });
+
+        // Prevent viewing cached authenticated pages on back-button navigation after logout
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted || (window.performance && (performance.navigation.type === 2 || (performance.getEntriesByType && performance.getEntriesByType("navigation")[0]?.type === "back_forward")))) {
+                window.location.reload();
             }
         });
     </script>

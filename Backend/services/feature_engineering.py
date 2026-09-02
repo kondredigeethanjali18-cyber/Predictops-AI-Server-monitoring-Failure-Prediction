@@ -8,36 +8,38 @@ def build_features(metric):
     global previous_memory
 
     server_name = metric.get("server_name", "Unknown")
-    cpu = metric["cpu_usage_percent"]
-    memory = metric["memory_usage_percent"]
+    cpu = float(metric.get("cpu_usage_percent", 35.0))
+    memory = float(metric.get("memory_usage_percent", 50.0))
+    disk = float(metric.get("disk_usage_percent", 50.0))
 
     prev_cpu = previous_cpu.get(server_name, cpu)
     prev_memory = previous_memory.get(server_name, memory)
 
-    network_total = (
-        metric["network_sent_mb"]
-        + metric["network_received_mb"]
-    )
+    # Convert network throughput into bytes scale expected by ML model
+    net_sent = float(metric.get("network_sent_mb", 90.0))
+    net_recv = float(metric.get("network_received_mb", 95.0))
+    network_total = net_sent + net_recv
+    if network_total < 50000:
+        # Values are in megabytes, convert to bytes scale (~1.8e8 bytes)
+        network_total = network_total * 1024 * 1024
 
-    request_latency_ms = metric.get(
+    request_latency_ms = float(metric.get(
         "request_latency_ms",
-        50
-    )
+        120.0 if cpu < 80 else 220.0
+    ))
 
-    error_count = metric.get(
+    error_count = int(metric.get(
         "error_count",
-        0
-    )
+        0 if cpu < 85 else 4
+    ))
 
-    active_processes = metric.get(
+    active_processes = int(metric.get(
         "active_processes",
-        100
-    )
+        343
+    ))
 
-    cpu_memory_ratio = cpu / max(memory, 1)
-
+    cpu_memory_ratio = cpu / max(memory, 1.0)
     cpu_change = cpu - prev_cpu
-
     memory_change = memory - prev_memory
 
     latency_per_process = (
@@ -48,11 +50,13 @@ def build_features(metric):
     previous_cpu[server_name] = cpu
     previous_memory[server_name] = memory
 
+    memory_used_mb = float(metric.get("memory_used_mb", (memory / 100.0) * 16000.0))
+
     return {
         "cpu_usage_percent": cpu,
         "memory_usage_percent": memory,
-        "memory_used_mb": metric["memory_used_mb"],
-        "disk_usage_percent": metric["disk_usage_percent"],
+        "memory_used_mb": memory_used_mb,
+        "disk_usage_percent": disk,
         "network_total": network_total,
         "request_latency_ms": request_latency_ms,
         "error_count": error_count,

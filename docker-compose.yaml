@@ -7,10 +7,11 @@ services:
       - "27017:27017"
     healthcheck:
       test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
       retries: 5
-      start_period: 10s
+      start_period: 5s
+    restart: unless-stopped
 
   kafka:
     image: apache/kafka:latest
@@ -20,7 +21,7 @@ services:
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
@@ -28,27 +29,33 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_LOG_DIRS: /tmp/kafka-logs
     healthcheck:
-      test: ["CMD", "/opt/kafka/bin/kafka-topics.sh", "--bootstrap-server", "localhost:9092", "--list"]
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 || /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 0"]
       interval: 10s
-      timeout: 5s
+      timeout: 10s
       retries: 10
       start_period: 20s
+    restart: unless-stopped
 
   backend:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: predictops-backend
     depends_on:
       mongodb:
         condition: service_healthy
       kafka:
-        condition: service_healthy
+        condition: service_started
     ports:
       - "8000:8000"
     environment:
       MONGO_URI: mongodb://mongodb:27017
       MONGO_DB: predictops
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      PYTHONUNBUFFERED: 1
     volumes:
       - .:/app
     command: python -m uvicorn Backend.main:app --host 0.0.0.0 --port 8000
@@ -58,14 +65,17 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: predictops-consumer
     depends_on:
       mongodb:
         condition: service_healthy
       kafka:
-        condition: service_healthy
+        condition: service_started
     environment:
       MONGO_URI: mongodb://mongodb:27017
       MONGO_DB: predictops
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      PYTHONUNBUFFERED: 1
     volumes:
       - .:/app
     command: python -m Backend.services.kafka_consumer
@@ -75,9 +85,15 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: predictops-collector
     depends_on:
       kafka:
-        condition: service_healthy
+        condition: service_started
+    environment:
+      MONGO_URI: mongodb://mongodb:27017
+      MONGO_DB: predictops
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      PYTHONUNBUFFERED: 1
     volumes:
       - .:/app
     command: python collector/metrics_collector.py

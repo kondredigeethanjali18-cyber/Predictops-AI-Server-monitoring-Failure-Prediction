@@ -77,31 +77,23 @@
             <div class="panel-health">
                 <div>
                     <span class="panel-label">Fleet Health</span>
-                    <strong>96%</strong>
+                    <strong id="landingFleetHealth">--%</strong>
                 </div>
                 <div class="health-ring">
                     <span></span>
                 </div>
             </div>
 
-            <div class="panel-list">
+            <div class="panel-list" id="landingPanelList">
                 <div class="panel-row">
-                    <span><i class="fas fa-server"></i> api-prod-03</span>
-                    <strong class="risk-high">High Risk</strong>
-                </div>
-                <div class="panel-row">
-                    <span><i class="fas fa-memory"></i> db-cluster-01</span>
-                    <strong class="risk-medium">Warning</strong>
-                </div>
-                <div class="panel-row">
-                    <span><i class="fas fa-check-circle"></i> worker-07</span>
-                    <strong class="risk-low">Healthy</strong>
+                    <span><i class="fas fa-server"></i> Loading telemetry...</span>
+                    <strong class="risk-low">Syncing</strong>
                 </div>
             </div>
 
-            <div class="panel-footer">
+            <div class="panel-footer" id="landingAlertFooter">
                 <i class="fas fa-bolt"></i>
-                Predictive alert generated from CPU and memory patterns
+                Real-time predictive telemetry generated from CPU & memory patterns
             </div>
         </div>
 
@@ -125,7 +117,7 @@
 
     <div class="stat-card">
         <i class="fas fa-chart-line"></i>
-        <h2>99%</h2>
+        <h2 id="accuracyCount">99.1%</h2>
         <p>Prediction Accuracy</p>
     </div>
 

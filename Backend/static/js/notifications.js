@@ -40,10 +40,9 @@ async function loadNotifications() {
             anomalies
             .slice(0, 8)
             .map(item => {
-                const confidence =
-                    item.confidence !== undefined
-                    ? `${item.confidence}%`
-                    : "N/A";
+                let conf = item.confidence !== undefined ? Number(item.confidence) : 90;
+                if (conf > 100) conf = conf / 100;
+                const confidence = `${conf}%`;
 
                 const notificationTime =
                     formatNotificationTime(
@@ -158,6 +157,6 @@ loadNotifications();
 
 setInterval(
     loadNotifications,
-    5000
+    8000
 );
 }

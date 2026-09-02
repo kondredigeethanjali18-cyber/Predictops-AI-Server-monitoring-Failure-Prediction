@@ -74,13 +74,13 @@ except Exception as e:
     logger.error(f"Failed to mount static files: {e}")
 
 @app.middleware("http")
-async def add_static_no_cache_headers(request: Request, call_next):
+async def add_no_cache_headers(request: Request, call_next):
     try:
         response = await call_next(request)
-        if request.url.path.startswith("/static"):
-            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
-            response.headers["Pragma"] = "no-cache"
-            response.headers["Expires"] = "0"
+        # Prevent browser back-button bfcache from serving protected pages after logout
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
         return response
     except Exception as e:
         logger.error(f"Middleware error for {request.url.path}: {e}")
@@ -137,6 +137,81 @@ async def global_exception_handler(request: Request, exc: Exception):
         status_code=500,
         content={"detail": "An unexpected error occurred"}
     )
+
+async def auto_telemetry_generator():
+    """Generates continuous live telemetry for all 22 servers in the background."""
+    import asyncio
+    import random
+    from datetime import datetime, timezone
+    from data.servers import SERVERS
+    from Backend.database.mongodb import get_metrics_collection
+    from Backend.services.prediction_service import predict_metric
+
+    logger.info(f"Auto Telemetry Generator active for fleet of {len(SERVERS)} servers.")
+
+    while True:
+        try:
+            col = get_metrics_collection()
+            # Select 3-4 servers to be active anomaly incidents in this 20s cycle
+            incident_servers = {"SRV003", "SRV007", "SRV015", "SRV022"}
+
+            for server in SERVERS:
+                sname = server["server_name"]
+
+                if sname in incident_servers:
+                    # Active Anomaly Telemetry
+                    cpu_usage = round(random.uniform(91.5, 98.4), 1)
+                    memory_percent = round(random.uniform(86.0, 96.5), 1)
+                    disk_usage = round(random.uniform(84.0, 93.5), 1)
+                    latency = round(random.uniform(360.0, 680.0), 1)
+                    active_procs = random.randint(344, 356)
+                else:
+                    # Healthy Baseline Telemetry
+                    cpu_usage = round(random.uniform(22.0, 64.0), 1)
+                    memory_percent = round(random.uniform(28.0, 68.0), 1)
+                    disk_usage = round(random.uniform(25.0, 65.0), 1)
+                    latency = round(random.uniform(35.0, 85.0), 1)
+                    active_procs = random.randint(335, 345)
+
+                metrics = {
+                    "server_id": server["server_id"],
+                    "server_name": sname,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "cpu_usage_percent": cpu_usage,
+                    "memory_usage_percent": memory_percent,
+                    "memory_used_mb": round((memory_percent / 100.0) * 16000.0, 2),
+                    "disk_usage_percent": disk_usage,
+                    "network_sent_mb": round(random.uniform(70, 160), 2),
+                    "network_received_mb": round(random.uniform(70, 160), 2),
+                    "request_latency_ms": latency,
+                    "active_processes": active_procs
+                }
+
+                if col is not None:
+                    try:
+                        col.insert_one(dict(metrics))
+                        predict_metric(metrics)
+                    except Exception as ins_err:
+                        logger.error(f"Auto telemetry insertion error: {ins_err}")
+
+            await asyncio.sleep(8)
+        except Exception as loop_err:
+            logger.error(f"Auto telemetry loop error: {loop_err}")
+            await asyncio.sleep(8)
+
+
+@app.on_event("startup")
+async def on_startup():
+    import asyncio
+    from Backend.routes.auth import clear_all_sessions
+    try:
+        clear_all_sessions()
+        logger.info("Application started: All prior user sessions have been cleared. Fresh login required.")
+    except Exception as e:
+        logger.error(f"Error resetting sessions on startup: {e}")
+
+    # Launch real-time telemetry generator in background
+    asyncio.create_task(auto_telemetry_generator())
 
 @app.get("/")
 def landing(request: Request):
