@@ -41,7 +41,17 @@
             <span class="cluster-title"><i class="fas fa-heart-pulse" style="color: #10b981;"></i> Fleet Health State</span>
             <span class="cluster-link-badge">Inventory &rarr;</span>
         </div>
-        <div class="tri-state-row">
+        <div class="cluster-main-metric">
+            <div>
+                <span class="cluster-label">Health Index</span>
+                <div class="metric cluster-number" id="fleetHealthScoreCluster" style="color: #16a34a;">--%</div>
+            </div>
+            <div class="cluster-sub-metric">
+                <span class="cluster-label">Active Nodes</span>
+                <strong id="totalNodesCluster">0</strong>
+            </div>
+        </div>
+        <div class="tri-state-row" style="margin-top: 4px; margin-bottom: 6px;">
             <div class="state-col state-healthy">
                 <span class="state-dot dot-green"></span>
                 <span class="state-name">Healthy</span>

@@ -138,66 +138,77 @@ async def global_exception_handler(request: Request, exc: Exception):
         content={"detail": "An unexpected error occurred"}
     )
 
-async def auto_telemetry_generator():
-    """Generates continuous live telemetry for all 22 servers in the background."""
-    import asyncio
+def generate_telemetry_batch():
+    """Generates a complete telemetry batch for all 22 servers and records predictions."""
     import random
     from datetime import datetime, timezone
-    from data.servers import SERVERS
+    from Backend.services.server_registry import SERVERS
     from Backend.database.mongodb import get_metrics_collection
     from Backend.services.prediction_service import predict_metric
 
+    col = get_metrics_collection()
+    # Dynamic active anomaly incident servers in this cycle
+    active_incident_names = {"AUTH-server-01", "EU-gateway-01", "cache-server-01", "db-server-02"}
+
+    for server in SERVERS:
+        sname = server["server_name"]
+        is_incident = sname in active_incident_names
+
+        if is_incident:
+            # Active Anomaly Telemetry
+            cpu_usage = round(random.uniform(91.5, 98.4), 1)
+            memory_percent = round(random.uniform(86.0, 96.5), 1)
+            disk_usage = round(random.uniform(85.0, 94.0), 1)
+            latency = round(random.uniform(380.0, 680.0), 1)
+            active_procs = random.randint(344, 356)
+        else:
+            # Healthy Baseline Telemetry
+            cpu_usage = round(random.uniform(22.0, 64.0), 1)
+            memory_percent = round(random.uniform(28.0, 68.0), 1)
+            disk_usage = round(random.uniform(25.0, 65.0), 1)
+            latency = round(random.uniform(35.0, 85.0), 1)
+            active_procs = random.randint(335, 345)
+
+        now_utc = datetime.now(timezone.utc)
+        metrics = {
+            "server_id": server["server_id"],
+            "server_name": sname,
+            "timestamp": now_utc.isoformat(),
+            "cpu_usage_percent": cpu_usage,
+            "memory_usage_percent": memory_percent,
+            "memory_used_mb": round((memory_percent / 100.0) * 16000.0, 2),
+            "disk_usage_percent": disk_usage,
+            "network_sent_mb": round(random.uniform(70, 160), 2),
+            "network_received_mb": round(random.uniform(70, 160), 2),
+            "request_latency_ms": latency,
+            "active_processes": active_procs
+        }
+
+        if col is not None:
+            try:
+                col.insert_one(dict(metrics))
+            except Exception as ins_err:
+                logger.error(f"Telemetry insertion error for {sname}: {ins_err}")
+
+        try:
+            predict_metric(metrics)
+        except Exception as pred_err:
+            logger.error(f"Prediction error for {sname}: {pred_err}")
+
+
+async def auto_telemetry_generator():
+    """Continuously generates live telemetry for all 22 servers in the background."""
+    import asyncio
+    from Backend.services.server_registry import SERVERS
     logger.info(f"Auto Telemetry Generator active for fleet of {len(SERVERS)} servers.")
 
     while True:
         try:
-            col = get_metrics_collection()
-            # Select 3-4 servers to be active anomaly incidents in this 20s cycle
-            incident_servers = {"SRV003", "SRV007", "SRV015", "SRV022"}
-
-            for server in SERVERS:
-                sname = server["server_name"]
-
-                if sname in incident_servers:
-                    # Active Anomaly Telemetry
-                    cpu_usage = round(random.uniform(91.5, 98.4), 1)
-                    memory_percent = round(random.uniform(86.0, 96.5), 1)
-                    disk_usage = round(random.uniform(84.0, 93.5), 1)
-                    latency = round(random.uniform(360.0, 680.0), 1)
-                    active_procs = random.randint(344, 356)
-                else:
-                    # Healthy Baseline Telemetry
-                    cpu_usage = round(random.uniform(22.0, 64.0), 1)
-                    memory_percent = round(random.uniform(28.0, 68.0), 1)
-                    disk_usage = round(random.uniform(25.0, 65.0), 1)
-                    latency = round(random.uniform(35.0, 85.0), 1)
-                    active_procs = random.randint(335, 345)
-
-                metrics = {
-                    "server_id": server["server_id"],
-                    "server_name": sname,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                    "cpu_usage_percent": cpu_usage,
-                    "memory_usage_percent": memory_percent,
-                    "memory_used_mb": round((memory_percent / 100.0) * 16000.0, 2),
-                    "disk_usage_percent": disk_usage,
-                    "network_sent_mb": round(random.uniform(70, 160), 2),
-                    "network_received_mb": round(random.uniform(70, 160), 2),
-                    "request_latency_ms": latency,
-                    "active_processes": active_procs
-                }
-
-                if col is not None:
-                    try:
-                        col.insert_one(dict(metrics))
-                        predict_metric(metrics)
-                    except Exception as ins_err:
-                        logger.error(f"Auto telemetry insertion error: {ins_err}")
-
-            await asyncio.sleep(8)
+            generate_telemetry_batch()
+            await asyncio.sleep(6)
         except Exception as loop_err:
             logger.error(f"Auto telemetry loop error: {loop_err}")
-            await asyncio.sleep(8)
+            await asyncio.sleep(6)
 
 
 @app.on_event("startup")
@@ -209,6 +220,13 @@ async def on_startup():
         logger.info("Application started: All prior user sessions have been purged. Fresh login required.")
     except Exception as e:
         logger.error(f"Error purging sessions on startup: {e}")
+
+    # Seed initial live telemetry batch immediately so dashboard has fresh data on load
+    try:
+        generate_telemetry_batch()
+        logger.info("Initial live telemetry batch generated successfully.")
+    except Exception as seed_err:
+        logger.error(f"Error seeding initial telemetry batch: {seed_err}")
 
     # Launch real-time telemetry generator in background
     asyncio.create_task(auto_telemetry_generator())
