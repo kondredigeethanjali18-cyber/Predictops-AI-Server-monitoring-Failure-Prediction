@@ -3,11 +3,14 @@ let filteredPredictions = [];
 let currentPage = 1;
 const recordsPerPage = 10;
 
+const APP_TIME_SHIFT_MS = (5 * 60 + 29) * 60 * 1000;
+
 function formatPredictionTime(timestamp) {
     if (!timestamp) return "Time unavailable";
     const date = new Date(timestamp);
     if (Number.isNaN(date.getTime())) return timestamp;
-    return date.toLocaleString("en-IN", {
+    const shiftedDate = new Date(date.getTime() + APP_TIME_SHIFT_MS);
+    return shiftedDate.toLocaleString("en-IN", {
         timeZone: "Asia/Kolkata",
         day: "2-digit",
         month: "short",
@@ -50,12 +53,13 @@ function renderTable() {
     const paginated = filteredPredictions.slice(startIndex, startIndex + recordsPerPage);
 
     if (paginated.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #94a3b8; padding: 24px;">No predictions recorded yet.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #94a3b8; padding: 24px;">No predictions recorded yet.</td></tr>`;
         renderNumberedPagination("predictionPagination", 1, 1, () => {});
         return;
     }
 
-    tableBody.innerHTML = paginated.map(item => {
+    tableBody.innerHTML = paginated.map((item, index) => {
+        const sNo = startIndex + index + 1;
         let conf = item.confidence !== undefined ? Number(item.confidence) : 90;
         if (conf > 100) conf = conf / 100;
         conf = Math.round(conf * 10) / 10;
@@ -72,6 +76,7 @@ function renderTable() {
 
         return `
             <tr>
+                <td style="text-align: center; color: #64748b; font-weight: 700; font-size: 12.5px;">${sNo}</td>
                 <td><strong style="color: #0f172a;"><i class="fas fa-server" style="color: #64748b; margin-right: 6px;"></i>${item.server_name}</strong></td>
                 <td>${badge}</td>
                 <td><strong>${conf}%</strong></td>
@@ -169,11 +174,22 @@ function renderNumberedPagination(containerId, currPage, totalPages, onPageClick
     });
 }
 
-document.getElementById("predictionFilter").addEventListener("change", () => {
-    applyPredictionFilter();
-    currentPage = 1;
-    renderTable();
-});
+function initPredictions() {
+    const filterEl = document.getElementById("predictionFilter");
+    if (filterEl) {
+        filterEl.addEventListener("change", () => {
+            applyPredictionFilter();
+            currentPage = 1;
+            renderTable();
+        });
+    }
 
-loadPredictions();
-setInterval(loadPredictions, 8000);
+    loadPredictions();
+    setInterval(loadPredictions, 8000);
+}
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initPredictions);
+} else {
+    initPredictions();
+}

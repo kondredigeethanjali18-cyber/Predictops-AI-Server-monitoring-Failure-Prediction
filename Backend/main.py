@@ -203,12 +203,12 @@ async def auto_telemetry_generator():
 @app.on_event("startup")
 async def on_startup():
     import asyncio
-    from Backend.routes.auth import clear_all_sessions
+    from Backend.services.session_service import purge_all_sessions
     try:
-        clear_all_sessions()
-        logger.info("Application started: All prior user sessions have been cleared. Fresh login required.")
+        purge_all_sessions()
+        logger.info("Application started: All prior user sessions have been purged. Fresh login required.")
     except Exception as e:
-        logger.error(f"Error resetting sessions on startup: {e}")
+        logger.error(f"Error purging sessions on startup: {e}")
 
     # Launch real-time telemetry generator in background
     asyncio.create_task(auto_telemetry_generator())

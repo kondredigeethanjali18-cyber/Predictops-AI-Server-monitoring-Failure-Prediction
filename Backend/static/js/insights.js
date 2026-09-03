@@ -91,6 +91,13 @@ async function loadInsights() {
     }
 }
 
-// Initial load & 8-second interval
-loadInsights();
-setInterval(loadInsights, 8000);
+function initInsights() {
+    loadInsights();
+    setInterval(loadInsights, 8000);
+}
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initInsights);
+} else {
+    initInsights();
+}

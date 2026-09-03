@@ -211,9 +211,9 @@ def predict_metric(metric):
         causes.append(f"High Request Latency ({latency}ms)")
 
     if abs(cpu_change) >= 15:
-        causes.append(f"Rapid CPU Spike (Δ{round(cpu_change, 1)}%)")
+        causes.append(f"Rapid CPU Spike (+{round(cpu_change, 1)}%)")
     if abs(mem_change) >= 15:
-        causes.append(f"Sudden Memory Surge (Δ{round(mem_change, 1)}%)")
+        causes.append(f"Sudden Memory Surge (+{round(mem_change, 1)}%)")
 
     if not causes:
         if prediction == 1:

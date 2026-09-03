@@ -1,3 +1,5 @@
+// PredictOps AI - Live Monitoring Alerts
+
 let allAlerts = [];
 let filteredAlerts = [];
 let currentPage = 1;
@@ -5,11 +7,15 @@ const recordsPerPage = 10;
 let currentSeverityFilter = "ALL";
 let searchQuery = "";
 
+const APP_TIME_SHIFT_MS = (5 * 60 + 29) * 60 * 1000;
+
 function formatAlertTime(timestamp) {
     if (!timestamp) return "Time unavailable";
     const date = new Date(timestamp);
     if (Number.isNaN(date.getTime())) return timestamp;
-    return date.toLocaleString("en-IN", {
+
+    const shiftedDate = new Date(date.getTime() + APP_TIME_SHIFT_MS);
+    return shiftedDate.toLocaleString("en-IN", {
         timeZone: "Asia/Kolkata",
         day: "2-digit",
         month: "short",
@@ -23,10 +29,12 @@ function formatAlertTime(timestamp) {
 async function loadAlerts() {
     try {
         const response = await fetch("/all-server-predictions");
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
         const predictions = await response.json();
 
-        // Filter only anomalies
-        allAlerts = predictions.filter(item => item.prediction === "ANOMALY");
+        // Filter only anomaly detections
+        allAlerts = (predictions || []).filter(item => item.prediction === "ANOMALY");
 
         // Calculate KPI Counts
         let totalCritical = 0;
@@ -41,29 +49,40 @@ async function loadAlerts() {
             else totalMedium++;
         });
 
-        document.getElementById("totalActiveAlertsCount").innerText = allAlerts.length;
-        document.getElementById("criticalAlertsCount").innerText = totalCritical;
-        document.getElementById("highAlertsCount").innerText = totalHigh;
-        document.getElementById("mediumAlertsCount").innerText = totalMedium;
+        const totalActiveEl = document.getElementById("totalActiveAlertsCount");
+        const criticalEl = document.getElementById("criticalAlertsCount");
+        const highEl = document.getElementById("highAlertsCount");
+        const mediumEl = document.getElementById("mediumAlertsCount");
 
-        // Notification summary
+        if (totalActiveEl) totalActiveEl.innerText = allAlerts.length;
+        if (criticalEl) criticalEl.innerText = totalCritical;
+        if (highEl) highEl.innerText = totalHigh;
+        if (mediumEl) mediumEl.innerText = totalMedium;
+
+        // Notification bar summary
         const notifBar = document.getElementById("alertsNotification");
-        if (allAlerts.length > 0) {
-            notifBar.className = "notification-bar notification-warning";
-            notifBar.innerHTML = `<i class="fas fa-triangle-exclamation"></i> <span><strong>${allAlerts.length} Active Incidents:</strong> ${totalCritical} Critical, ${totalHigh} High, ${totalMedium} Moderate risk servers detected.</span>`;
-        } else {
-            notifBar.className = "notification-bar notification-success";
-            notifBar.innerHTML = `<i class="fas fa-circle-check"></i> <span>All 22 monitored servers are running within healthy baselines. Zero critical alerts.</span>`;
+        if (notifBar) {
+            if (allAlerts.length > 0) {
+                notifBar.className = "notification-bar notification-warning";
+                notifBar.innerHTML = `<i class="fas fa-triangle-exclamation"></i> <span><strong>${allAlerts.length} Active Incidents Detected:</strong> ${totalCritical} Critical (90%+), ${totalHigh} High, ${totalMedium} Moderate risk servers.</span>`;
+            } else {
+                notifBar.className = "notification-bar notification-success";
+                notifBar.innerHTML = `<i class="fas fa-circle-check"></i> <span>All 22 monitored servers are running within healthy baselines. Zero critical alerts.</span>`;
+            }
         }
 
-        const now = new Date();
-        document.getElementById("alertsSyncTime").innerText = now.toLocaleTimeString("en-IN", {
-            timeZone: "Asia/Kolkata",
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-            hour12: true
-        }) + " (IST)";
+        const syncEl = document.getElementById("alertsSyncTime");
+        if (syncEl) {
+            const now = new Date();
+            const shiftedNow = new Date(now.getTime() + APP_TIME_SHIFT_MS);
+            syncEl.innerText = shiftedNow.toLocaleTimeString("en-IN", {
+                timeZone: "Asia/Kolkata",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: true
+            }) + " (IST)";
+        }
 
         applyFilters();
         renderAlertsTable();
@@ -83,7 +102,7 @@ function applyFilters() {
         else if (conf >= 70) severity = "High";
 
         const matchesSeverity = currentSeverityFilter === "ALL" || severity === currentSeverityFilter;
-        const matchesSearch = !searchQuery || item.server_name.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesSearch = !searchQuery || (item.server_name && item.server_name.toLowerCase().includes(searchQuery.toLowerCase()));
 
         return matchesSeverity && matchesSearch;
     });
@@ -91,6 +110,8 @@ function applyFilters() {
 
 function renderAlertsTable() {
     const tableBody = document.getElementById("alertsTableBody");
+    if (!tableBody) return;
+
     const totalPages = Math.max(1, Math.ceil(filteredAlerts.length / recordsPerPage));
 
     if (currentPage > totalPages) {
@@ -101,18 +122,14 @@ function renderAlertsTable() {
     const paginated = filteredAlerts.slice(startIndex, startIndex + recordsPerPage);
 
     if (paginated.length === 0) {
-        tableBody.innerHTML = `
-            <tr>
-                <td colspan="7" style="text-align: center; color: #16a34a; padding: 24px;">
-                    <i class="fas fa-circle-check" style="margin-right: 6px;"></i> No active anomaly alerts matching current filter.
-                </td>
-            </tr>
-        `;
+        tableBody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #94a3b8; padding: 24px;">No active anomaly alerts matching filter.</td></tr>`;
         renderNumberedPagination("alertsPagination", 1, 1, () => {});
         return;
     }
 
-    tableBody.innerHTML = paginated.map(item => {
+    tableBody.innerHTML = paginated.map((item, index) => {
+        const sNo = startIndex + index + 1;
+        const globalIndex = startIndex + index;
         let conf = item.confidence !== undefined ? Number(item.confidence) : 90;
         if (conf > 100) conf = conf / 100;
         conf = Math.round(conf * 10) / 10;
@@ -137,6 +154,7 @@ function renderAlertsTable() {
 
         return `
             <tr>
+                <td style="text-align: center; color: #64748b; font-weight: 700; font-size: 12.5px;">${sNo}</td>
                 <td><strong style="color: #0f172a;"><i class="fas fa-server" style="color: #64748b; margin-right: 6px;"></i>${item.server_name}</strong></td>
                 <td><span class="badge-danger"><i class="fas fa-triangle-exclamation"></i><span>${item.prediction}</span></span></td>
                 <td><strong>${conf}%</strong></td>
@@ -144,6 +162,11 @@ function renderAlertsTable() {
                 <td><span style="color: #b91c1c; font-weight: 600;">${causes}</span></td>
                 <td style="text-align: left; font-size: 12px; color: #475569; max-width: 300px;">${remark}</td>
                 <td style="font-size: 12px; color: #64748b; white-space: nowrap;"><i class="fas fa-calendar-day" style="color: #2563eb; margin-right: 5px;"></i>${formattedTime}</td>
+                <td style="text-align: center;">
+                    <button type="button" class="view-detail-btn" onclick="openAlertDetail(${globalIndex})">
+                        <i class="fas fa-eye"></i> Details
+                    </button>
+                </td>
             </tr>
         `;
     }).join("");
@@ -221,60 +244,179 @@ function renderNumberedPagination(containerId, currPage, totalPages, onPageClick
     });
 }
 
-// Search input listener
-document.getElementById("searchAlertBox").addEventListener("input", e => {
-    searchQuery = e.target.value;
-    currentPage = 1;
-    applyFilters();
-    renderAlertsTable();
-});
-
-// Severity filter buttons listener
-document.querySelectorAll("#severityFilters .filter-pill").forEach(pill => {
-    pill.addEventListener("click", () => {
-        document.querySelectorAll("#severityFilters .filter-pill").forEach(p => p.classList.remove("active"));
-        pill.classList.add("active");
-        currentSeverityFilter = pill.getAttribute("data-severity");
-        currentPage = 1;
-        applyFilters();
-        renderAlertsTable();
-    });
-});
-
-// Export CSV for alerts
-const exportBtn = document.getElementById("exportAlertsBtn");
-if (exportBtn) {
-    exportBtn.addEventListener("click", () => {
-        if (allAlerts.length === 0) {
-            alert("No active alerts to export.");
-            return;
-        }
-
-        const headers = ["Server Name", "Prediction", "Confidence", "Severity", "Causes", "Remark", "Timestamp (IST)"];
-        const rows = allAlerts.map(a => {
-            let sev = "Medium";
-            let conf = Number(a.confidence) || 0;
-            if (conf > 100) conf = conf / 100;
-            conf = Math.round(conf * 10) / 10;
-            if (conf >= 90) sev = "Critical";
-            else if (conf >= 70) sev = "High";
-            const time = formatAlertTime(a.timestamp);
-            const causes = (a.possible_causes || []).join("; ");
-            const remark = `"${(a.remark || '').replace(/"/g, '""')}"`;
-            return [a.server_name, a.prediction, `${conf}%`, sev, `"${causes}"`, remark, `"${time}"`].join(",");
+function initAlerts() {
+    const searchBox = document.getElementById("searchAlertBox");
+    if (searchBox) {
+        searchBox.addEventListener("input", e => {
+            searchQuery = e.target.value;
+            currentPage = 1;
+            applyFilters();
+            renderAlertsTable();
         });
+    }
 
-        const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows].join("\n");
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `live_monitoring_alerts_${Date.now()}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+    document.querySelectorAll("#severityFilters .filter-pill").forEach(pill => {
+        pill.addEventListener("click", () => {
+            document.querySelectorAll("#severityFilters .filter-pill").forEach(p => p.classList.remove("active"));
+            pill.classList.add("active");
+            currentSeverityFilter = pill.getAttribute("data-severity");
+            currentPage = 1;
+            applyFilters();
+            renderAlertsTable();
+        });
     });
+
+    const exportBtn = document.getElementById("exportAlertsBtn");
+    if (exportBtn) {
+        exportBtn.addEventListener("click", () => {
+            if (allAlerts.length === 0) {
+                alert("No active alerts to export.");
+                return;
+            }
+
+            const headers = ["#", "Server Name", "Prediction", "Confidence", "Severity", "Causes", "Remark", "Timestamp (IST)"];
+            const rows = allAlerts.map((a, index) => {
+                let sev = "Medium";
+                let conf = Number(a.confidence) || 0;
+                if (conf > 100) conf = conf / 100;
+                conf = Math.round(conf * 10) / 10;
+                if (conf >= 90) sev = "Critical";
+                else if (conf >= 70) sev = "High";
+                const time = formatAlertTime(a.timestamp);
+                const causes = (a.possible_causes || []).join("; ");
+                const remark = `"${(a.remark || '').replace(/"/g, '""')}"`;
+                return [index + 1, a.server_name, a.prediction, `${conf}%`, sev, `"${causes}"`, remark, `"${time}"`].join(",");
+            });
+
+            const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows].join("\n");
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `live_monitoring_alerts_${Date.now()}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+    }
+
+    loadAlerts();
+    setInterval(loadAlerts, 8000);
 }
 
-// Initial load & 8-second live streaming polling loop
-loadAlerts();
-setInterval(loadAlerts, 8000);
+function openAlertDetail(itemIndex) {
+    const item = filteredAlerts[itemIndex] || allAlerts[itemIndex];
+    if (!item) return;
+
+    let conf = item.confidence !== undefined ? Number(item.confidence) : 90;
+    if (conf > 100) conf = conf / 100;
+    conf = Math.round(conf * 10) / 10;
+
+    let severity = "Moderate Risk";
+    let severityClass = "severity-medium";
+    let iconClass = "fa-triangle-exclamation";
+    let iconColor = "#d97706";
+    let iconBg = "#fef3c7";
+
+    if (conf >= 90) {
+        severity = "Critical Risk";
+        severityClass = "severity-critical";
+        iconClass = "fa-triangle-exclamation";
+        iconColor = "#dc2626";
+        iconBg = "#fee2e2";
+    } else if (conf >= 70) {
+        severity = "High Risk";
+        severityClass = "severity-high";
+        iconClass = "fa-circle-exclamation";
+        iconColor = "#ea580c";
+        iconBg = "#ffedd5";
+    }
+
+    const modal = document.getElementById("alertDetailModal");
+    if (!modal) return;
+
+    // Server Name & Detected Time
+    document.getElementById("modalServerName").innerText = item.server_name || "Unknown Server";
+    document.getElementById("modalDetectedTime").innerHTML = `<i class="fas fa-clock" style="color: #2563eb; margin-right: 4px;"></i> Detected: <strong>${formatAlertTime(item.timestamp)}</strong>`;
+
+    // Icon
+    const iconContainer = document.getElementById("modalSeverityIcon");
+    if (iconContainer) {
+        iconContainer.style.background = iconBg;
+        iconContainer.style.color = iconColor;
+        iconContainer.innerHTML = `<i class="fas ${iconClass}"></i>`;
+    }
+
+    // Badges
+    const predBadge = document.getElementById("modalPredictionBadge");
+    if (predBadge) {
+        predBadge.className = item.prediction === "ANOMALY" ? "badge-danger" : "badge-success";
+        predBadge.innerHTML = `<i class="fas ${item.prediction === 'ANOMALY' ? 'fa-triangle-exclamation' : 'fa-circle-check'}"></i> ${item.prediction}`;
+    }
+
+    const sevBadge = document.getElementById("modalSeverityBadge");
+    if (sevBadge) {
+        sevBadge.className = severityClass;
+        sevBadge.innerText = severity;
+    }
+
+    const confBadge = document.getElementById("modalConfidenceBadge");
+    if (confBadge) {
+        confBadge.innerText = `${conf}% Confidence`;
+    }
+
+    // Telemetry metrics snapshot
+    document.getElementById("modalCpu").innerText = item.cpu_usage_percent !== undefined ? `${item.cpu_usage_percent}%` : "--";
+    document.getElementById("modalMem").innerText = item.memory_usage_percent !== undefined ? `${item.memory_usage_percent}%` : "--";
+    document.getElementById("modalDisk").innerText = item.disk_usage_percent !== undefined ? `${item.disk_usage_percent}%` : "--";
+    
+    let tp = "0.00 MB/s";
+    if (item.network_throughput !== undefined && item.network_throughput !== null) {
+        let num = Number(item.network_throughput);
+        if (num > 100000) num = num / (1024 * 1024);
+        tp = `${num.toFixed(2)} MB/s`;
+    }
+    document.getElementById("modalThroughput").innerText = tp;
+
+    // Causes List
+    const causesList = document.getElementById("modalCausesList");
+    if (causesList) {
+        const causes = (item.possible_causes && item.possible_causes.length > 0)
+            ? item.possible_causes
+            : ["Behavioral Telemetry Deviation (Resource Load Spike)"];
+        causesList.innerHTML = causes.map(c => `<li>${c}</li>`).join("");
+    }
+
+    // AI Remark
+    const fallbackRemark = `${severity}: resource deviation (${conf}% confidence). Urgent review recommended.`;
+    const remark = item.remark || fallbackRemark;
+    document.getElementById("modalRemark").innerHTML = `<strong>Status Assessment:</strong> ${remark}<br><br><strong>Action Item:</strong> Isolate worker threads on ${item.server_name}, investigate high-CPU/Memory PID allocations, and balance incoming requests.`;
+
+    modal.style.display = "flex";
+}
+
+function closeAlertModal() {
+    const modal = document.getElementById("alertDetailModal");
+    if (modal) {
+        modal.style.display = "none";
+    }
+}
+
+// Close modal on click outside or Escape key
+document.addEventListener("click", e => {
+    const modal = document.getElementById("alertDetailModal");
+    if (modal && e.target === modal) {
+        closeAlertModal();
+    }
+});
+
+document.addEventListener("keydown", e => {
+    if (e.key === "Escape") {
+        closeAlertModal();
+    }
+});
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initAlerts);
+} else {
+    initAlerts();
+}

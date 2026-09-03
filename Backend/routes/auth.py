@@ -20,7 +20,9 @@ from Backend.services.oauth_service import (
     get_github_auth_url,
     handle_google_callback,
     handle_github_callback,
-    get_sandbox_user
+    get_sandbox_user,
+    GOOGLE_CLIENT_ID,
+    GITHUB_CLIENT_ID
 )
 
 logger = logging.getLogger(__name__)
@@ -144,7 +146,7 @@ def get_session(token: str) -> Optional[str]:
 
 
 def set_session(token: str, username: str, remember_me: bool = False, provider: str = "local"):
-    """Legacy helper that creates a session with custom duration."""
+    """Creates a session with custom duration."""
     return create_session(username, remember_me=remember_me, provider=provider)
 
 
@@ -187,7 +189,7 @@ def get_current_user_api(request: Request) -> str:
 # =========================================================================
 
 @router.get("/login", response_class=HTMLResponse)
-def login_get(request: Request):
+def login_get(request: Request, success: Optional[str] = None, error: Optional[str] = None):
     token = request.cookies.get("session_token")
     username = validate_session(token) if token else None
     if username:
@@ -195,7 +197,11 @@ def login_get(request: Request):
     return templates.TemplateResponse(
         request=request,
         name="login.html",
-        context={"mode": "login"}
+        context={
+            "mode": "login",
+            "success": success,
+            "error": error
+        }
     )
 
 
@@ -297,21 +303,19 @@ def signup_post(
             context={"error": p_err, "mode": "signup", "username": u}
         )
 
-    # Create the user
+    # Create the user in database
     create_user(u, password=password, auth_type="local")
 
-    # Automatically create session for new user
-    token, max_age = create_session(u, remember_me=False, provider="local")
-    redirect = RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
-    redirect.set_cookie(
-        key="session_token",
-        value=token,
-        max_age=max_age,
-        httponly=True,
-        samesite="lax",
-        path="/"
+    # Redirect to Login Page with Success message as requested
+    return templates.TemplateResponse(
+        request=request,
+        name="login.html",
+        context={
+            "success": f"Account created successfully for '{u}'! Please sign in with your credentials.",
+            "mode": "login",
+            "username": u
+        }
     )
-    return redirect
 
 
 @router.get("/logout")
@@ -330,6 +334,60 @@ def logout(request: Request, response: Response):
 # =========================================================================
 # OAuth 2.0 Authentication Routes
 # =========================================================================
+
+@router.post("/auth/oauth/prompt-submit")
+def oauth_prompt_submit(
+    request: Request,
+    provider: str = Form(...),
+    account_input: str = Form(...)
+):
+    """
+    Handles user's submitted Google or GitHub account identity when clicking OAuth buttons.
+    """
+    p = provider.lower().strip()
+    raw_acc = account_input.strip()
+
+    if not raw_acc:
+        return templates.TemplateResponse(
+            request=request,
+            name="login.html",
+            context={"error": f"Please enter your {p.capitalize()} account.", "mode": "login"}
+        )
+
+    # Extract clean username from email or handle
+    if p == "google":
+        email = raw_acc if "@" in raw_acc else f"{raw_acc}@gmail.com"
+        username = email.split("@")[0].replace(".", "_").lower()
+        auth_type = "google"
+        display_name = f"Google User ({email})"
+    elif p == "github":
+        username = raw_acc.split("@")[0].replace(" ", "_").lower()
+        email = raw_acc if "@" in raw_acc else f"{username}@github.local"
+        auth_type = "github"
+        display_name = f"GitHub User (@{username})"
+    else:
+        username = raw_acc.replace(" ", "_").lower()
+        email = f"{username}@predictops.local"
+        auth_type = "oauth_demo"
+        display_name = username
+
+    # Provision user in database
+    create_user(username, auth_type=auth_type, email=email)
+
+    # Establish active session (7-day remember-me)
+    token, max_age = create_session(username, remember_me=True, provider=auth_type)
+    redirect = RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
+    redirect.set_cookie(
+        key="session_token",
+        value=token,
+        max_age=max_age,
+        httponly=True,
+        samesite="lax",
+        path="/"
+    )
+    logger.info(f"OAuth Account login successful for {username} via {auth_type} ({email})")
+    return redirect
+
 
 @router.get("/auth/oauth/sandbox")
 def oauth_sandbox(provider: str = "demo"):
@@ -420,14 +478,20 @@ async def oauth_github_callback(request: Request, code: Optional[str] = None, er
 
 @router.get("/auth/oauth/{provider}")
 def oauth_authorize(provider: str):
-    """Initiates OAuth 2.0 authorization code flow for requested provider."""
+    """Initiates OAuth 2.0 authorization code flow or account prompt for requested provider."""
     provider_clean = provider.lower().strip()
     if provider_clean == "google":
-        url = get_google_auth_url()
-        return RedirectResponse(url=url, status_code=status.HTTP_302_FOUND)
+        if GOOGLE_CLIENT_ID:
+            url = get_google_auth_url()
+            return RedirectResponse(url=url, status_code=status.HTTP_302_FOUND)
+        else:
+            return RedirectResponse(url="/login?oauth_prompt=google", status_code=status.HTTP_302_FOUND)
     elif provider_clean == "github":
-        url = get_github_auth_url()
-        return RedirectResponse(url=url, status_code=status.HTTP_302_FOUND)
+        if GITHUB_CLIENT_ID:
+            url = get_github_auth_url()
+            return RedirectResponse(url=url, status_code=status.HTTP_302_FOUND)
+        else:
+            return RedirectResponse(url="/login?oauth_prompt=github", status_code=status.HTTP_302_FOUND)
     elif provider_clean in ["demo", "sandbox"]:
         return RedirectResponse(url="/auth/oauth/sandbox?provider=demo", status_code=status.HTTP_302_FOUND)
     else:

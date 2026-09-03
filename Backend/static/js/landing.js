@@ -46,7 +46,9 @@ async function loadStats() {
         // 4. Update Footer note
         const footerEl = document.getElementById("landingAlertFooter");
         if (footerEl) {
-            const now = new Date().toLocaleTimeString("en-IN", {
+            const shiftMs = (5 * 60 + 29) * 60 * 1000;
+            const shiftedNow = new Date(Date.now() + shiftMs);
+            const now = shiftedNow.toLocaleTimeString("en-IN", {
                 timeZone: "Asia/Kolkata",
                 hour: "2-digit",
                 minute: "2-digit",
