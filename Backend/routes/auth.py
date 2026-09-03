@@ -428,10 +428,6 @@ async def google_send_verification_code(request: Request):
         "expires_in_seconds": 600
     }
 
-    # If in local development and SMTP is not configured, provide dev_otp so the user can easily sign in
-    if not delivered_via_smtp:
-        response_payload["dev_otp"] = code
-
     return JSONResponse(content=response_payload)
 
 
