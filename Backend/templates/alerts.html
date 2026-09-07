@@ -25,9 +25,9 @@
     </div>
 </div>
 
-<!-- 4 Live Summary KPI Cards -->
-<div class="cards alerts-kpi-cards" style="margin-bottom: 18px;">
-    <div class="card total-card">
+<!-- 4 Live Summary KPI Cards (Interactive Filters) -->
+<div class="cards alerts-kpi-cards" id="alertsKpiCards" style="margin-bottom: 18px;">
+    <div class="card total-card alert-filter-card active" data-severity-card="ALL" title="Click to show All Alerts">
         <div class="card-header-row">
             <h3>Active Alerts</h3>
             <div class="card-icon" style="color: #ef4444; background: transparent;"><i class="fas fa-bell"></i></div>
@@ -36,7 +36,7 @@
         <div class="card-subtext">Total flagged anomalies</div>
     </div>
 
-    <div class="card critical-card">
+    <div class="card critical-card alert-filter-card" data-severity-card="Critical" title="Click to filter Critical Alerts">
         <div class="card-header-row">
             <h3>Critical (90%+)</h3>
             <div class="card-icon" style="color: #dc2626; background: transparent;"><i class="fas fa-triangle-exclamation"></i></div>
@@ -45,7 +45,7 @@
         <div class="card-subtext">Immediate action required</div>
     </div>
 
-    <div class="card warning-card">
+    <div class="card warning-card alert-filter-card" data-severity-card="High" title="Click to filter High Risk Alerts">
         <div class="card-header-row">
             <h3>High (70-89%)</h3>
             <div class="card-icon" style="color: #d97706; background: transparent;"><i class="fas fa-circle-exclamation"></i></div>
@@ -54,7 +54,7 @@
         <div class="card-subtext">Elevated failure risk</div>
     </div>
 
-    <div class="card healthy-card">
+    <div class="card healthy-card alert-filter-card" data-severity-card="Medium" title="Click to filter Moderate Alerts">
         <div class="card-header-row">
             <h3>Moderate (<70%)</h3>
             <div class="card-icon" style="color: #2563eb; background: transparent;"><i class="fas fa-shield"></i></div>
@@ -217,6 +217,21 @@
         0% { opacity: 1; transform: scale(1); }
         50% { opacity: 0.3; transform: scale(0.85); }
         100% { opacity: 1; transform: scale(1); }
+    }
+    .alert-filter-card {
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        position: relative;
+    }
+    .alert-filter-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px -3px rgba(15, 23, 42, 0.12);
+        border-color: #94a3b8 !important;
+    }
+    .alert-filter-card.active {
+        border-color: #2563eb !important;
+        box-shadow: 0 0 0 2px #2563eb, 0 8px 16px rgba(37, 99, 235, 0.12);
+        background: #fbfdff !important;
     }
     .filter-pill {
         padding: 6px 14px;

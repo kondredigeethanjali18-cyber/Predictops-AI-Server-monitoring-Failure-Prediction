@@ -1,5 +1,3 @@
-const APP_TIME_SHIFT_MS = (5 * 60 + 29) * 60 * 1000;
-
 let cpuLabels = [];
 let cpuValues = [];
 
@@ -13,8 +11,8 @@ async function loadMetrics() {
     const response = await fetch("/latest-metrics");
     const data = await response.json();
 
-    const shiftedNow = new Date(Date.now() + APP_TIME_SHIFT_MS);
-    const currentTime = shiftedNow.toLocaleTimeString("en-IN", {
+    const now = new Date();
+    const currentTime = now.toLocaleTimeString("en-IN", {
         timeZone: "Asia/Kolkata",
         hour: "2-digit",
         minute: "2-digit",

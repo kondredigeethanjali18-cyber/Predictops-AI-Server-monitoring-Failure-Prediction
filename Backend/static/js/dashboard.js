@@ -1,13 +1,14 @@
 // PredictOps AI - Real-Time Dashboard Controller
 
-const APP_TIME_SHIFT_MS = (5 * 60 + 29) * 60 * 1000;
-
 function formatAlertTime(timestamp) {
     if (!timestamp) return "Time unavailable";
-    const date = new Date(timestamp);
+    let ts = String(timestamp).trim();
+    if (ts.includes("T") && !ts.endsWith("Z") && !ts.includes("+") && !ts.includes("-", 10)) {
+        ts += "Z";
+    }
+    const date = new Date(ts);
     if (Number.isNaN(date.getTime())) return timestamp;
-    const shiftedDate = new Date(date.getTime() + APP_TIME_SHIFT_MS);
-    return shiftedDate.toLocaleString("en-IN", {
+    return date.toLocaleString("en-IN", {
         timeZone: "Asia/Kolkata",
         day: "2-digit",
         month: "short",
@@ -68,18 +69,44 @@ async function loadDashboard() {
         if (criticalEl) criticalEl.innerText = critical;
 
         const serverCount = (serversData && serversData.length) ? serversData.length : 1;
+        const avgCpuVal = (totalCpu / serverCount);
+        const avgMemVal = (totalMemory / serverCount);
+
         const avgCpuEl = document.getElementById("avgCpuUsage");
-        if (avgCpuEl) avgCpuEl.innerText = (totalCpu / serverCount).toFixed(1) + "%";
+        if (avgCpuEl) avgCpuEl.innerText = avgCpuVal.toFixed(1) + "%";
 
         const avgMemEl = document.getElementById("avgMemoryUsage");
-        if (avgMemEl) avgMemEl.innerText = (totalMemory / serverCount).toFixed(1) + "%";
+        if (avgMemEl) avgMemEl.innerText = avgMemVal.toFixed(1) + "%";
 
-        // 3. Anomaly Rate
+        const barAvgCpu = document.getElementById("barAvgCpu");
+        if (barAvgCpu) barAvgCpu.style.width = Math.min(avgCpuVal, 100) + "%";
+
+        const barAvgMem = document.getElementById("barAvgMem");
+        if (barAvgMem) barAvgMem.style.width = Math.min(avgMemVal, 100) + "%";
+
+        // Update Tri-state distribution progress bar
+        const totalNodes = Math.max(1, healthy + warning + critical);
+        const barHealthy = document.getElementById("barHealthy");
+        if (barHealthy) barHealthy.style.width = ((healthy / totalNodes) * 100) + "%";
+
+        const barWarning = document.getElementById("barWarning");
+        if (barWarning) barWarning.style.width = ((warning / totalNodes) * 100) + "%";
+
+        const barCritical = document.getElementById("barCritical");
+        if (barCritical) barCritical.style.width = ((critical / totalNodes) * 100) + "%";
+
+        // 3. Anomaly Rate & Active Anomalies
         const anomalies = (data || []).filter(x => x.prediction === "ANOMALY");
         const anomalyCount = anomalies.length;
         const anomalyRate = (data && data.length > 0) ? ((anomalyCount / data.length) * 100).toFixed(1) : 0;
         const anomalyRateEl = document.getElementById("anomalyRate");
         if (anomalyRateEl) anomalyRateEl.innerText = anomalyRate + "%";
+
+        const totalAnomaliesEl = document.getElementById("totalAnomaliesCount");
+        if (totalAnomaliesEl) {
+            totalAnomaliesEl.innerText = `${anomalyCount} Active`;
+            totalAnomaliesEl.style.color = anomalyCount > 0 ? "#dc2626" : "#16a34a";
+        }
 
         // 4. Top Risk Server
         if (serversData && serversData.length > 0) {
@@ -124,23 +151,60 @@ async function loadDashboard() {
                     }
                 }
 
-                // AI Remediation & Insights Card
+                // Card 4: Predictive Reliability & Action Center
                 const recEl = document.getElementById("dashboardRecommendation");
-                const actionEl = document.getElementById("dashboardSuggestedAction");
                 const fleetTagEl = document.getElementById("fleetHealthTag");
+                const healthScoreEl = document.getElementById("fleetHealthScore");
+                const aiGuardEl = document.getElementById("aiGuardStatus");
+
+                // Calculate Fleet Health Score (Index out of 100)
+                let healthIndex = 99.8;
+                if (critical > 0) {
+                    healthIndex = Math.max(68.5, Math.min(92.0, (100 - (critical * 9.5 + warning * 3.5))));
+                } else if (warning > 0) {
+                    healthIndex = Math.max(91.0, (100 - (warning * 2.8)));
+                }
+                if (healthScoreEl) healthScoreEl.innerText = `${healthIndex.toFixed(1)}%`;
 
                 if (critical > 0) {
-                    if (fleetTagEl) fleetTagEl.innerHTML = `<i class="fas fa-triangle-exclamation" style="color: #dc2626;"></i> ${critical} High Stress Nodes`;
-                    if (recEl) recEl.innerText = `${highestRiskServer.server_name} is operating at critical capacity (${highestRiskServer.cpu_usage_percent}% CPU, ${highestRiskServer.memory_usage_percent}% MEM).`;
-                    if (actionEl) actionEl.innerHTML = `<i class="fas fa-wrench" style="color: #2563eb; margin-right: 6px;"></i> <strong>Recommended Action:</strong> Rebalance traffic from ${highestRiskServer.server_name} and check top process memory leaks.`;
+                    if (fleetTagEl) {
+                        fleetTagEl.className = "live-tag live-tag-danger";
+                        fleetTagEl.innerHTML = `<i class="fas fa-triangle-exclamation"></i> ${critical} Node${critical > 1 ? 's' : ''} At Risk`;
+                    }
+                    if (aiGuardEl) {
+                        aiGuardEl.className = "stat-value";
+                        aiGuardEl.style.color = "#dc2626";
+                        aiGuardEl.innerHTML = `<i class="fas fa-triangle-exclamation"></i> Mitigation Standby`;
+                    }
+                    if (recEl) {
+                        recEl.innerHTML = `<strong>CRITICAL LOAD on ${highestRiskServer.server_name}</strong> (${highestRiskServer.cpu_usage_percent}% CPU, ${highestRiskServer.memory_usage_percent}% RAM). Automated traffic rebalance and memory reclamation advised.`;
+                    }
                 } else if (warning > 0) {
-                    if (fleetTagEl) fleetTagEl.innerHTML = `<i class="fas fa-circle-exclamation" style="color: #d97706;"></i> Moderate Load`;
-                    if (recEl) recEl.innerText = `Fleet load is moderately elevated. ${highestRiskServer.server_name} is currently the highest consumer.`;
-                    if (actionEl) actionEl.innerHTML = `<i class="fas fa-shield" style="color: #2563eb; margin-right: 6px;"></i> <strong>Recommended Action:</strong> Monitor compute headroom. Automated mitigation on standby.`;
+                    if (fleetTagEl) {
+                        fleetTagEl.className = "live-tag live-tag-warning";
+                        fleetTagEl.innerHTML = `<i class="fas fa-circle-exclamation"></i> Elevated Load`;
+                    }
+                    if (aiGuardEl) {
+                        aiGuardEl.className = "stat-value";
+                        aiGuardEl.style.color = "#d97706";
+                        aiGuardEl.innerHTML = `<i class="fas fa-shield"></i> Monitoring Headroom`;
+                    }
+                    if (recEl) {
+                        recEl.innerHTML = `<strong>Moderate workload spike detected:</strong> ${highestRiskServer.server_name} is consuming peak fleet resources. Infrastructure headroom is within safe buffer margins.`;
+                    }
                 } else {
-                    if (fleetTagEl) fleetTagEl.innerHTML = `<i class="fas fa-circle live-pulse" style="color: #22c55e;"></i> All Stable`;
-                    if (recEl) recEl.innerText = `All ${serversData.length} monitored servers are operating comfortably within baseline.`;
-                    if (actionEl) actionEl.innerHTML = `<i class="fas fa-circle-check" style="color: #16a34a; margin-right: 6px;"></i> <strong>Status:</strong> Zero immediate interventions required. ML guard active.`;
+                    if (fleetTagEl) {
+                        fleetTagEl.className = "live-tag live-tag-success";
+                        fleetTagEl.innerHTML = `<i class="fas fa-circle live-pulse"></i> SLA: 99.9% Optimal`;
+                    }
+                    if (aiGuardEl) {
+                        aiGuardEl.className = "stat-value text-success";
+                        aiGuardEl.style.color = "#16a34a";
+                        aiGuardEl.innerHTML = `<i class="fas fa-shield-check"></i> Automated Guard Active`;
+                    }
+                    if (recEl) {
+                        recEl.innerHTML = `All ${serversData.length} monitored infrastructure nodes operating comfortably within nominal performance baselines. Zero imminent failover risks detected.`;
+                    }
                 }
             }
         }
@@ -214,10 +278,9 @@ async function loadDashboard() {
 
         // 7. Last Updated Timestamp
         const now = new Date();
-        const shiftedNow = new Date(now.getTime() + APP_TIME_SHIFT_MS);
         const lastUpdatedEl = document.getElementById("lastUpdated");
         if (lastUpdatedEl) {
-            lastUpdatedEl.innerText = shiftedNow.toLocaleTimeString("en-IN", {
+            lastUpdatedEl.innerText = now.toLocaleTimeString("en-IN", {
                 timeZone: "Asia/Kolkata",
                 hour: "2-digit",
                 minute: "2-digit",

@@ -1,14 +1,15 @@
 // PredictOps AI - Global Notification Bell & Real-Time Incident Alerts
 
-const APP_TIME_SHIFT_MS = (5 * 60 + 29) * 60 * 1000;
-
 function formatNotificationTime(timestamp) {
     if (!timestamp) return "Time unavailable";
-    const date = new Date(timestamp);
+    let ts = String(timestamp).trim();
+    if (ts.includes("T") && !ts.endsWith("Z") && !ts.includes("+") && !ts.includes("-", 10)) {
+        ts += "Z";
+    }
+    const date = new Date(ts);
     if (Number.isNaN(date.getTime())) return timestamp;
 
-    const shiftedDate = new Date(date.getTime() + APP_TIME_SHIFT_MS);
-    return shiftedDate.toLocaleString("en-IN", {
+    return date.toLocaleString("en-IN", {
         timeZone: "Asia/Kolkata",
         day: "2-digit",
         month: "short",
