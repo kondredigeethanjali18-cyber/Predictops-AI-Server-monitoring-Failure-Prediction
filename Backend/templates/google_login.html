@@ -454,57 +454,7 @@
             flex-shrink: 0;
         }
 
-        /* Dev OTP Notice Card */
-        .dev-otp-card {
-            background: #fff8e1;
-            border: 1px solid #ffe082;
-            color: #795548;
-            padding: 12px 14px;
-            border-radius: 12px;
-            font-size: 13px;
-            margin-bottom: 16px;
-            display: none;
-            line-height: 1.45;
-        }
-        .dev-otp-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 6px;
-            font-weight: 700;
-            color: #e65100;
-        }
-        .dev-otp-code {
-            font-family: monospace;
-            font-size: 16px;
-            font-weight: 800;
-            background: #ffffff;
-            border: 1px solid #ffb300;
-            padding: 3px 10px;
-            border-radius: 6px;
-            color: #bf360c;
-            letter-spacing: 3px;
-            display: inline-block;
-        }
-        .btn-dev-fill {
-            background: #ff9800;
-            color: #ffffff;
-            border: none;
-            font-size: 11.5px;
-            font-weight: 700;
-            padding: 4px 10px;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background 0.15s;
-        }
-        .btn-dev-fill:hover {
-            background: #f57c00;
-        }
-        .dev-otp-hint {
-            font-size: 11.5px;
-            color: #8d6e63;
-            margin-top: 4px;
-        }
+
 
         /* Footer */
         .google-card-footer {
@@ -639,15 +589,7 @@
                 <span id="inboxLiveText">A 6-digit confirmation code was sent directly to your Google email inbox. Please check your inbox (and spam folder) to sign in.</span>
             </div>
 
-            <!-- Dev OTP Notice (when SMTP is not yet configured) -->
-            <div class="dev-otp-card" id="devOtpNotice">
-                <div class="dev-otp-header">
-                    <span><i class="fas fa-key"></i> Verification Code:</span>
-                    <button type="button" class="btn-dev-fill" id="btnDevFill" onclick="fillDevCode()">Auto-Fill</button>
-                </div>
-                <div>Code: <span class="dev-otp-code" id="devOtpCode">------</span></div>
-                <div class="dev-otp-hint">To deliver emails directly to your Gmail inbox, set <code>SMTP_USER</code> and <code>SMTP_PASSWORD</code> in your <code>.env</code>.</div>
-            </div>
+
 
             <div id="verifyError" class="error-alert">
                 <i class="fas fa-circle-exclamation"></i>
@@ -688,7 +630,6 @@
 
 <script>
     let activeEmail = '';
-    let currentDevOtp = '';
     let countdownInterval = null;
     let countdownSeconds = 600;
 
@@ -918,24 +859,11 @@
             if (res.ok && data.success) {
                 document.getElementById('targetEmailLabel').innerText = email;
 
-                // Handle live SMTP delivery vs local development mode
+                // Live email inbox verification notice
                 const liveNotice = document.getElementById('inboxLiveNotice');
                 const liveText = document.getElementById('inboxLiveText');
-                const devNotice = document.getElementById('devOtpNotice');
-                const devCodeSpan = document.getElementById('devOtpCode');
-
-                if (data.delivered_via_smtp) {
-                    if (liveNotice) liveNotice.style.display = 'flex';
-                    if (liveText) liveText.innerText = `A 6-digit confirmation code was sent directly to your Google email inbox at ${email}. Please check your inbox (and spam folder) to sign in.`;
-                    if (devNotice) devNotice.style.display = 'none';
-                } else {
-                    currentDevOtp = data.dev_otp || '';
-                    if (liveNotice) liveNotice.style.display = 'none';
-                    if (devNotice) {
-                        devNotice.style.display = 'block';
-                        if (devCodeSpan) devCodeSpan.innerText = currentDevOtp || '------';
-                    }
-                }
+                if (liveNotice) liveNotice.style.display = 'flex';
+                if (liveText) liveText.innerText = `A 6-digit confirmation code was sent directly to your Google email inbox at ${email}. Please check your inbox (and spam folder) to sign in.`;
 
                 // Transition to OTP verification step
                 document.getElementById('stepAccountChooser').style.display = 'none';
@@ -973,20 +901,6 @@
                 btnEl.innerHTML = '<span>Next</span> <i class="fas fa-arrow-right"></i>';
             }
         }
-    }
-
-    function fillDevCode(codeToFill) {
-        const code = codeToFill || currentDevOtp;
-        if (!code || code.length !== 6) return;
-
-        for (let i = 0; i < 6; i++) {
-            const b = document.getElementById(`code_${i}`);
-            if (b) {
-                b.value = code[i] || '';
-                b.classList.add('filled');
-            }
-        }
-        setTimeout(handleVerifySubmit, 200);
     }
 
     function backToAccountChooser() {
@@ -1071,16 +985,8 @@
                 clearOtpBoxes();
                 startCountdown(600);
 
-                if (data.delivered_via_smtp) {
-                    const liveNotice = document.getElementById('inboxLiveNotice');
-                    const devNotice = document.getElementById('devOtpNotice');
-                    if (liveNotice) liveNotice.style.display = 'flex';
-                    if (devNotice) devNotice.style.display = 'none';
-                } else {
-                    currentDevOtp = data.dev_otp || '';
-                    const devCodeSpan = document.getElementById('devOtpCode');
-                    if (devCodeSpan) devCodeSpan.innerText = currentDevOtp;
-                }
+                const liveNotice = document.getElementById('inboxLiveNotice');
+                if (liveNotice) liveNotice.style.display = 'flex';
 
                 let cd = 30;
                 const cdInterval = setInterval(() => {
