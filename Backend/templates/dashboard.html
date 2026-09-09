@@ -125,64 +125,81 @@
 <div class="info-grid">
 
     <!-- Card 1: Top Risk Server -->
-    <div class="info-card">
+    <div class="info-card top-risk-card" id="topRiskServerInfoCard">
         <div class="info-card-header">
             <h3><i class="fas fa-fire" style="color: #ef4444;"></i> Top Risk Server</h3>
-            <span class="live-tag live-tag-danger">Critical Focus</span>
+            <span class="live-tag live-tag-danger" id="topRiskHeaderTag">Critical Focus</span>
         </div>
-        <div class="info-card-body" id="topRiskServerCard">
+        <div class="info-card-body top-risk-body" id="topRiskServerCard">
             <div class="server-title-row">
-                <span class="server-name-badge" id="topRiskServer">Loading...</span>
-                <span class="risk-pill" id="topRiskPill">High Risk</span>
+                <span class="server-name-badge" id="topRiskServer"><i class="fas fa-server"></i> Loading...</span>
+                <span class="risk-pill" id="topRiskPill">Evaluating</span>
             </div>
-            <div class="mini-metrics-row">
+            <div class="mini-metrics-row-tri">
                 <div class="mini-metric-item">
-                    <span class="mini-label">CPU Usage</span>
+                    <span class="mini-label">CPU</span>
                     <strong id="topRiskCpu">--%</strong>
                     <div class="progress-track"><div class="progress-fill fill-cpu" id="topRiskCpuBar" style="width: 0%;"></div></div>
                 </div>
                 <div class="mini-metric-item">
-                    <span class="mini-label">Memory Usage</span>
+                    <span class="mini-label">Memory</span>
                     <strong id="topRiskMem">--%</strong>
                     <div class="progress-track"><div class="progress-fill fill-mem" id="topRiskMemBar" style="width: 0%;"></div></div>
                 </div>
+                <div class="mini-metric-item">
+                    <span class="mini-label">Disk</span>
+                    <strong id="topRiskDisk">--%</strong>
+                    <div class="progress-track"><div class="progress-fill fill-disk" id="topRiskDiskBar" style="width: 0%;"></div></div>
+                </div>
+            </div>
+            <div class="top-risk-footer-note" id="topRiskFooterNote">
+                <i class="fas fa-shield-halved"></i> <span>Automated diagnostic evaluation active.</span>
             </div>
         </div>
     </div>
 
     <!-- Card 2: Latest AI Prediction -->
-    <div class="info-card">
+    <div class="info-card latest-prediction-card" id="latestPredictionInfoCard">
         <div class="info-card-header">
             <h3><i class="fas fa-brain" style="color: #3b82f6;"></i> Latest AI Prediction</h3>
             <span class="live-tag live-tag-info">Inference Stream</span>
         </div>
-        <div class="info-card-body" id="latestPredictionCard">
-            <div id="latestPrediction">Loading...</div>
+        <div class="info-card-body latest-prediction-body" id="latestPredictionCard">
+            <div id="latestPrediction">
+                <div class="server-title-row">
+                    <strong style="font-size: 14px; color: #0f172a;"><i class="fas fa-server" style="color: #64748b; margin-right: 6px;"></i>Loading...</strong>
+                    <span class="badge-neutral">Stream Active</span>
+                </div>
+            </div>
             <div class="prediction-details" id="predictionDetails">
                 <div class="confidence-meter-box">
                     <div class="confidence-header">
-                        <span>Confidence Score</span>
+                        <span>AI Confidence Score</span>
                         <strong id="confidenceScoreVal">--%</strong>
                     </div>
                     <div class="progress-track"><div class="progress-fill fill-confidence" id="confidenceBar" style="width: 0%;"></div></div>
                 </div>
             </div>
+            <div class="ai-model-meta-row" id="aiModelMetaRow">
+                <span><i class="fas fa-microchip" style="color: #3b82f6;"></i> 3-Model Ensemble (RF + ET + HGB)</span>
+                <span id="aiInferenceLatency"><i class="fas fa-bolt" style="color: #f59e0b;"></i> &lt;10ms</span>
+            </div>
         </div>
     </div>
 
     <!-- Card 3: Recent Threat & Anomaly Alerts -->
-    <div class="info-card">
+    <div class="info-card recent-alerts-card" id="recentAlertsInfoCard">
         <div class="info-card-header">
             <h3><i class="fas fa-triangle-exclamation" style="color: #f59e0b;"></i> Recent Alerts</h3>
             <span class="live-tag live-tag-warning">Live Threat Monitor</span>
         </div>
-        <div class="info-card-body" id="recentAlerts">
+        <div class="info-card-body recent-alerts-body" id="recentAlerts">
             <div class="loading-placeholder">Loading alerts...</div>
         </div>
     </div>
 
     <!-- Card 4: Predictive Reliability & Action Center -->
-    <div class="info-card">
+    <div class="info-card action-center-card" id="actionCenterInfoCard">
         <div class="info-card-header">
             <h3><i class="fas fa-shield-halved" style="color: #6366f1;"></i> Predictive Reliability & Action Center</h3>
             <span class="live-tag live-tag-success" id="fleetHealthTag"><i class="fas fa-circle live-pulse"></i> SLA: 99.9% Optimal</span>

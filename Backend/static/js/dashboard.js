@@ -164,7 +164,7 @@ async function loadDashboard() {
                 const isTopAnomaly = sPred && sPred.prediction === "ANOMALY";
 
                 const topServerEl = document.getElementById("topRiskServer");
-                if (topServerEl) topServerEl.innerHTML = `<i class="fas fa-server" style="color: #64748b; font-size: 15px;"></i> ${highestRiskServer.server_name}`;
+                if (topServerEl) topServerEl.innerHTML = `<i class="fas fa-server" style="color: #64748b; font-size: 14px;"></i> ${highestRiskServer.server_name}`;
 
                 const topCpuEl = document.getElementById("topRiskCpu");
                 if (topCpuEl) topCpuEl.innerText = `${highestRiskServer.cpu_usage_percent}%`;
@@ -172,28 +172,65 @@ async function loadDashboard() {
                 const topMemEl = document.getElementById("topRiskMem");
                 if (topMemEl) topMemEl.innerText = `${highestRiskServer.memory_usage_percent}%`;
 
+                const topDiskEl = document.getElementById("topRiskDisk");
+                const diskVal = highestRiskServer.disk_usage_percent !== undefined ? highestRiskServer.disk_usage_percent : (sPred && sPred.disk_usage_percent !== undefined ? sPred.disk_usage_percent : 45);
+                if (topDiskEl) topDiskEl.innerText = `${diskVal}%`;
+
                 const topCpuBar = document.getElementById("topRiskCpuBar");
                 if (topCpuBar) topCpuBar.style.width = Math.min(Number(highestRiskServer.cpu_usage_percent) || 0, 100) + "%";
 
                 const topMemBar = document.getElementById("topRiskMemBar");
                 if (topMemBar) topMemBar.style.width = Math.min(Number(highestRiskServer.memory_usage_percent) || 0, 100) + "%";
 
+                const topDiskBar = document.getElementById("topRiskDiskBar");
+                if (topDiskBar) topDiskBar.style.width = Math.min(Number(diskVal) || 0, 100) + "%";
+
                 const riskPill = document.getElementById("topRiskPill");
-                if (riskPill) {
-                    const cpu = Number(highestRiskServer.cpu_usage_percent) || 0;
-                    const mem = Number(highestRiskServer.memory_usage_percent) || 0;
-                    if (isTopAnomaly || cpu > 85 || mem > 85) {
+                const topRiskFooterNote = document.getElementById("topRiskFooterNote");
+                const topRiskHeaderTag = document.getElementById("topRiskHeaderTag");
+
+                const cpuNum = Number(highestRiskServer.cpu_usage_percent) || 0;
+                const memNum = Number(highestRiskServer.memory_usage_percent) || 0;
+                const diskNum = Number(diskVal) || 0;
+
+                if (isTopAnomaly || cpuNum > 85 || memNum > 85 || diskNum > 85) {
+                    if (riskPill) {
                         riskPill.innerText = "Critical Risk";
                         riskPill.style.background = "#fee2e2";
                         riskPill.style.color = "#dc2626";
-                    } else if (cpu > 70 || mem > 75) {
+                    }
+                    if (topRiskHeaderTag) {
+                        topRiskHeaderTag.className = "live-tag live-tag-danger";
+                        topRiskHeaderTag.innerText = "Critical Focus";
+                    }
+                    if (topRiskFooterNote) {
+                        topRiskFooterNote.innerHTML = `<i class="fas fa-triangle-exclamation" style="color: #dc2626;"></i> <span style="color: #b91c1c;">Surge detected on ${highestRiskServer.server_name} — automated guard evaluating</span>`;
+                    }
+                } else if (cpuNum > 70 || memNum > 75 || diskNum > 75) {
+                    if (riskPill) {
                         riskPill.innerText = "Elevated";
                         riskPill.style.background = "#fef3c7";
                         riskPill.style.color = "#d97706";
-                    } else {
+                    }
+                    if (topRiskHeaderTag) {
+                        topRiskHeaderTag.className = "live-tag live-tag-warning";
+                        topRiskHeaderTag.innerText = "Elevated Load";
+                    }
+                    if (topRiskFooterNote) {
+                        topRiskFooterNote.innerHTML = `<i class="fas fa-circle-exclamation" style="color: #d97706;"></i> <span style="color: #92400e;">Moderate consumption buffer on ${highestRiskServer.server_name}</span>`;
+                    }
+                } else {
+                    if (riskPill) {
                         riskPill.innerText = "Optimal";
                         riskPill.style.background = "#dcfce7";
                         riskPill.style.color = "#16a34a";
+                    }
+                    if (topRiskHeaderTag) {
+                        topRiskHeaderTag.className = "live-tag live-tag-success";
+                        topRiskHeaderTag.innerText = "Nominal";
+                    }
+                    if (topRiskFooterNote) {
+                        topRiskFooterNote.innerHTML = `<i class="fas fa-circle-check" style="color: #16a34a;"></i> <span style="color: #15803d;">All node resources within safe headroom</span>`;
                     }
                 }
 
@@ -262,8 +299,8 @@ async function loadDashboard() {
             const latestPredEl = document.getElementById("latestPrediction");
             if (latestPredEl) {
                 latestPredEl.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <strong style="font-size: 15px; color: #0f172a;"><i class="fas fa-server" style="color: #64748b; margin-right: 6px;"></i>${latest.server_name}</strong>
+                    <div class="server-title-row">
+                        <strong style="font-size: 14px; color: #0f172a;"><i class="fas fa-server" style="color: #64748b; margin-right: 6px;"></i>${latest.server_name}</strong>
                         ${badge}
                     </div>
                 `;
