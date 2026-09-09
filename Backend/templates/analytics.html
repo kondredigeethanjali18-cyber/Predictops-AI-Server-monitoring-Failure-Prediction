@@ -2,13 +2,17 @@
 
 {% block content %}
 
-<div class="dashboard-header page-header-row">
+<div class="dashboard-header page-header-row" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;">
     <div>
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px; flex-wrap: wrap;">
             <h1 style="margin: 0;"><i class="fas fa-chart-bar" style="color: #2563eb;"></i> Telemetry & Infrastructure Analytics</h1>
             <span class="live-tag live-tag-info" style="font-size: 12px; padding: 4px 10px; border-radius: 20px;"><i class="fas fa-circle live-pulse"></i> Live Analytics</span>
         </div>
         <p>Real-time resource utilization, throughput distribution & historical anomaly spectrum across all 22 servers</p>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px; background: white; padding: 8px 14px; border-radius: 10px; border: 1px solid #e2e8f0; font-size: 12px; color: #64748b; font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,0.04);">
+        <span><i class="fas fa-clock" style="color: #2563eb; margin-right: 4px;"></i> Synced: <strong id="analyticsSyncTime" style="color: #0f172a;">--</strong></span>
+        <span class="countdown-badge" id="analyticsCountdownBadge" style="background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;"><i class="fas fa-rotate" style="font-size: 10px;"></i> <span id="analyticsRemainingSecs">8s</span></span>
     </div>
 </div>
 

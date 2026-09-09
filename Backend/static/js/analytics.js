@@ -1,37 +1,37 @@
-let cpuChart;
-let memoryChart;
-let utilizationChart;
-let throughputChart;
-let predictionChart;
-let statusDistributionChart;
+// PredictOps AI - Telemetry & Infrastructure Analytics Controller
+// Dynamically renders Chart.js visualizations including dynamic Pie & Doughnut charts
+
+let cpuChart = null;
+let memoryChart = null;
+let utilizationChart = null;
+let throughputChart = null;
+let predictionChart = null;
+let statusDistributionChart = null;
+
+const ANALYTICS_REFRESH_INTERVAL = 8;
+let remainingSeconds = ANALYTICS_REFRESH_INTERVAL;
+let countdownTimer = null;
+let lastSyncDate = new Date();
+let isFetchingAnalytics = false;
 
 async function loadAnalytics() {
+    if (isFetchingAnalytics) return;
+    isFetchingAnalytics = true;
+
     try {
-        const response = await fetch("/all-predictions");
-        const data = await response.json();
+        const [predRes, serversRes] = await Promise.all([
+            fetch("/all-predictions"),
+            fetch("/all-servers")
+        ]);
 
-        const serversResponse = await fetch("/all-servers");
-        const serversData = await serversResponse.json();
+        const predictionsData = predRes.ok ? await predRes.json() : [];
+        const serversData = serversRes.ok ? await serversRes.json() : [];
 
-        // 1. CPU Chart Data
-        const cpuServers = [...serversData].sort(
-            (a, b) => b.cpu_usage_percent - a.cpu_usage_percent
-        );
-        const cpuServerNames = cpuServers.map(x => x.server_name);
-        const cpuData = cpuServers.map(x => x.cpu_usage_percent);
-
-        // 2. Memory Chart Data (Top 5 servers by memory)
-        const topMemoryServers = [...serversData]
-            .sort((a, b) => b.memory_usage_percent - a.memory_usage_percent)
-            .slice(0, 5);
-        const memoryServerNames = topMemoryServers.map(x => x.server_name);
-        const memoryData = topMemoryServers.map(x => x.memory_usage_percent);
-
-        // 3. Historical Anomaly & Normal Counts
+        // 1. Process Historical Predictions Spectrum
         let normalCount = 0;
         let anomalyCount = 0;
 
-        data.forEach(item => {
+        predictionsData.forEach(item => {
             if (item.prediction === "NORMAL") {
                 normalCount++;
             } else {
@@ -39,294 +39,506 @@ async function loadAnalytics() {
             }
         });
 
-        document.getElementById("totalPredictions").innerText = data.length;
-        document.getElementById("normalPredictions").innerText = normalCount;
-        document.getElementById("anomalyPredictions").innerText = anomalyCount;
+        const totalPredictionsEl = document.getElementById("totalPredictions");
+        if (totalPredictionsEl) totalPredictionsEl.innerText = predictionsData.length;
 
-        // 4. Latest Status by Server Data
-        const latestByServer = {};
-        data.forEach(item => {
-            if (!latestByServer[item.server_name]) {
-                latestByServer[item.server_name] = item;
+        const normalPredictionsEl = document.getElementById("normalPredictions");
+        if (normalPredictionsEl) normalPredictionsEl.innerText = normalCount;
+
+        const anomalyPredictionsEl = document.getElementById("anomalyPredictions");
+        if (anomalyPredictionsEl) anomalyPredictionsEl.innerText = anomalyCount;
+
+        // 2. Map Latest Prediction per Server
+        const latestPredByServer = {};
+        predictionsData.forEach(item => {
+            if (!latestPredByServer[item.server_name]) {
+                latestPredByServer[item.server_name] = item;
             }
         });
-        const uniqueServers = Object.values(latestByServer);
 
-        const utilizationLabels = uniqueServers.map(s => s.server_name);
-        const utilizationCpuData = uniqueServers.map(s => s.cpu_usage_percent);
-        const utilizationMemData = uniqueServers.map(s => s.memory_usage_percent);
+        // 3. Build Unified Server List with Latest Telemetry
+        const serverMap = {};
+        (serversData || []).forEach(s => {
+            serverMap[s.server_name] = { ...s };
+        });
+        Object.keys(latestPredByServer).forEach(sname => {
+            if (!serverMap[sname]) {
+                serverMap[sname] = { ...latestPredByServer[sname] };
+            }
+        });
+        const activeServers = Object.values(serverMap);
 
-        const throughputLabels = uniqueServers.map(s => s.server_name);
-        const throughputData = uniqueServers.map(s => s.network_throughput || 0);
+        // 4. Calculate Dynamic Tri-State Status for Fleet Status Distribution
+        let healthyCount = 0;
+        let warningCount = 0;
+        let criticalCount = 0;
 
-        const serverHealthyCount = uniqueServers.filter(s => s.prediction === "NORMAL").length;
-        const serverAnomalyCount = uniqueServers.filter(s => s.prediction === "ANOMALY").length;
+        activeServers.forEach(s => {
+            const sPred = latestPredByServer[s.server_name];
+            const isAnomaly = sPred && sPred.prediction === "ANOMALY";
+            const cpu = Number(s.cpu_usage_percent) || 0;
+            const mem = Number(s.memory_usage_percent) || 0;
+            const disk = Number(s.disk_usage_percent) || (sPred && sPred.disk_usage_percent !== undefined ? Number(sPred.disk_usage_percent) : 0);
 
-        // --- DRAW CHARTS ---
+            if (isAnomaly || cpu > 85 || mem > 85 || disk > 85) {
+                criticalCount++;
+            } else if (cpu > 70 || mem > 75 || disk > 75) {
+                warningCount++;
+            } else {
+                healthyCount++;
+            }
+        });
 
-        // 1. CPU Chart (Horizontal Bar)
-        if (cpuChart) {
-            cpuChart.data.labels = cpuServerNames;
-            cpuChart.data.datasets[0].data = cpuData;
-            cpuChart.data.datasets[0].backgroundColor = cpuData.map(cpu =>
-                cpu > 80 ? "#ef4444" : cpu > 60 ? "#f59e0b" : "#22c55e"
-            );
-            cpuChart.update();
-        } else {
-            cpuChart = new Chart(document.getElementById("cpuChart"), {
-                type: "bar",
-                data: {
-                    labels: cpuServerNames,
-                    datasets: [{
-                        label: "CPU %",
-                        data: cpuData,
-                        backgroundColor: cpuData.map(cpu =>
-                            cpu > 80 ? "#ef4444" : cpu > 60 ? "#f59e0b" : "#22c55e"
-                        )
-                    }]
-                },
-                options: {
-                    indexAxis: "y",
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            beginAtZero: true,
-                            max: 100,
-                            title: {
-                                display: true,
-                                text: "CPU utilization (%)"
-                            }
-                        },
-                        y: {
-                            title: {
-                                display: true,
-                                text: "Server name"
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    }
-                }
-            });
-        }
+        // --- RENDER DYNAMIC CHARTS ---
 
-        // 2. Memory Chart (Horizontal Bar)
-        if (memoryChart) {
-            memoryChart.data.labels = memoryServerNames;
-            memoryChart.data.datasets[0].data = memoryData;
-            memoryChart.data.datasets[0].backgroundColor = memoryData.map(memory =>
-                memory > 85 ? "#ef4444" : memory > 70 ? "#f59e0b" : "#22c55e"
-            );
-            memoryChart.update();
-        } else {
-            memoryChart = new Chart(document.getElementById("memoryChart"), {
-                type: "bar",
-                data: {
-                    labels: memoryServerNames,
-                    datasets: [{
-                        label: "Memory %",
-                        data: memoryData,
-                        backgroundColor: memoryData.map(memory =>
-                            memory > 85 ? "#ef4444" : memory > 70 ? "#f59e0b" : "#22c55e"
-                        )
-                    }]
-                },
-                options: {
-                    indexAxis: "y",
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            beginAtZero: true,
-                            max: 100,
-                            title: {
-                                display: true,
-                                text: "Memory utilization (%)"
-                            }
-                        },
-                        y: {
-                            title: {
-                                display: true,
-                                text: "Server name"
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    }
-                }
-            });
-        }
+        // Chart 1: CPU Utilization Across All Servers (Sorted Descending)
+        const sortedCpuServers = [...activeServers].sort(
+            (a, b) => (Number(b.cpu_usage_percent) || 0) - (Number(a.cpu_usage_percent) || 0)
+        );
+        const cpuLabels = sortedCpuServers.map(s => s.server_name);
+        const cpuValues = sortedCpuServers.map(s => Number(s.cpu_usage_percent) || 0);
+        const cpuColors = cpuValues.map(cpu => cpu > 80 ? "#ef4444" : cpu > 60 ? "#f59e0b" : "#22c55e");
 
-        // 3. Server Utilization (CPU vs Memory side-by-side)
-        if (utilizationChart) {
-            utilizationChart.data.labels = utilizationLabels;
-            utilizationChart.data.datasets[0].data = utilizationCpuData;
-            utilizationChart.data.datasets[1].data = utilizationMemData;
-            utilizationChart.update();
-        } else {
-            utilizationChart = new Chart(document.getElementById("utilizationChart"), {
-                type: "bar",
-                data: {
-                    labels: utilizationLabels,
-                    datasets: [
-                        {
-                            label: "CPU Usage %",
-                            data: utilizationCpuData,
-                            backgroundColor: "rgba(59, 130, 246, 0.8)",
-                            borderColor: "rgb(59, 130, 246)",
-                            borderWidth: 1,
-                            borderRadius: 4
-                        },
-                        {
-                            label: "Memory Usage %",
-                            data: utilizationMemData,
-                            backgroundColor: "rgba(168, 85, 247, 0.8)",
-                            borderColor: "rgb(168, 85, 247)",
-                            borderWidth: 1,
-                            borderRadius: 4
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 100,
-                            title: {
-                                display: true,
-                                text: "Usage (%)"
-                            }
-                        }
-                    }
-                }
-            });
-        }
+        renderCpuChart(cpuLabels, cpuValues, cpuColors);
 
-        // 4. Network Throughput Chart
-        if (throughputChart) {
-            throughputChart.data.labels = throughputLabels;
-            throughputChart.data.datasets[0].data = throughputData;
-            throughputChart.update();
-        } else {
-            throughputChart = new Chart(document.getElementById("throughputChart"), {
-                type: "bar",
-                data: {
-                    labels: throughputLabels,
-                    datasets: [
-                        {
-                            label: "Throughput (MB/s)",
-                            data: throughputData,
-                            backgroundColor: "rgba(244, 63, 94, 0.8)",
-                            borderColor: "rgb(244, 63, 94)",
-                            borderWidth: 1,
-                            borderRadius: 4
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: "Throughput (MB/s)"
-                            }
-                        }
-                    }
-                }
-            });
-        }
+        // Chart 2: Top 5 Memory Utilization Servers
+        const topMemServers = [...activeServers]
+            .sort((a, b) => (Number(b.memory_usage_percent) || 0) - (Number(a.memory_usage_percent) || 0))
+            .slice(0, 5);
+        const memLabels = topMemServers.map(s => s.server_name);
+        const memValues = topMemServers.map(s => Number(s.memory_usage_percent) || 0);
+        const memColors = memValues.map(mem => mem > 85 ? "#ef4444" : mem > 70 ? "#f59e0b" : "#22c55e");
 
-        // 5. Historical Anomaly Distribution (Pie Chart)
-        if (predictionChart) {
-            predictionChart.data.datasets[0].data = [normalCount, anomalyCount];
-            predictionChart.update();
-        } else {
-            predictionChart = new Chart(document.getElementById("predictionChart"), {
-                type: "pie",
-                data: {
-                    labels: ["NORMAL", "ANOMALY"],
-                    datasets: [{
-                        data: [normalCount, anomalyCount],
-                        backgroundColor: ["#22c55e", "#ef4444"]
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: "bottom",
-                            labels: {
-                                boxWidth: 12,
-                                font: {
-                                    size: 11.5,
-                                    weight: "600"
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
+        renderMemoryChart(memLabels, memValues, memColors);
 
-        // 6. Current Server Status Distribution (Doughnut Chart)
-        if (statusDistributionChart) {
-            statusDistributionChart.data.datasets[0].data = [serverHealthyCount, serverAnomalyCount];
-            statusDistributionChart.update();
-        } else {
-            statusDistributionChart = new Chart(document.getElementById("statusDistributionChart"), {
-                type: "doughnut",
-                data: {
-                    labels: ["Healthy (NORMAL)", "Anomalous (ANOMALY)"],
-                    datasets: [{
-                        data: [serverHealthyCount, serverAnomalyCount],
-                        backgroundColor: [
-                            "rgba(16, 185, 129, 0.85)",
-                            "rgba(239, 68, 68, 0.85)"
-                        ],
-                        borderColor: [
-                            "rgb(16, 185, 129)",
-                            "rgb(239, 68, 68)"
-                        ],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: "bottom",
-                            labels: {
-                                boxWidth: 12,
-                                font: {
-                                    size: 11.5,
-                                    weight: "600"
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
+        // Chart 3: Server Resource Allocation (CPU vs Memory)
+        const sortedByServerName = [...activeServers].sort((a, b) => a.server_name.localeCompare(b.server_name));
+        const utilLabels = sortedByServerName.map(s => s.server_name);
+        const utilCpu = sortedByServerName.map(s => Number(s.cpu_usage_percent) || 0);
+        const utilMem = sortedByServerName.map(s => Number(s.memory_usage_percent) || 0);
+
+        renderUtilizationChart(utilLabels, utilCpu, utilMem);
+
+        // Chart 4: Network Throughput per Server
+        const tpLabels = sortedByServerName.map(s => s.server_name);
+        const tpValues = sortedByServerName.map(s => {
+            let tp = Number(s.network_throughput) || 0;
+            if (tp > 100000) tp = tp / (1024 * 1024);
+            return Math.round(tp * 100) / 100;
+        });
+
+        renderThroughputChart(tpLabels, tpValues);
+
+        // Chart 5: Historical Anomaly Distribution (Dynamic Pie Chart with % Tooltips)
+        renderHistoricalPieChart(normalCount, anomalyCount);
+
+        // Chart 6: Current Server Status Distribution (Dynamic Tri-State Doughnut/Pie Chart)
+        renderStatusDistributionChart(healthyCount, warningCount, criticalCount);
+
+        // Update Synced IST Timestamp & Reset Countdown
+        lastSyncDate = new Date();
+        remainingSeconds = ANALYTICS_REFRESH_INTERVAL;
+        renderAnalyticsSyncTime();
 
     } catch (error) {
-        console.error("Error loading analytics:", error);
+        console.error("Error loading analytics data:", error);
+    } finally {
+        isFetchingAnalytics = false;
     }
 }
 
-// Initial load & 8-second interval
-loadAnalytics();
-setInterval(loadAnalytics, 8000);
+// -------------------------------------------------------------
+// Chart Renderers
+// -------------------------------------------------------------
+
+function renderHistoricalPieChart(normalCount, anomalyCount) {
+    const ctx = document.getElementById("predictionChart");
+    if (!ctx) return;
+
+    const pieLabels = ["Normal Operations", "Anomaly Incidents"];
+    const pieData = [normalCount, anomalyCount];
+    const pieColors = ["#10b981", "#ef4444"];
+
+    if (predictionChart) {
+        predictionChart.data.labels = pieLabels;
+        predictionChart.data.datasets[0].data = pieData;
+        predictionChart.data.datasets[0].backgroundColor = pieColors;
+        predictionChart.update();
+    } else {
+        predictionChart = new Chart(ctx, {
+            type: "pie",
+            data: {
+                labels: pieLabels,
+                datasets: [{
+                    data: pieData,
+                    backgroundColor: pieColors,
+                    borderColor: "#ffffff",
+                    borderWidth: 2,
+                    hoverOffset: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    duration: 600,
+                    easing: "easeOutQuart"
+                },
+                plugins: {
+                    legend: {
+                        position: "bottom",
+                        labels: {
+                            boxWidth: 12,
+                            padding: 14,
+                            font: {
+                                size: 11.5,
+                                weight: "700"
+                            },
+                            generateLabels: (chart) => {
+                                const d = chart.data;
+                                if (d.labels.length && d.datasets.length) {
+                                    const dataset = d.datasets[0];
+                                    const total = dataset.data.reduce((a, b) => a + b, 0);
+                                    return d.labels.map((label, i) => {
+                                        const val = dataset.data[i] || 0;
+                                        const pct = total > 0 ? ((val / total) * 100).toFixed(1) : "0.0";
+                                        return {
+                                            text: `${label}: ${val} (${pct}%)`,
+                                            fillStyle: dataset.backgroundColor[i],
+                                            strokeStyle: "#ffffff",
+                                            lineWidth: 1,
+                                            hidden: isNaN(dataset.data[i]) || chart.getDatasetMeta(0).data[i]?.hidden,
+                                            index: i
+                                        };
+                                    });
+                                }
+                                return [];
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const val = context.raw || 0;
+                                const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                const pct = total > 0 ? ((val / total) * 100).toFixed(1) : "0.0";
+                                return ` ${label}: ${val} (${pct}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
+function renderStatusDistributionChart(healthyCount, warningCount, criticalCount) {
+    const ctx = document.getElementById("statusDistributionChart");
+    if (!ctx) return;
+
+    const statusLabels = ["Healthy", "Warning", "Critical"];
+    const statusData = [healthyCount, warningCount, criticalCount];
+    const statusColors = ["#10b981", "#f59e0b", "#ef4444"];
+
+    if (statusDistributionChart) {
+        statusDistributionChart.data.labels = statusLabels;
+        statusDistributionChart.data.datasets[0].data = statusData;
+        statusDistributionChart.data.datasets[0].backgroundColor = statusColors;
+        statusDistributionChart.update();
+    } else {
+        statusDistributionChart = new Chart(ctx, {
+            type: "doughnut",
+            data: {
+                labels: statusLabels,
+                datasets: [{
+                    data: statusData,
+                    backgroundColor: statusColors,
+                    borderColor: "#ffffff",
+                    borderWidth: 2,
+                    hoverOffset: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: "55%",
+                animation: {
+                    duration: 600,
+                    easing: "easeOutQuart"
+                },
+                plugins: {
+                    legend: {
+                        position: "bottom",
+                        labels: {
+                            boxWidth: 12,
+                            padding: 14,
+                            font: {
+                                size: 11.5,
+                                weight: "700"
+                            },
+                            generateLabels: (chart) => {
+                                const d = chart.data;
+                                if (d.labels.length && d.datasets.length) {
+                                    const dataset = d.datasets[0];
+                                    const total = dataset.data.reduce((a, b) => a + b, 0);
+                                    return d.labels.map((label, i) => {
+                                        const val = dataset.data[i] || 0;
+                                        const pct = total > 0 ? ((val / total) * 100).toFixed(1) : "0.0";
+                                        return {
+                                            text: `${label}: ${val} (${pct}%)`,
+                                            fillStyle: dataset.backgroundColor[i],
+                                            strokeStyle: "#ffffff",
+                                            lineWidth: 1,
+                                            hidden: isNaN(dataset.data[i]) || chart.getDatasetMeta(0).data[i]?.hidden,
+                                            index: i
+                                        };
+                                    });
+                                }
+                                return [];
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const val = context.raw || 0;
+                                const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                const pct = total > 0 ? ((val / total) * 100).toFixed(1) : "0.0";
+                                return ` ${label}: ${val} Nodes (${pct}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
+function renderCpuChart(labels, values, colors) {
+    const ctx = document.getElementById("cpuChart");
+    if (!ctx) return;
+
+    if (cpuChart) {
+        cpuChart.data.labels = labels;
+        cpuChart.data.datasets[0].data = values;
+        cpuChart.data.datasets[0].backgroundColor = colors;
+        cpuChart.update();
+    } else {
+        cpuChart = new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: "CPU %",
+                    data: values,
+                    backgroundColor: colors,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                indexAxis: "y",
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: { display: true, text: "CPU Utilization (%)" }
+                    },
+                    y: {
+                        title: { display: true, text: "Server" }
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+}
+
+function renderMemoryChart(labels, values, colors) {
+    const ctx = document.getElementById("memoryChart");
+    if (!ctx) return;
+
+    if (memoryChart) {
+        memoryChart.data.labels = labels;
+        memoryChart.data.datasets[0].data = values;
+        memoryChart.data.datasets[0].backgroundColor = colors;
+        memoryChart.update();
+    } else {
+        memoryChart = new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: "Memory %",
+                    data: values,
+                    backgroundColor: colors,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                indexAxis: "y",
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: { display: true, text: "Memory Utilization (%)" }
+                    },
+                    y: {
+                        title: { display: true, text: "Server" }
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+}
+
+function renderUtilizationChart(labels, cpuData, memData) {
+    const ctx = document.getElementById("utilizationChart");
+    if (!ctx) return;
+
+    if (utilizationChart) {
+        utilizationChart.data.labels = labels;
+        utilizationChart.data.datasets[0].data = cpuData;
+        utilizationChart.data.datasets[1].data = memData;
+        utilizationChart.update();
+    } else {
+        utilizationChart = new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: "CPU Usage %",
+                        data: cpuData,
+                        backgroundColor: "rgba(59, 130, 246, 0.8)",
+                        borderColor: "rgb(59, 130, 246)",
+                        borderWidth: 1,
+                        borderRadius: 4
+                    },
+                    {
+                        label: "Memory Usage %",
+                        data: memData,
+                        backgroundColor: "rgba(168, 85, 247, 0.8)",
+                        borderColor: "rgb(168, 85, 247)",
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: { display: true, text: "Usage (%)" }
+                    }
+                }
+            }
+        });
+    }
+}
+
+function renderThroughputChart(labels, data) {
+    const ctx = document.getElementById("throughputChart");
+    if (!ctx) return;
+
+    if (throughputChart) {
+        throughputChart.data.labels = labels;
+        throughputChart.data.datasets[0].data = data;
+        throughputChart.update();
+    } else {
+        throughputChart = new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: "Throughput (MB/s)",
+                        data: data,
+                        backgroundColor: "rgba(244, 63, 94, 0.8)",
+                        borderColor: "rgb(244, 63, 94)",
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: "Throughput (MB/s)" }
+                    }
+                }
+            }
+        });
+    }
+}
+
+// -------------------------------------------------------------
+// Clock & Countdown Synchronization
+// -------------------------------------------------------------
+
+function renderAnalyticsSyncTime() {
+    const syncTimeEl = document.getElementById("analyticsSyncTime");
+    const remainingEl = document.getElementById("analyticsRemainingSecs");
+
+    if (syncTimeEl) {
+        syncTimeEl.innerText = lastSyncDate.toLocaleTimeString("en-IN", {
+            timeZone: "Asia/Kolkata",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: true
+        }) + " (IST)";
+    }
+
+    if (remainingEl) {
+        remainingEl.innerText = `${remainingSeconds}s`;
+    }
+}
+
+function startAnalyticsCountdown() {
+    if (countdownTimer) clearInterval(countdownTimer);
+
+    countdownTimer = setInterval(() => {
+        remainingSeconds--;
+        const remainingEl = document.getElementById("analyticsRemainingSecs");
+        const badgeEl = document.getElementById("analyticsCountdownBadge");
+
+        if (remainingSeconds <= 0) {
+            if (badgeEl) {
+                badgeEl.innerHTML = `<i class="fas fa-spinner fa-spin" style="font-size: 10px;"></i> Syncing...`;
+            }
+            loadAnalytics();
+        } else {
+            if (badgeEl) {
+                badgeEl.innerHTML = `<i class="fas fa-rotate" style="font-size: 10px;"></i> <span id="analyticsRemainingSecs">${remainingSeconds}s</span>`;
+            }
+        }
+    }, 1000);
+}
+
+// Initial initialization
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => {
+        loadAnalytics();
+        startAnalyticsCountdown();
+    });
+} else {
+    loadAnalytics();
+    startAnalyticsCountdown();
+}
