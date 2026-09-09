@@ -268,8 +268,13 @@ def send_verification_email(email: str, code: str) -> Tuple[bool, str]:
     </html>
     """
 
+    # Determine effective SMTP settings (auto-configure Gmail if SMTP_HOST is omitted)
+    effective_host = SMTP_HOST
+    if not effective_host and SMTP_USER and "@gmail.com" in SMTP_USER.lower():
+        effective_host = "smtp.gmail.com"
+
     # If SMTP is configured, send the live email
-    if SMTP_HOST and SMTP_USER and SMTP_PASSWORD:
+    if effective_host and SMTP_USER and SMTP_PASSWORD:
         try:
             msg = MIMEMultipart("alternative")
             msg["Subject"] = subject
@@ -285,9 +290,9 @@ def send_verification_email(email: str, code: str) -> Tuple[bool, str]:
             msg.attach(MIMEText(html_body, "html"))
 
             if SMTP_USE_SSL:
-                server = smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=12)
+                server = smtplib.SMTP_SSL(effective_host, SMTP_PORT, timeout=12)
             else:
-                server = smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=12)
+                server = smtplib.SMTP(effective_host, SMTP_PORT, timeout=12)
                 if SMTP_USE_TLS:
                     server.starttls()
 
@@ -295,18 +300,19 @@ def send_verification_email(email: str, code: str) -> Tuple[bool, str]:
             server.sendmail(SMTP_FROM_EMAIL, [clean_email], msg.as_string())
             server.quit()
 
-            logger.info(f"Verification email successfully delivered to {clean_email} via SMTP ({SMTP_HOST}:{SMTP_PORT})")
-            return True, "Verification code sent to your email inbox."
+            logger.info(f"Verification email successfully delivered to {clean_email} via SMTP ({effective_host}:{SMTP_PORT})")
+            return True, "Verification code sent to your email inbox.", True
         except smtplib.SMTPRecipientsRefused:
             logger.error(f"SMTP rejected recipient {clean_email}: address does not exist on mail server.")
-            return False, "The email address could not be delivered to. Please verify that this email exists and is active."
+            return False, "The email address could not be delivered to. Please verify that this email exists and is active.", False
         except smtplib.SMTPAuthenticationError as e:
             logger.error(f"SMTP authentication error: {e}. Please check SMTP_USER and SMTP_PASSWORD in .env.")
         except Exception as e:
             logger.error(f"SMTP delivery error to {clean_email}: {e}")
 
-    logger.info(f"[SECURITY AUDIT] Email OTP generated for {clean_email} (Configure SMTP in .env for direct inbox delivery).")
-    return True, f"Verification code has been dispatched to {clean_email}."
+    logger.info(f"[SECURITY AUDIT] Email OTP {code} generated for {clean_email} (Configure SMTP in .env for direct inbox delivery).")
+    return True, f"Verification code has been dispatched for {clean_email}.", False
+
 
 
 def verify_email_code(email: str, code_input: str) -> Tuple[bool, str]:

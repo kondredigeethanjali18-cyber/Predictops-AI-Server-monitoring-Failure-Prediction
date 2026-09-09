@@ -87,13 +87,7 @@
             color: #1a73e8;
         }
 
-        /* Accounts Picker List */
-        .accounts-list-container {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
+        /* Step 1: Account Chooser / Email Input */
         .account-card-item {
             display: flex;
             align-items: center;
@@ -160,11 +154,30 @@
             background: #e6f4ea;
             padding: 2px 7px;
             border-radius: 999px;
-            margin-left: auto;
             flex-shrink: 0;
             display: inline-flex;
             align-items: center;
             gap: 4px;
+        }
+        .account-remove-btn {
+            background: transparent;
+            border: none;
+            color: #9aa0a6;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            transition: all 0.15s ease;
+            flex-shrink: 0;
+            margin-left: 4px;
+        }
+        .account-remove-btn:hover {
+            background: #fce8e6;
+            color: #d93025;
         }
         .btn-use-another-card {
             display: flex;
@@ -441,6 +454,58 @@
             flex-shrink: 0;
         }
 
+        /* Dev OTP Notice Card */
+        .dev-otp-card {
+            background: #fff8e1;
+            border: 1px solid #ffe082;
+            color: #795548;
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 13px;
+            margin-bottom: 16px;
+            display: none;
+            line-height: 1.45;
+        }
+        .dev-otp-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-weight: 700;
+            color: #e65100;
+        }
+        .dev-otp-code {
+            font-family: monospace;
+            font-size: 16px;
+            font-weight: 800;
+            background: #ffffff;
+            border: 1px solid #ffb300;
+            padding: 3px 10px;
+            border-radius: 6px;
+            color: #bf360c;
+            letter-spacing: 3px;
+            display: inline-block;
+        }
+        .btn-dev-fill {
+            background: #ff9800;
+            color: #ffffff;
+            border: none;
+            font-size: 11.5px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .btn-dev-fill:hover {
+            background: #f57c00;
+        }
+        .dev-otp-hint {
+            font-size: 11.5px;
+            color: #8d6e63;
+            margin-top: 4px;
+        }
+
         /* Footer */
         .google-card-footer {
             margin-top: 28px;
@@ -474,7 +539,7 @@
 <div class="google-card-wrapper">
     <div class="google-card">
         
-        <!-- STEP 1: ACCOUNT CHOOSER (AVAILABLE IN BROWSER) -->
+        <!-- STEP 1: ACCOUNT CHOOSER (ONLY SHOWN IF USER PREVIOUSLY SAVED REAL ACCOUNTS) -->
         <div id="stepAccountChooser" class="email-step">
             <div class="google-logo">
                 <svg viewBox="0 0 48 48">
@@ -487,7 +552,7 @@
             </div>
 
             <div class="google-header">
-                <h1 id="headerTitle">Choose an account</h1>
+                <h1 id="headerTitle">Sign in with Google</h1>
                 <p id="headerSubtitle">to continue to <strong>PredictOps AI</strong></p>
             </div>
 
@@ -496,10 +561,10 @@
                 <span id="emailErrorText">Enter a valid Google email.</span>
             </div>
 
-            <!-- ACCOUNTS LIST (DISCOVERED IN BROWSER) -->
-            <div id="accountPickerSection">
+            <!-- ACCOUNTS LIST (ONLY DISPLAYED IF REAL ACCOUNTS EXIST) -->
+            <div id="accountPickerSection" style="display: none;">
                 <div class="accounts-list-container" id="accountsList">
-                    <!-- Injected dynamically by JavaScript -->
+                    <!-- Injected dynamically for real saved accounts -->
                 </div>
 
                 <div class="btn-use-another-card" id="btnUseAnotherAccount" onclick="showCustomEmailInput()">
@@ -514,25 +579,28 @@
                 </div>
             </div>
 
-            <!-- CUSTOM EMAIL ENTRY FORM (WHEN USER CLICKS 'USE ANOTHER ACCOUNT') -->
+            <!-- DIRECT EMAIL ENTRY FORM -->
             <div id="customEmailSection">
                 <form id="googleEmailForm" onsubmit="handleEmailSubmit(event)" autocomplete="off">
                     <div class="google-input-group">
-                        <label for="googleEmail">Google Email address</label>
+                        <label for="googleEmail">Email address</label>
                         <div class="google-input-wrapper">
                             <i class="fas fa-envelope"></i>
-                            <input type="email" id="googleEmail" class="google-input" placeholder="name@gmail.com" required autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                            <input type="email" id="googleEmail" class="google-input" placeholder="Enter your Google email (e.g. name@gmail.com)" required autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
                         </div>
                         <div class="google-input-helper">
                             <i class="fas fa-shield-halved" style="color: #1a73e8;"></i>
-                            <span>A 6-digit verification code will be sent to your inbox.</span>
+                            <span>A 6-digit confirmation code will be sent to verify your identity.</span>
                         </div>
                     </div>
 
                     <div class="google-actions">
-                        <button type="button" class="btn-google-secondary" onclick="showAccountPicker()">
-                            <i class="fas fa-arrow-left"></i> Back to Accounts
+                        <button type="button" class="btn-google-secondary" id="btnBackToAccounts" style="display: none;" onclick="showAccountPicker()">
+                            <i class="fas fa-arrow-left"></i> Saved Accounts
                         </button>
+                        <a href="/login" class="btn-google-secondary" id="btnBackToLogin">
+                            <i class="fas fa-arrow-left"></i> Return to Login
+                        </a>
                         <button type="submit" id="btnNext" class="btn-google-primary">
                             <span>Next</span>
                             <i class="fas fa-arrow-right"></i>
@@ -556,7 +624,7 @@
 
             <div class="google-header">
                 <h1>Verify it's you</h1>
-                <p>A 6-digit confirmation code was dispatched to your Google account.</p>
+                <p>Enter the 6-digit confirmation code sent for your account.</p>
             </div>
 
             <div class="email-pill-container">
@@ -565,9 +633,20 @@
                 <button type="button" class="btn-change-email" onclick="backToAccountChooser()">Change</button>
             </div>
 
-            <div class="inbox-info-card">
+            <!-- Live SMTP Delivery Notice -->
+            <div class="inbox-info-card" id="inboxLiveNotice">
                 <i class="fas fa-envelope-circle-check"></i>
-                <span>A 6-digit confirmation code was dispatched to your Google email inbox. Please check your inbox (and spam folder) to sign in.</span>
+                <span id="inboxLiveText">A 6-digit confirmation code was sent directly to your Google email inbox. Please check your inbox (and spam folder) to sign in.</span>
+            </div>
+
+            <!-- Dev OTP Notice (when SMTP is not yet configured) -->
+            <div class="dev-otp-card" id="devOtpNotice">
+                <div class="dev-otp-header">
+                    <span><i class="fas fa-key"></i> Verification Code:</span>
+                    <button type="button" class="btn-dev-fill" id="btnDevFill" onclick="fillDevCode()">Auto-Fill</button>
+                </div>
+                <div>Code: <span class="dev-otp-code" id="devOtpCode">------</span></div>
+                <div class="dev-otp-hint">To deliver emails directly to your Gmail inbox, set <code>SMTP_USER</code> and <code>SMTP_PASSWORD</code> in your <code>.env</code>.</div>
             </div>
 
             <div id="verifyError" class="error-alert">
@@ -609,55 +688,95 @@
 
 <script>
     let activeEmail = '';
+    let currentDevOtp = '';
     let countdownInterval = null;
     let countdownSeconds = 600;
 
     // Palette for account avatars
     const avatarColors = ['#1a73e8', '#1e8e3e', '#9334e6', '#e37400', '#d93025'];
 
-    // Load or initialize browser accounts
-    function getBrowserAccounts() {
-        const stored = localStorage.getItem('predictops_browser_accounts');
-        if (stored) {
-            try {
-                const parsed = JSON.parse(stored);
-                if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-            } catch (e) {}
-        }
+    // Known dummy mock emails to purge completely
+    const DUMMY_EMAILS = [
+        'vamsi.predictops@gmail.com',
+        'admin.devops@gmail.com',
+        'engineering.team@gmail.com'
+    ];
 
-        // Default initial browser accounts
-        return [
-            { name: 'Vamsi Krishna', email: 'vamsi.predictops@gmail.com', avatarColor: '#1a73e8' },
-            { name: 'DevOps Administrator', email: 'admin.devops@gmail.com', avatarColor: '#1e8e3e' },
-            { name: 'PredictOps Engineering', email: 'engineering.team@gmail.com', avatarColor: '#9334e6' }
-        ];
+    // Load only real stored accounts from browser storage
+    function getStoredAccounts() {
+        const stored = localStorage.getItem('predictops_browser_accounts');
+        if (!stored) return [];
+
+        try {
+            const parsed = JSON.parse(stored);
+            if (!Array.isArray(parsed)) return [];
+
+            // Filter out any fake accounts or corrupted entries
+            const valid = parsed.filter(acc => {
+                if (!acc || !acc.email) return false;
+                const e = acc.email.toLowerCase().trim();
+                if (DUMMY_EMAILS.includes(e)) return false;
+                if (e.endsWith('@predictops.local')) return false;
+                return e.includes('@') && e.includes('.');
+            });
+
+            // Update storage if any dummy entries were cleaned
+            if (valid.length !== parsed.length) {
+                localStorage.setItem('predictops_browser_accounts', JSON.stringify(valid));
+            }
+
+            return valid;
+        } catch (e) {
+            localStorage.removeItem('predictops_browser_accounts');
+            return [];
+        }
     }
 
-    function saveBrowserAccount(email, name) {
-        const accounts = getBrowserAccounts();
-        const existingIdx = accounts.findIndex(a => a.email.toLowerCase() === email.toLowerCase());
-        const cleanName = name || email.split('@')[0].replace('.', ' ').replace(/(^\w|\s\w)/g, m => m.toUpperCase());
+    function saveStoredAccount(email, name) {
+        if (!email) return;
+        const cleanEmail = email.trim().toLowerCase();
+        if (DUMMY_EMAILS.includes(cleanEmail)) return;
+
+        const accounts = getStoredAccounts();
+        const existingIdx = accounts.findIndex(a => a.email.toLowerCase() === cleanEmail);
+        const cleanName = name || cleanEmail.split('@')[0].replace('.', ' ').replace(/(^\w|\s\w)/g, m => m.toUpperCase());
 
         if (existingIdx >= 0) {
             accounts[existingIdx].name = cleanName;
         } else {
             const color = avatarColors[accounts.length % avatarColors.length];
-            accounts.unshift({ name: cleanName, email: email, avatarColor: color });
+            accounts.unshift({ name: cleanName, email: cleanEmail, avatarColor: color });
         }
         localStorage.setItem('predictops_browser_accounts', JSON.stringify(accounts.slice(0, 5)));
     }
 
-    function renderBrowserAccounts() {
-        const listContainer = document.getElementById('accountsList');
-        if (!listContainer) return;
+    function removeSavedAccount(email, evt) {
+        if (evt) evt.stopPropagation();
+        const accounts = getStoredAccounts().filter(a => a.email.toLowerCase() !== email.toLowerCase());
+        localStorage.setItem('predictops_browser_accounts', JSON.stringify(accounts));
+        
+        if (accounts.length > 0) {
+            renderAccountsList();
+        } else {
+            showCustomEmailInput(false);
+        }
+    }
 
-        const accounts = getBrowserAccounts();
+    function renderAccountsList() {
+        const listContainer = document.getElementById('accountsList');
+        const accounts = getStoredAccounts();
+
+        if (!listContainer || accounts.length === 0) {
+            showCustomEmailInput(false);
+            return;
+        }
+
         listContainer.innerHTML = accounts.map((acc, idx) => {
             const initial = (acc.name || acc.email)[0].toUpperCase();
             const color = acc.avatarColor || avatarColors[idx % avatarColors.length];
 
             return `
-                <div class="account-card-item" onclick="selectBrowserAccount('${acc.email}', this)">
+                <div class="account-card-item" onclick="selectStoredAccount('${acc.email}', this)">
                     <div class="account-avatar" style="background-color: ${color};">
                         ${initial}
                     </div>
@@ -667,19 +786,42 @@
                     </div>
                     <div class="account-tag">
                         <i class="fab fa-google"></i>
-                        <span>Browser</span>
+                        <span>Saved</span>
                     </div>
+                    <button type="button" class="account-remove-btn" title="Remove ${acc.email}" onclick="removeSavedAccount('${acc.email}', event)">
+                        <i class="fas fa-xmark"></i>
+                    </button>
                 </div>
             `;
         }).join('');
+
+        document.getElementById('accountPickerSection').style.display = 'block';
+        document.getElementById('customEmailSection').style.display = 'none';
+        document.getElementById('headerTitle').innerText = 'Choose an account';
+        document.getElementById('headerSubtitle').innerHTML = 'to continue to <strong>PredictOps AI</strong>';
     }
 
-    function showCustomEmailInput() {
+    function showCustomEmailInput(canGoBack = true) {
         hideEmailError();
         document.getElementById('accountPickerSection').style.display = 'none';
         document.getElementById('customEmailSection').style.display = 'block';
         document.getElementById('headerTitle').innerText = 'Sign in with Google';
         document.getElementById('headerSubtitle').innerHTML = 'Use your Google Account for <strong>PredictOps AI</strong>';
+        
+        const btnBackToAccounts = document.getElementById('btnBackToAccounts');
+        const btnBackToLogin = document.getElementById('btnBackToLogin');
+        const hasAccounts = getStoredAccounts().length > 0;
+
+        if (btnBackToAccounts && btnBackToLogin) {
+            if (canGoBack && hasAccounts) {
+                btnBackToAccounts.style.display = 'inline-flex';
+                btnBackToLogin.style.display = 'none';
+            } else {
+                btnBackToAccounts.style.display = 'none';
+                btnBackToLogin.style.display = 'inline-flex';
+            }
+        }
+
         const inp = document.getElementById('googleEmail');
         if (inp) {
             inp.value = '';
@@ -689,11 +831,12 @@
 
     function showAccountPicker() {
         hideEmailError();
-        document.getElementById('customEmailSection').style.display = 'none';
-        document.getElementById('accountPickerSection').style.display = 'block';
-        document.getElementById('headerTitle').innerText = 'Choose an account';
-        document.getElementById('headerSubtitle').innerHTML = 'to continue to <strong>PredictOps AI</strong>';
-        renderBrowserAccounts();
+        const accounts = getStoredAccounts();
+        if (accounts.length > 0) {
+            renderAccountsList();
+        } else {
+            showCustomEmailInput(false);
+        }
     }
 
     function showEmailError(msg) {
@@ -724,15 +867,16 @@
         if (el) el.style.display = 'none';
     }
 
-    // Select an account from the browser list and dispatch OTP
-    async function selectBrowserAccount(email, cardEl) {
+    // Select an account from the saved accounts list
+    async function selectStoredAccount(email, cardEl) {
         if (!email) return;
         hideEmailError();
         activeEmail = email.trim().toLowerCase();
 
         if (cardEl) {
             cardEl.classList.add('loading');
-            cardEl.querySelector('.account-tag').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending code...';
+            const tag = cardEl.querySelector('.account-tag');
+            if (tag) tag.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending code...';
         }
 
         await dispatchVerificationCode(activeEmail, cardEl);
@@ -772,10 +916,26 @@
 
             const data = await res.json();
             if (res.ok && data.success) {
-                // Save to browser accounts
-                saveBrowserAccount(email);
-
                 document.getElementById('targetEmailLabel').innerText = email;
+
+                // Handle live SMTP delivery vs local development mode
+                const liveNotice = document.getElementById('inboxLiveNotice');
+                const liveText = document.getElementById('inboxLiveText');
+                const devNotice = document.getElementById('devOtpNotice');
+                const devCodeSpan = document.getElementById('devOtpCode');
+
+                if (data.delivered_via_smtp) {
+                    if (liveNotice) liveNotice.style.display = 'flex';
+                    if (liveText) liveText.innerText = `A 6-digit confirmation code was sent directly to your Google email inbox at ${email}. Please check your inbox (and spam folder) to sign in.`;
+                    if (devNotice) devNotice.style.display = 'none';
+                } else {
+                    currentDevOtp = data.dev_otp || '';
+                    if (liveNotice) liveNotice.style.display = 'none';
+                    if (devNotice) {
+                        devNotice.style.display = 'block';
+                        if (devCodeSpan) devCodeSpan.innerText = currentDevOtp || '------';
+                    }
+                }
 
                 // Transition to OTP verification step
                 document.getElementById('stepAccountChooser').style.display = 'none';
@@ -792,7 +952,8 @@
                 showEmailError(data.error || 'Failed to dispatch verification code. Try again.');
                 if (cardEl) {
                     cardEl.classList.remove('loading');
-                    cardEl.querySelector('.account-tag').innerHTML = '<i class="fab fa-google"></i> Browser';
+                    const tag = cardEl.querySelector('.account-tag');
+                    if (tag) tag.innerHTML = '<i class="fab fa-google"></i> Saved';
                 }
                 if (btnEl) {
                     btnEl.disabled = false;
@@ -804,7 +965,8 @@
             showEmailError('Connection error. Please check your network and retry.');
             if (cardEl) {
                 cardEl.classList.remove('loading');
-                cardEl.querySelector('.account-tag').innerHTML = '<i class="fab fa-google"></i> Browser';
+                const tag = cardEl.querySelector('.account-tag');
+                if (tag) tag.innerHTML = '<i class="fab fa-google"></i> Saved';
             }
             if (btnEl) {
                 btnEl.disabled = false;
@@ -813,11 +975,31 @@
         }
     }
 
+    function fillDevCode(codeToFill) {
+        const code = codeToFill || currentDevOtp;
+        if (!code || code.length !== 6) return;
+
+        for (let i = 0; i < 6; i++) {
+            const b = document.getElementById(`code_${i}`);
+            if (b) {
+                b.value = code[i] || '';
+                b.classList.add('filled');
+            }
+        }
+        setTimeout(handleVerifySubmit, 200);
+    }
+
     function backToAccountChooser() {
         if (countdownInterval) clearInterval(countdownInterval);
         document.getElementById('stepVerify').style.display = 'none';
         document.getElementById('stepAccountChooser').style.display = 'block';
-        showAccountPicker();
+        
+        const accounts = getStoredAccounts();
+        if (accounts.length > 0) {
+            showAccountPicker();
+        } else {
+            showCustomEmailInput(false);
+        }
         hideVerifyError();
     }
 
@@ -889,6 +1071,17 @@
                 clearOtpBoxes();
                 startCountdown(600);
 
+                if (data.delivered_via_smtp) {
+                    const liveNotice = document.getElementById('inboxLiveNotice');
+                    const devNotice = document.getElementById('devOtpNotice');
+                    if (liveNotice) liveNotice.style.display = 'flex';
+                    if (devNotice) devNotice.style.display = 'none';
+                } else {
+                    currentDevOtp = data.dev_otp || '';
+                    const devCodeSpan = document.getElementById('devOtpCode');
+                    if (devCodeSpan) devCodeSpan.innerText = currentDevOtp;
+                }
+
                 let cd = 30;
                 const cdInterval = setInterval(() => {
                     if (cd <= 0) {
@@ -948,8 +1141,8 @@
                     btnVerify.style.background = '#137333';
                 }
 
-                // Save verified account in browser list
-                saveBrowserAccount(activeEmail);
+                // Save verified real account in browser list
+                saveStoredAccount(activeEmail);
 
                 setTimeout(() => {
                     window.location.href = data.redirect_url || '/dashboard';
@@ -1036,10 +1229,16 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        renderBrowserAccounts();
+        const accounts = getStoredAccounts();
+        if (accounts.length > 0) {
+            renderAccountsList();
+        } else {
+            showCustomEmailInput(false);
+        }
         setupOtpListeners();
     });
 </script>
 
 </body>
 </html>
+
