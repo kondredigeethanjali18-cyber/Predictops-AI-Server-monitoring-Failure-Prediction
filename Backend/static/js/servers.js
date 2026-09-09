@@ -113,6 +113,7 @@ function renderTable() {
 
         const cpuColor = cpu > 80 ? "#dc2626" : cpu > 60 ? "#d97706" : "#16a34a";
         const memColor = mem > 85 ? "#dc2626" : mem > 70 ? "#d97706" : "#16a34a";
+        const diskColor = disk > 85 ? "#dc2626" : disk > 70 ? "#d97706" : "#16a34a";
 
         return `
             <tr>
@@ -125,9 +126,10 @@ function renderTable() {
                 </td>
                 <td><strong style="color: ${cpuColor};">${cpu}%</strong></td>
                 <td><strong style="color: ${memColor};">${mem}%</strong></td>
-                <td>${disk}%</td>
+                <td><strong style="color: ${diskColor};">${disk}%</strong></td>
             </tr>
         `;
+
     }).join("");
 
     renderNumberedPagination("serversPagination", currentPage, totalPages, newPage => {

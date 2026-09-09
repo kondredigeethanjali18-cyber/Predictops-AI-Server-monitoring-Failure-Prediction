@@ -357,10 +357,28 @@ function openDashboardAlertDetail(index) {
         confBadge.innerText = `${conf}% Confidence`;
     }
 
-    // Telemetry metrics snapshot
-    document.getElementById("dModalCpu").innerText = item.cpu_usage_percent !== undefined ? `${item.cpu_usage_percent}%` : "--";
-    document.getElementById("dModalMem").innerText = item.memory_usage_percent !== undefined ? `${item.memory_usage_percent}%` : "--";
-    document.getElementById("dModalDisk").innerText = item.disk_usage_percent !== undefined ? `${item.disk_usage_percent}%` : "--";
+    // Telemetry metrics snapshot with dynamic color coding
+    const cpuVal = item.cpu_usage_percent !== undefined && item.cpu_usage_percent !== null ? Number(item.cpu_usage_percent) : null;
+    const memVal = item.memory_usage_percent !== undefined && item.memory_usage_percent !== null ? Number(item.memory_usage_percent) : null;
+    const diskVal = item.disk_usage_percent !== undefined && item.disk_usage_percent !== null ? Number(item.disk_usage_percent) : null;
+
+    const dCpuEl = document.getElementById("dModalCpu");
+    const dMemEl = document.getElementById("dModalMem");
+    const dDiskEl = document.getElementById("dModalDisk");
+
+    if (dCpuEl) {
+        dCpuEl.innerText = cpuVal !== null && !isNaN(cpuVal) ? `${cpuVal}%` : "--";
+        dCpuEl.style.color = cpuVal !== null && !isNaN(cpuVal) ? (cpuVal > 80 ? "#dc2626" : cpuVal > 60 ? "#d97706" : "#16a34a") : "";
+    }
+    if (dMemEl) {
+        dMemEl.innerText = memVal !== null && !isNaN(memVal) ? `${memVal}%` : "--";
+        dMemEl.style.color = memVal !== null && !isNaN(memVal) ? (memVal > 85 ? "#dc2626" : memVal > 70 ? "#d97706" : "#16a34a") : "";
+    }
+    if (dDiskEl) {
+        dDiskEl.innerText = diskVal !== null && !isNaN(diskVal) ? `${diskVal}%` : "--";
+        dDiskEl.style.color = diskVal !== null && !isNaN(diskVal) ? (diskVal > 85 ? "#dc2626" : diskVal > 70 ? "#d97706" : "#16a34a") : "";
+    }
+
 
     let tp = "0.00 MB/s";
     if (item.network_throughput !== undefined && item.network_throughput !== null) {

@@ -132,15 +132,12 @@ def validate_username(username: str) -> tuple[bool, str]:
 
 
 def validate_email(email: str) -> tuple[bool, str]:
-    """Validate email address format."""
+    """Validate email address format, structure, and domain existence."""
     e = email.strip()
     if not e:
         return False, "Email address is required."
-    # Standard RFC-compliant email regex pattern
-    pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
-    if not re.match(pattern, e):
-        return False, "Please enter a valid email address (e.g., user@example.com)."
-    return True, ""
+    return verify_email_exists(e)
+
 
 
 def validate_password(password: str) -> tuple[bool, str]:

@@ -147,9 +147,17 @@ function renderTable() {
             ? `<span class="badge-danger"><i class="fas fa-triangle-exclamation"></i> <span>ANOMALY</span></span>`
             : `<span class="badge-success"><i class="fas fa-circle-check"></i> <span>NORMAL</span></span>`;
 
-        const cpu = item.cpu_usage_percent !== undefined ? `${item.cpu_usage_percent}%` : "--";
-        const mem = item.memory_usage_percent !== undefined ? `${item.memory_usage_percent}%` : "--";
-        const disk = item.disk_usage_percent !== undefined ? `${item.disk_usage_percent}%` : "--";
+        const cpuNum = item.cpu_usage_percent !== undefined && item.cpu_usage_percent !== null ? Number(item.cpu_usage_percent) : null;
+        const memNum = item.memory_usage_percent !== undefined && item.memory_usage_percent !== null ? Number(item.memory_usage_percent) : null;
+        const diskNum = item.disk_usage_percent !== undefined && item.disk_usage_percent !== null ? Number(item.disk_usage_percent) : null;
+
+        const cpuColor = cpuNum !== null && !isNaN(cpuNum) ? (cpuNum > 80 ? "#dc2626" : cpuNum > 60 ? "#d97706" : "#16a34a") : "#64748b";
+        const memColor = memNum !== null && !isNaN(memNum) ? (memNum > 85 ? "#dc2626" : memNum > 70 ? "#d97706" : "#16a34a") : "#64748b";
+        const diskColor = diskNum !== null && !isNaN(diskNum) ? (diskNum > 85 ? "#dc2626" : diskNum > 70 ? "#d97706" : "#16a34a") : "#64748b";
+
+        const cpu = cpuNum !== null && !isNaN(cpuNum) ? `<strong style="color: ${cpuColor};">${cpuNum}%</strong>` : "--";
+        const mem = memNum !== null && !isNaN(memNum) ? `<strong style="color: ${memColor};">${memNum}%</strong>` : "--";
+        const disk = diskNum !== null && !isNaN(diskNum) ? `<strong style="color: ${diskColor};">${diskNum}%</strong>` : "--";
         const throughput = formatThroughput(item.network_throughput);
         const time = formatPredictionTime(item.timestamp);
 
@@ -172,6 +180,7 @@ function renderTable() {
             </tr>
         `;
     }).join("");
+
 
     renderNumberedPagination("predictionPagination", currentPage, totalPages, newPage => {
         currentPage = newPage;

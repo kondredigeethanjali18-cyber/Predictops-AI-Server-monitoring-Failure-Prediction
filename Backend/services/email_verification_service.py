@@ -49,12 +49,23 @@ KNOWN_TRUSTED_MAIL_DOMAINS = {
     "proton.me", "protonmail.com", "aol.com", "zoho.com"
 }
 
+# Disposable / Temporary Fake Email Domain Blacklist
+DISPOSABLE_EMAIL_DOMAINS = {
+    "mailinator.com", "tempmail.com", "temp-mail.org", "10minutemail.com",
+    "guerrillamail.com", "guerrillamail.net", "guerrillamail.org",
+    "trashmail.com", "trashmail.net", "yopmail.com", "yopmail.net",
+    "dispostable.com", "fakeinbox.com", "getairmail.com", "mohmal.com",
+    "crazymailing.com", "burnermail.io", "throwawaymail.com", "fakemail.net",
+    "nada.ltd", "tempmailaddress.com", "sharklasers.com", "grr.la"
+}
+
+
 
 def verify_email_exists(email: str) -> Tuple[bool, str]:
     """
     Verifies that the provided email address has a valid syntax,
-    a valid username structure, and belongs to an existing internet domain
-    capable of receiving mail.
+    a valid username structure, is not a disposable address, and belongs
+    to an existing internet domain capable of receiving mail.
     """
     if not email:
         return False, "Email address cannot be empty."
@@ -78,10 +89,14 @@ def verify_email_exists(email: str) -> Tuple[bool, str]:
     if not local_part or not domain:
         return False, "Invalid email address."
 
-    # 2. Gmail / Googlemail specific username syntax validation
+    # 2. Block disposable / fake temporary email providers
+    if domain in DISPOSABLE_EMAIL_DOMAINS:
+        return False, "Temporary/disposable email addresses cannot be used. Please use your genuine Google account."
+
+    # 3. Gmail / Googlemail specific username syntax validation
     if domain in ("gmail.com", "googlemail.com"):
         if len(local_part) < 6:
-            return False, "Google account usernames must be at least 6 characters."
+            return False, "Google account usernames must be at least 6 characters long."
         if len(local_part) > 30:
             return False, "Google account usernames cannot exceed 30 characters."
         if local_part.startswith(".") or local_part.endswith("."):
@@ -91,11 +106,11 @@ def verify_email_exists(email: str) -> Tuple[bool, str]:
         if not re.match(r"^[a-zA-Z0-9.]+$", local_part):
             return False, "Google email addresses can only contain letters, numbers, and periods."
 
-    # 3. Known trusted domains are immediately verified
+    # 4. Known trusted domains are immediately verified
     if domain in KNOWN_TRUSTED_MAIL_DOMAINS:
         return True, "Email address is valid and domain exists."
 
-    # 4. Domain existence verification via native socket lookup
+    # 5. Domain existence verification via native socket lookup
     try:
         socket.getaddrinfo(domain, None)
     except socket.gaierror:
@@ -106,12 +121,11 @@ def verify_email_exists(email: str) -> Tuple[bool, str]:
 
     return True, "Email address is valid and domain exists."
 
-    return True, "Email address is valid and domain exists."
-
 
 def generate_otp_code() -> str:
     """Generates a cryptographically secure 6-digit verification code."""
     return f"{secrets.randbelow(900000) + 100000}"
+
 
 
 def create_verification_record(email: str) -> Tuple[str, datetime]:
@@ -280,6 +294,10 @@ def send_verification_email(email: str, code: str) -> Tuple[bool, str]:
             msg["Subject"] = subject
             msg["From"] = f"{SMTP_FROM_NAME} <{SMTP_FROM_EMAIL}>"
             msg["To"] = clean_email
+            msg["Auto-Submitted"] = "auto-generated"
+            msg["X-Priority"] = "1"
+            msg["X-MSMail-Priority"] = "High"
+            msg["Importance"] = "High"
 
             text_fallback = (
                 f"Your PredictOps AI verification code is: {code}\n\n"
@@ -299,6 +317,7 @@ def send_verification_email(email: str, code: str) -> Tuple[bool, str]:
             server.login(SMTP_USER, SMTP_PASSWORD)
             server.sendmail(SMTP_FROM_EMAIL, [clean_email], msg.as_string())
             server.quit()
+
 
             logger.info(f"Verification email successfully delivered to {clean_email} via SMTP ({effective_host}:{SMTP_PORT})")
             return True, "Verification code sent to your email inbox.", True
