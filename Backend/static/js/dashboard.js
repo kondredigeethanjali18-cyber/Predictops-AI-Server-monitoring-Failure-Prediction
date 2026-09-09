@@ -29,9 +29,22 @@ async function loadDashboard() {
         const data = predsResp.ok ? await predsResp.json() : [];
         const serversData = serversResp.ok ? await serversResp.json() : [];
 
+        // Build mapping of latest prediction per server
+        const latestPredByServer = {};
+        (data || []).forEach(p => {
+            const sname = p.server_name;
+            if (sname && !latestPredByServer[sname]) {
+                latestPredByServer[sname] = p;
+            }
+        });
+
+        const effectiveServerList = (serversData && serversData.length > 0)
+            ? serversData
+            : Object.values(latestPredByServer);
+
         // 1. Total Metrics
         const totalServersEl = document.getElementById("totalServers");
-        if (totalServersEl) totalServersEl.innerText = (serversData || []).length;
+        if (totalServersEl) totalServersEl.innerText = effectiveServerList.length;
 
         const totalRecordsEl = document.getElementById("totalRecords");
         if (totalRecordsEl) totalRecordsEl.innerText = (data || []).length;
@@ -43,21 +56,27 @@ async function loadDashboard() {
         let totalCpu = 0;
         let totalMemory = 0;
 
-        (serversData || []).forEach(s => {
-            const cpu = Number(s.cpu_usage_percent) || 0;
-            const memory = Number(s.memory_usage_percent) || 0;
+        effectiveServerList.forEach(s => {
+            const sname = s.server_name;
+            const pred = latestPredByServer[sname];
+            const cpu = Number(s.cpu_usage_percent !== undefined ? s.cpu_usage_percent : (pred ? pred.cpu_usage_percent : 0)) || 0;
+            const memory = Number(s.memory_usage_percent !== undefined ? s.memory_usage_percent : (pred ? pred.memory_usage_percent : 0)) || 0;
+            const disk = Number(s.disk_usage_percent !== undefined ? s.disk_usage_percent : (pred ? pred.disk_usage_percent : 0)) || 0;
+            const isAnomaly = pred && pred.prediction === "ANOMALY";
 
             totalCpu += cpu;
             totalMemory += memory;
 
-            if (cpu > 85 || memory > 85) {
+            if (isAnomaly || cpu > 85 || memory > 85 || disk > 85) {
                 critical++;
-            } else if (cpu > 70 || memory > 75) {
+            } else if (cpu > 70 || memory > 75 || disk > 75) {
                 warning++;
             } else {
                 healthy++;
             }
         });
+
+        const totalNodes = Math.max(1, healthy + warning + critical);
 
         const healthyEl = document.getElementById("healthyServers");
         if (healthyEl) healthyEl.innerText = healthy;
@@ -68,7 +87,22 @@ async function loadDashboard() {
         const criticalEl = document.getElementById("criticalServers");
         if (criticalEl) criticalEl.innerText = critical;
 
-        const serverCount = (serversData && serversData.length) ? serversData.length : 1;
+        // Update Fleet Health Score Number in Cluster 2
+        const healthScore = Math.max(0, Math.min(100, Math.round(((healthy + (warning * 0.5)) / totalNodes) * 1000) / 10));
+        const healthScoreColor = healthScore >= 90 ? "#16a34a" : healthScore >= 75 ? "#d97706" : "#dc2626";
+
+        const fleetHealthScoreClusterEl = document.getElementById("fleetHealthScoreCluster");
+        if (fleetHealthScoreClusterEl) {
+            fleetHealthScoreClusterEl.innerText = `${healthScore.toFixed(1)}%`;
+            fleetHealthScoreClusterEl.style.color = healthScoreColor;
+        }
+
+        const totalNodesClusterEl = document.getElementById("totalNodesCluster");
+        if (totalNodesClusterEl) {
+            totalNodesClusterEl.innerText = effectiveServerList.length;
+        }
+
+        const serverCount = Math.max(1, effectiveServerList.length);
         const avgCpuVal = (totalCpu / serverCount);
         const avgMemVal = (totalMemory / serverCount);
 
@@ -85,7 +119,6 @@ async function loadDashboard() {
         if (barAvgMem) barAvgMem.style.width = Math.min(avgMemVal, 100) + "%";
 
         // Update Tri-state distribution progress bar
-        const totalNodes = Math.max(1, healthy + warning + critical);
         const barHealthy = document.getElementById("barHealthy");
         if (barHealthy) barHealthy.style.width = ((healthy / totalNodes) * 100) + "%";
 
@@ -97,26 +130,39 @@ async function loadDashboard() {
 
         // 3. Anomaly Rate & Active Anomalies
         const anomalies = (data || []).filter(x => x.prediction === "ANOMALY");
-        const anomalyCount = anomalies.length;
-        const anomalyRate = (data && data.length > 0) ? ((anomalyCount / data.length) * 100).toFixed(1) : 0;
+        const activeAnomalyServers = new Set(
+            Object.values(latestPredByServer)
+                .filter(p => p.prediction === "ANOMALY")
+                .map(p => p.server_name)
+        );
+        const anomalyCount = activeAnomalyServers.size > 0 ? activeAnomalyServers.size : anomalies.length;
+        const anomalyRate = totalNodes > 0 ? ((activeAnomalyServers.size / totalNodes) * 100).toFixed(1) : 0;
+        
         const anomalyRateEl = document.getElementById("anomalyRate");
         if (anomalyRateEl) anomalyRateEl.innerText = anomalyRate + "%";
 
         const totalAnomaliesEl = document.getElementById("totalAnomaliesCount");
         if (totalAnomaliesEl) {
-            totalAnomaliesEl.innerText = `${anomalyCount} Active`;
-            totalAnomaliesEl.style.color = anomalyCount > 0 ? "#dc2626" : "#16a34a";
+            totalAnomaliesEl.innerText = `${activeAnomalyServers.size || anomalyCount} Active`;
+            totalAnomaliesEl.style.color = (activeAnomalyServers.size > 0 || anomalyCount > 0) ? "#dc2626" : "#16a34a";
         }
 
         // 4. Top Risk Server
-        if (serversData && serversData.length > 0) {
-            const highestRiskServer = [...serversData].sort((a, b) => {
-                const aVal = (Number(a.cpu_usage_percent) || 0) + (Number(a.memory_usage_percent) || 0);
-                const bVal = (Number(b.cpu_usage_percent) || 0) + (Number(b.memory_usage_percent) || 0);
+        if (effectiveServerList.length > 0) {
+            const highestRiskServer = [...effectiveServerList].sort((a, b) => {
+                const aPred = latestPredByServer[a.server_name];
+                const bPred = latestPredByServer[b.server_name];
+                const aIsAnom = aPred && aPred.prediction === "ANOMALY" ? 1000 : 0;
+                const bIsAnom = bPred && bPred.prediction === "ANOMALY" ? 1000 : 0;
+                const aVal = aIsAnom + (Number(a.cpu_usage_percent) || 0) + (Number(a.memory_usage_percent) || 0);
+                const bVal = bIsAnom + (Number(b.cpu_usage_percent) || 0) + (Number(b.memory_usage_percent) || 0);
                 return bVal - aVal;
             })[0];
 
             if (highestRiskServer) {
+                const sPred = latestPredByServer[highestRiskServer.server_name];
+                const isTopAnomaly = sPred && sPred.prediction === "ANOMALY";
+
                 const topServerEl = document.getElementById("topRiskServer");
                 if (topServerEl) topServerEl.innerHTML = `<i class="fas fa-server" style="color: #64748b; font-size: 15px;"></i> ${highestRiskServer.server_name}`;
 
@@ -136,11 +182,11 @@ async function loadDashboard() {
                 if (riskPill) {
                     const cpu = Number(highestRiskServer.cpu_usage_percent) || 0;
                     const mem = Number(highestRiskServer.memory_usage_percent) || 0;
-                    if (cpu > 85 || mem > 85) {
+                    if (isTopAnomaly || cpu > 85 || mem > 85) {
                         riskPill.innerText = "Critical Risk";
                         riskPill.style.background = "#fee2e2";
                         riskPill.style.color = "#dc2626";
-                    } else if (cpu > 70) {
+                    } else if (cpu > 70 || mem > 75) {
                         riskPill.innerText = "Elevated";
                         riskPill.style.background = "#fef3c7";
                         riskPill.style.color = "#d97706";
@@ -157,14 +203,7 @@ async function loadDashboard() {
                 const healthScoreEl = document.getElementById("fleetHealthScore");
                 const aiGuardEl = document.getElementById("aiGuardStatus");
 
-                // Calculate Fleet Health Score (Index out of 100)
-                let healthIndex = 99.8;
-                if (critical > 0) {
-                    healthIndex = Math.max(68.5, Math.min(92.0, (100 - (critical * 9.5 + warning * 3.5))));
-                } else if (warning > 0) {
-                    healthIndex = Math.max(91.0, (100 - (warning * 2.8)));
-                }
-                if (healthScoreEl) healthScoreEl.innerText = `${healthIndex.toFixed(1)}%`;
+                if (healthScoreEl) healthScoreEl.innerText = `${healthScore.toFixed(1)}%`;
 
                 if (critical > 0) {
                     if (fleetTagEl) {
@@ -174,10 +213,10 @@ async function loadDashboard() {
                     if (aiGuardEl) {
                         aiGuardEl.className = "stat-value";
                         aiGuardEl.style.color = "#dc2626";
-                        aiGuardEl.innerHTML = `<i class="fas fa-triangle-exclamation"></i> Mitigation Standby`;
+                        aiGuardEl.innerHTML = `<i class="fas fa-triangle-exclamation"></i> Incident Active`;
                     }
                     if (recEl) {
-                        recEl.innerHTML = `<strong>CRITICAL LOAD on ${highestRiskServer.server_name}</strong> (${highestRiskServer.cpu_usage_percent}% CPU, ${highestRiskServer.memory_usage_percent}% RAM). Automated traffic rebalance and memory reclamation advised.`;
+                        recEl.innerHTML = `<strong>${critical} ACTIVE ANOMALY INCIDENT${critical > 1 ? 'S' : ''}:</strong> Critical load and telemetry anomalies detected on <strong>${highestRiskServer.server_name}</strong> (${highestRiskServer.cpu_usage_percent}% CPU, ${highestRiskServer.memory_usage_percent}% RAM). Automated traffic rebalance and memory reclamation recommended.`;
                     }
                 } else if (warning > 0) {
                     if (fleetTagEl) {
@@ -190,7 +229,7 @@ async function loadDashboard() {
                         aiGuardEl.innerHTML = `<i class="fas fa-shield"></i> Monitoring Headroom`;
                     }
                     if (recEl) {
-                        recEl.innerHTML = `<strong>Moderate workload spike detected:</strong> ${highestRiskServer.server_name} is consuming peak fleet resources. Infrastructure headroom is within safe buffer margins.`;
+                        recEl.innerHTML = `<strong>Moderate workload spike detected:</strong> ${highestRiskServer.server_name} is consuming elevated fleet resources. Infrastructure headroom is within safe buffer margins.`;
                     }
                 } else {
                     if (fleetTagEl) {
@@ -203,7 +242,7 @@ async function loadDashboard() {
                         aiGuardEl.innerHTML = `<i class="fas fa-shield-check"></i> Automated Guard Active`;
                     }
                     if (recEl) {
-                        recEl.innerHTML = `All ${serversData.length} monitored infrastructure nodes operating comfortably within nominal performance baselines. Zero imminent failover risks detected.`;
+                        recEl.innerHTML = `All ${effectiveServerList.length} monitored infrastructure nodes operating comfortably within nominal performance baselines. Zero imminent failover risks detected.`;
                     }
                 }
             }
