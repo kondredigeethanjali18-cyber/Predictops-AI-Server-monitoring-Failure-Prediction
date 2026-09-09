@@ -245,7 +245,7 @@ async function loadDashboard() {
                 if (critical > 0) {
                     if (fleetTagEl) {
                         fleetTagEl.className = "live-tag live-tag-danger";
-                        fleetTagEl.innerHTML = `<i class="fas fa-triangle-exclamation"></i> ${critical} Node${critical > 1 ? 's' : ''} At Risk`;
+                        fleetTagEl.innerHTML = `<i class="fas fa-triangle-exclamation"></i> ${critical} At Risk`;
                     }
                     if (aiGuardEl) {
                         aiGuardEl.className = "stat-value";
@@ -253,33 +253,33 @@ async function loadDashboard() {
                         aiGuardEl.innerHTML = `<i class="fas fa-triangle-exclamation"></i> Incident Active`;
                     }
                     if (recEl) {
-                        recEl.innerHTML = `<strong>${critical} ACTIVE ANOMALY INCIDENT${critical > 1 ? 'S' : ''}:</strong> Critical load and telemetry anomalies detected on <strong>${highestRiskServer.server_name}</strong> (${highestRiskServer.cpu_usage_percent}% CPU, ${highestRiskServer.memory_usage_percent}% RAM). Automated traffic rebalance and memory reclamation recommended.`;
+                        recEl.innerHTML = `<strong>Critical Anomaly:</strong> Surge on <strong>${highestRiskServer.server_name}</strong> (${highestRiskServer.cpu_usage_percent}% CPU, ${highestRiskServer.memory_usage_percent}% RAM). Automated traffic rebalance recommended.`;
                     }
                 } else if (warning > 0) {
                     if (fleetTagEl) {
                         fleetTagEl.className = "live-tag live-tag-warning";
-                        fleetTagEl.innerHTML = `<i class="fas fa-circle-exclamation"></i> Elevated Load`;
+                        fleetTagEl.innerHTML = `<i class="fas fa-circle-exclamation"></i> Elevated`;
                     }
                     if (aiGuardEl) {
                         aiGuardEl.className = "stat-value";
                         aiGuardEl.style.color = "#d97706";
-                        aiGuardEl.innerHTML = `<i class="fas fa-shield"></i> Monitoring Headroom`;
+                        aiGuardEl.innerHTML = `<i class="fas fa-shield"></i> Monitoring`;
                     }
                     if (recEl) {
-                        recEl.innerHTML = `<strong>Moderate workload spike detected:</strong> ${highestRiskServer.server_name} is consuming elevated fleet resources. Infrastructure headroom is within safe buffer margins.`;
+                        recEl.innerHTML = `<strong>Moderate Spike:</strong> Elevated load on ${highestRiskServer.server_name}. Cluster headroom buffer nominal.`;
                     }
                 } else {
                     if (fleetTagEl) {
                         fleetTagEl.className = "live-tag live-tag-success";
-                        fleetTagEl.innerHTML = `<i class="fas fa-circle live-pulse"></i> SLA: 99.9% Optimal`;
+                        fleetTagEl.innerHTML = `<i class="fas fa-circle live-pulse"></i> SLA: 99.9%`;
                     }
                     if (aiGuardEl) {
                         aiGuardEl.className = "stat-value text-success";
                         aiGuardEl.style.color = "#16a34a";
-                        aiGuardEl.innerHTML = `<i class="fas fa-shield-check"></i> Automated Guard Active`;
+                        aiGuardEl.innerHTML = `<i class="fas fa-shield-check"></i> Active`;
                     }
                     if (recEl) {
-                        recEl.innerHTML = `All ${effectiveServerList.length} monitored infrastructure nodes operating comfortably within nominal performance baselines. Zero imminent failover risks detected.`;
+                        recEl.innerHTML = `All ${effectiveServerList.length} monitored nodes operating comfortably within nominal baselines. Zero failover risks.`;
                     }
                 }
             }

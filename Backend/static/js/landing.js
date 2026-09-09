@@ -67,17 +67,7 @@ async function loadStats() {
             healthRingEl.style.boxShadow = `0 4px 14px ${scoreNum >= 90 ? 'rgba(34, 197, 94, 0.25)' : scoreNum >= 75 ? 'rgba(245, 158, 11, 0.25)' : 'rgba(239, 68, 68, 0.25)'}`;
         }
 
-        // 3. Update Breakdown Count Pills
-        const healthyTxtEl = document.getElementById("landingHealthyTxt");
-        if (healthyTxtEl) healthyTxtEl.innerText = data.healthy !== undefined ? `${data.healthy}` : "0";
-
-        const warningTxtEl = document.getElementById("landingWarningTxt");
-        if (warningTxtEl) warningTxtEl.innerText = data.warning !== undefined ? `${data.warning}` : "0";
-
-        const criticalTxtEl = document.getElementById("landingCriticalTxt");
-        if (criticalTxtEl) criticalTxtEl.innerText = data.critical !== undefined ? `${data.critical}` : "0";
-
-        // 4. Update Live Operations Server List
+        // 3. Update Live Operations Server List
         const panelListEl = document.getElementById("landingPanelList");
         if (panelListEl && data.top_servers && data.top_servers.length > 0) {
             panelListEl.innerHTML = data.top_servers.map(s => {
