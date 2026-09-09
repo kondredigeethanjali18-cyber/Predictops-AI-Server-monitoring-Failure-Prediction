@@ -315,7 +315,7 @@ async function loadDashboard() {
             }
         }
 
-        // 7. Last Updated Timestamp
+        // 7. Last Updated Timestamp & Reset Countdown
         const now = new Date();
         const lastUpdatedEl = document.getElementById("lastUpdated");
         if (lastUpdatedEl) {
@@ -328,12 +328,24 @@ async function loadDashboard() {
             }) + " (IST)";
         }
 
+        dashRemainingSecs = DASH_REFRESH_INTERVAL;
+        const dashCountdownEl = document.getElementById("dashboardSyncCountdown");
+        if (dashCountdownEl) {
+            dashCountdownEl.innerText = `• Next in ${dashRemainingSecs}s`;
+        }
+
     } catch (error) {
         console.error("Error loading dashboard data:", error);
+    } finally {
+        isFetchingDashboard = false;
     }
 }
 
 let dashboardAnomalies = [];
+const DASH_REFRESH_INTERVAL = 8;
+let dashRemainingSecs = DASH_REFRESH_INTERVAL;
+let dashCountdownTimer = null;
+let isFetchingDashboard = false;
 
 function openDashboardAlertDetail(index) {
     const item = dashboardAnomalies[index];
@@ -465,9 +477,23 @@ document.addEventListener("keydown", e => {
     }
 });
 
+function startDashboardCountdown() {
+    if (dashCountdownTimer) clearInterval(dashCountdownTimer);
+    dashCountdownTimer = setInterval(() => {
+        dashRemainingSecs--;
+        const dashCountdownEl = document.getElementById("dashboardSyncCountdown");
+        if (dashRemainingSecs <= 0) {
+            if (dashCountdownEl) dashCountdownEl.innerText = "• Refreshing...";
+            loadDashboard();
+        } else {
+            if (dashCountdownEl) dashCountdownEl.innerText = `• Next in ${dashRemainingSecs}s`;
+        }
+    }, 1000);
+}
+
 function initDashboard() {
     loadDashboard();
-    setInterval(loadDashboard, 8000);
+    startDashboardCountdown();
 }
 
 if (document.readyState === "loading") {

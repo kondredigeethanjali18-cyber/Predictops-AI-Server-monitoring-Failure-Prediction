@@ -16,8 +16,12 @@ def dashboard_summary():
             "healthy": 0,
             "warning": 0,
             "critical": 0,
+            "healthy_pct": 100.0,
+            "warning_pct": 0.0,
+            "critical_pct": 0.0,
             "active_alerts": 0,
             "fleet_health_score": "100%",
+            "health_score_num": 100.0,
             "prediction_accuracy": "99.2%",
             "top_servers": []
         }
@@ -44,20 +48,27 @@ def dashboard_summary():
     for s in unique_servers:
         cpu = float(s.get("cpu_usage_percent", 0))
         mem = float(s.get("memory_usage_percent", 0))
+        disk = float(s.get("disk_usage_percent", 0))
         pred = s.get("prediction", "NORMAL")
 
-        if pred == "ANOMALY" or cpu > 85 or mem > 85:
+        if pred == "ANOMALY" or cpu > 85 or mem > 85 or disk > 85:
             critical += 1
             active_alerts += 1
-        elif cpu > 70 or mem > 75:
+        elif cpu > 70 or mem > 75 or disk > 75:
             warning += 1
         else:
             healthy += 1
 
     if total_servers > 0:
-        health_pct = round((healthy / total_servers) * 100, 1)
+        health_score_num = round(((healthy + (warning * 0.5)) / total_servers) * 100, 1)
+        healthy_pct = round((healthy / total_servers) * 100, 1)
+        warning_pct = round((warning / total_servers) * 100, 1)
+        critical_pct = round((critical / total_servers) * 100, 1)
     else:
-        health_pct = 100.0
+        health_score_num = 100.0
+        healthy_pct = 100.0
+        warning_pct = 0.0
+        critical_pct = 0.0
 
     # Top 3 servers to show on live landing preview
     sorted_servers = sorted(
@@ -70,12 +81,13 @@ def dashboard_summary():
     for s in sorted_servers:
         cpu = float(s.get("cpu_usage_percent", 0))
         mem = float(s.get("memory_usage_percent", 0))
+        disk = float(s.get("disk_usage_percent", 0))
         pred = s.get("prediction", "NORMAL")
 
-        if pred == "ANOMALY" or cpu > 85 or mem > 85:
+        if pred == "ANOMALY" or cpu > 85 or mem > 85 or disk > 85:
             status_text = "High Risk"
             risk_class = "risk-high"
-        elif cpu > 70 or mem > 75:
+        elif cpu > 70 or mem > 75 or disk > 75:
             status_text = "Warning"
             risk_class = "risk-medium"
         else:
@@ -87,7 +99,8 @@ def dashboard_summary():
             "status": status_text,
             "risk_class": risk_class,
             "cpu": cpu,
-            "memory": mem
+            "memory": mem,
+            "disk": disk
         })
 
     return {
@@ -97,8 +110,12 @@ def dashboard_summary():
         "healthy": healthy,
         "warning": warning,
         "critical": critical,
+        "healthy_pct": healthy_pct,
+        "warning_pct": warning_pct,
+        "critical_pct": critical_pct,
         "active_alerts": active_alerts,
-        "fleet_health_score": f"{health_pct}%",
+        "fleet_health_score": f"{health_score_num}%",
+        "health_score_num": health_score_num,
         "prediction_accuracy": "99.1%",
         "top_servers": top_servers_list
     }

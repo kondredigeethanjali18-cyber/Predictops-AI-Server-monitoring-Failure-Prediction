@@ -71,16 +71,23 @@
         <div class="hero-panel" aria-label="Infrastructure health preview">
             <div class="panel-header">
                 <span>Operations Overview</span>
-                <strong>Live</strong>
+                <strong><i class="fas fa-circle live-pulse" style="font-size: 8px; margin-right: 4px;"></i> Live</strong>
             </div>
 
             <div class="panel-health">
-                <div>
-                    <span class="panel-label">Fleet Health</span>
-                    <strong id="landingFleetHealth">--%</strong>
+                <div class="panel-health-main">
+                    <div>
+                        <span class="panel-label">Fleet Health Index</span>
+                        <strong id="landingFleetHealth">--%</strong>
+                    </div>
+                    <div class="health-ring" id="landingHealthRing" title="Live Fleet Health Distribution">
+                        <span id="landingHealthRingInner"><i class="fas fa-heart-pulse" style="color: #16a34a; font-size: 18px;"></i></span>
+                    </div>
                 </div>
-                <div class="health-ring">
-                    <span></span>
+                <div class="landing-health-breakdown" id="landingHealthBreakdown">
+                    <span class="health-pill pill-healthy"><span class="dot dot-green"></span> <strong id="landingHealthyTxt">--</strong> Healthy</span>
+                    <span class="health-pill pill-warning"><span class="dot dot-yellow"></span> <strong id="landingWarningTxt">--</strong> Warning</span>
+                    <span class="health-pill pill-critical"><span class="dot dot-red"></span> <strong id="landingCriticalTxt">--</strong> Critical</span>
                 </div>
             </div>
 
@@ -92,8 +99,10 @@
             </div>
 
             <div class="panel-footer" id="landingAlertFooter">
-                <i class="fas fa-bolt"></i>
-                Real-time predictive telemetry generated from CPU & memory patterns
+                <div class="footer-time-row">
+                    <span><i class="fas fa-clock" style="color: #60a5fa; margin-right: 4px;"></i> Synced: <strong id="landingSyncTime">--:--:-- (IST)</strong></span>
+                    <span class="countdown-badge" id="landingCountdownBadge"><i class="fas fa-rotate" style="font-size: 10px;"></i> Next in <strong id="landingRemainingSecs">8s</strong></span>
+                </div>
             </div>
         </div>
 

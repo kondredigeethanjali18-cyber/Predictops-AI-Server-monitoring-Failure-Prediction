@@ -1,6 +1,21 @@
+// PredictOps AI - Landing Page Live Stats & Synchronized Countdown Controller
+
+const REFRESH_INTERVAL_SECONDS = 8;
+let remainingSeconds = REFRESH_INTERVAL_SECONDS;
+let countdownTimer = null;
+let lastSyncDate = new Date();
+let isFetchingStats = false;
+
 async function loadStats() {
+    if (isFetchingStats) return;
+    isFetchingStats = true;
+
     try {
         const response = await fetch("/dashboard-summary");
+        if (!response.ok) {
+            isFetchingStats = false;
+            return;
+        }
         const data = await response.json();
 
         // 1. Update KPI Counters
@@ -19,13 +34,50 @@ async function loadStats() {
             accuracyEl.innerText = data.prediction_accuracy;
         }
 
-        // 2. Update Live Fleet Health Preview
+        // 2. Update Dynamic Fleet Health Score & Dynamic Ring Chart
         const fleetHealthEl = document.getElementById("landingFleetHealth");
-        if (fleetHealthEl && data.fleet_health_score) {
-            fleetHealthEl.innerText = data.fleet_health_score;
+        const healthRingEl = document.getElementById("landingHealthRing");
+        const ringIconEl = document.querySelector("#landingHealthRingInner i");
+
+        const scoreNum = data.health_score_num !== undefined 
+            ? Number(data.health_score_num) 
+            : (data.fleet_health_score ? parseFloat(data.fleet_health_score) : 100);
+
+        const scoreColor = scoreNum >= 90 ? "#16a34a" : scoreNum >= 75 ? "#d97706" : "#dc2626";
+
+        if (fleetHealthEl) {
+            fleetHealthEl.innerText = data.fleet_health_score || `${scoreNum.toFixed(1)}%`;
+            fleetHealthEl.style.color = scoreColor;
         }
 
-        // 3. Update Live Operations Server List
+        if (ringIconEl) {
+            ringIconEl.style.color = scoreColor;
+        }
+
+        if (healthRingEl) {
+            const hPct = data.healthy_pct !== undefined ? Number(data.healthy_pct) : 100;
+            const wPct = data.warning_pct !== undefined ? Number(data.warning_pct) : 0;
+            const cPct = data.critical_pct !== undefined ? Number(data.critical_pct) : 0;
+
+            const stop1 = Math.max(0, Math.min(100, hPct));
+            const stop2 = Math.max(stop1, Math.min(100, stop1 + wPct));
+
+            // Dynamic conic gradient reflecting live proportions of Healthy (Green), Warning (Amber), Critical (Red)
+            healthRingEl.style.background = `conic-gradient(#22c55e 0% ${stop1}%, #f59e0b ${stop1}% ${stop2}%, #ef4444 ${stop2}% 100%)`;
+            healthRingEl.style.boxShadow = `0 4px 14px ${scoreNum >= 90 ? 'rgba(34, 197, 94, 0.25)' : scoreNum >= 75 ? 'rgba(245, 158, 11, 0.25)' : 'rgba(239, 68, 68, 0.25)'}`;
+        }
+
+        // 3. Update Breakdown Count Pills
+        const healthyTxtEl = document.getElementById("landingHealthyTxt");
+        if (healthyTxtEl) healthyTxtEl.innerText = data.healthy !== undefined ? `${data.healthy}` : "0";
+
+        const warningTxtEl = document.getElementById("landingWarningTxt");
+        if (warningTxtEl) warningTxtEl.innerText = data.warning !== undefined ? `${data.warning}` : "0";
+
+        const criticalTxtEl = document.getElementById("landingCriticalTxt");
+        if (criticalTxtEl) criticalTxtEl.innerText = data.critical !== undefined ? `${data.critical}` : "0";
+
+        // 4. Update Live Operations Server List
         const panelListEl = document.getElementById("landingPanelList");
         if (panelListEl && data.top_servers && data.top_servers.length > 0) {
             panelListEl.innerHTML = data.top_servers.map(s => {
@@ -43,26 +95,58 @@ async function loadStats() {
             }).join("");
         }
 
-        // 4. Update Footer note
-        const footerEl = document.getElementById("landingAlertFooter");
-        if (footerEl) {
-            const shiftMs = (5 * 60 + 29) * 60 * 1000;
-            const shiftedNow = new Date(Date.now() + shiftMs);
-            const now = shiftedNow.toLocaleTimeString("en-IN", {
-                timeZone: "Asia/Kolkata",
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-                hour12: true
-            });
-            footerEl.innerHTML = `<i class="fas fa-bolt" style="color: #2563eb;"></i> Live sync active at ${now} (IST) — ${data.total_servers || 26} nodes connected`;
-        }
+        // 5. Update Accurate Synced Time & Reset Countdown
+        lastSyncDate = new Date();
+        remainingSeconds = REFRESH_INTERVAL_SECONDS;
+        renderSyncTimer();
 
     } catch (error) {
         console.error("Error loading landing stats:", error);
+    } finally {
+        isFetchingStats = false;
     }
 }
 
-// Initial load & 8-second interval
+function renderSyncTimer() {
+    const syncTimeEl = document.getElementById("landingSyncTime");
+    const remainingEl = document.getElementById("landingRemainingSecs");
+
+    if (syncTimeEl) {
+        syncTimeEl.innerText = lastSyncDate.toLocaleTimeString("en-IN", {
+            timeZone: "Asia/Kolkata",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: true
+        }) + " (IST)";
+    }
+
+    if (remainingEl) {
+        remainingEl.innerText = `${remainingSeconds}s`;
+    }
+}
+
+function startSyncCountdown() {
+    if (countdownTimer) clearInterval(countdownTimer);
+
+    countdownTimer = setInterval(() => {
+        remainingSeconds--;
+        const remainingEl = document.getElementById("landingRemainingSecs");
+        const badgeEl = document.getElementById("landingCountdownBadge");
+
+        if (remainingSeconds <= 0) {
+            if (badgeEl) {
+                badgeEl.innerHTML = `<i class="fas fa-spinner fa-spin" style="font-size: 10px;"></i> Syncing...`;
+            }
+            loadStats();
+        } else {
+            if (badgeEl) {
+                badgeEl.innerHTML = `<i class="fas fa-rotate" style="font-size: 10px;"></i> Next in <strong id="landingRemainingSecs">${remainingSeconds}s</strong>`;
+            }
+        }
+    }, 1000);
+}
+
+// Initial load & start synchronized countdown loop
 loadStats();
-setInterval(loadStats, 8000);
+startSyncCountdown();
