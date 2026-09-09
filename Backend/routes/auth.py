@@ -608,34 +608,15 @@ async def oauth_github_callback(request: Request, code: Optional[str] = None, er
     return redirect
 
 
-@router.get("/auth/oauth/google", response_class=HTMLResponse)
-@router.get("/auth/google-login", response_class=HTMLResponse)
-def google_login_page(request: Request):
-    """
-    Dedicated Google Sign-in and 2-Step OTP Verification Page.
-    """
-    token = request.cookies.get("session_token")
-    username = validate_session(token) if token else None
-    if username:
-        return RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
-
-    return templates.TemplateResponse(
-        request=request,
-        name="google_login.html",
-        context={}
-    )
+@router.get("/auth/oauth/google")
+@router.get("/auth/google-login")
+def google_login_page():
+    """Google login removed. Redirects to standard login."""
+    return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
 
 
 @router.get("/auth/oauth/{provider}")
 def oauth_authorize(provider: str):
-    """Initiates OAuth 2.0 authorization code flow or account prompt for requested provider."""
-    provider_clean = provider.lower().strip()
-    if provider_clean == "google":
-        return RedirectResponse(url="/auth/oauth/google", status_code=status.HTTP_302_FOUND)
-    elif provider_clean == "github":
-        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
-    elif provider_clean in ["demo", "sandbox"]:
-        return RedirectResponse(url="/auth/oauth/sandbox?provider=demo", status_code=status.HTTP_302_FOUND)
-    else:
-        return RedirectResponse(url="/login?error=unsupported_provider", status_code=status.HTTP_302_FOUND)
+    """External OAuth removed. Redirects to standard login."""
+    return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
 
