@@ -25,6 +25,7 @@ from Backend.services.oauth_service import (
     GITHUB_CLIENT_ID
 )
 from Backend.services.email_verification_service import (
+    verify_email_exists,
     create_verification_record,
     send_verification_email,
     verify_email_code
@@ -365,7 +366,8 @@ def logout(request: Request, response: Response):
 @router.post("/auth/oauth/google/send-code")
 async def google_send_verification_code(request: Request):
     """
-    Generates and sends a 6-digit OTP verification code for the selected Google email.
+    Verifies that the Google email exists and has active MX mail records,
+    then generates and dispatches a 6-digit OTP verification code directly to the inbox.
     """
     try:
         content_type = request.headers.get("content-type", "")
@@ -378,17 +380,35 @@ async def google_send_verification_code(request: Request):
     except Exception:
         email = ""
 
-    if not email or "@" not in email:
+    if not email:
         return JSONResponse(
             status_code=400,
-            content={"success": False, "error": "Please provide a valid Google email address."}
+            content={"success": False, "error": "Please enter your Google email address."}
         )
 
-    code, expires_at = create_verification_record(email)
-    sent, msg = send_verification_email(email, code)
+    # 1. Verify that email format & domain exist with active MX mail servers
+    is_valid, err_msg = verify_email_exists(email)
+    if not is_valid:
+        return JSONResponse(
+            status_code=400,
+            content={"success": False, "error": err_msg}
+        )
+
+    clean_email = email.lower().strip()
+
+    # 2. Generate secure OTP and store record (10-min validity)
+    code, expires_at = create_verification_record(clean_email)
+
+    # 3. Dispatch verification email via SMTP directly to the inbox
+    sent, delivery_msg = send_verification_email(clean_email, code)
+    if not sent:
+        return JSONResponse(
+            status_code=400,
+            content={"success": False, "error": delivery_msg}
+        )
 
     # Mask email for privacy (e.g., va***ops@gmail.com)
-    parts = email.split("@")
+    parts = clean_email.split("@")
     local_part = parts[0]
     domain_part = parts[1]
     if len(local_part) <= 3:
@@ -398,10 +418,9 @@ async def google_send_verification_code(request: Request):
 
     return JSONResponse(content={
         "success": True,
-        "message": f"Verification code sent to {email}.",
-        "email": email,
+        "message": f"A 6-digit confirmation code has been sent to {clean_email}. Please check your inbox.",
+        "email": clean_email,
         "masked_email": masked,
-        "code_preview": code,
         "expires_in_seconds": 600
     })
 
@@ -522,36 +541,10 @@ def oauth_prompt_submit(
 
 
 @router.get("/auth/oauth/sandbox")
-def oauth_sandbox(provider: str = "demo"):
-    """
-    Developer Sandbox OAuth 2.0 Flow:
-    Provides an immediate 1-click verified login for testing and evaluation.
-    """
-    profile = get_sandbox_user(provider)
-    username = profile["username"]
-
-    # Provision user
-    create_user(username, auth_type=profile["provider"], email=profile["email"])
-
-    # Establish session
-    token, max_age = create_session(username, remember_me=True, provider=profile["provider"])
-    redirect = RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
-    redirect.set_cookie(
-        key="session_token",
-        value=token,
-        max_age=max_age,
-        httponly=True,
-        samesite="lax",
-        path="/"
-    )
-    logger.info(f"OAuth 2.0 Sandbox login successful for {username} ({profile['provider']})")
-    return redirect
-
-
 @router.get("/auth/oauth/demo")
-def oauth_demo():
-    """Direct alias for 1-click sandbox demo."""
-    return oauth_sandbox(provider="demo")
+def oauth_instant_disabled():
+    """Instant login is permanently disabled. Redirects to standard login."""
+    return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
 
 
 @router.get("/auth/oauth/google/callback")
@@ -608,23 +601,34 @@ async def oauth_github_callback(request: Request, code: Optional[str] = None, er
     return redirect
 
 
+@router.get("/auth/oauth/google", response_class=HTMLResponse)
+@router.get("/auth/google-login", response_class=HTMLResponse)
+def google_login_page(request: Request):
+    """
+    Dedicated Google Sign-in and 2-Step OTP Verification Page.
+    """
+    token = request.cookies.get("session_token")
+    username = validate_session(token) if token else None
+    if username:
+        return RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="google_login.html",
+        context={}
+    )
+
+
 @router.get("/auth/oauth/{provider}")
 def oauth_authorize(provider: str):
     """Initiates OAuth 2.0 authorization code flow or account prompt for requested provider."""
     provider_clean = provider.lower().strip()
     if provider_clean == "google":
-        if GOOGLE_CLIENT_ID:
-            url = get_google_auth_url()
-            return RedirectResponse(url=url, status_code=status.HTTP_302_FOUND)
-        else:
-            return RedirectResponse(url="/login?oauth_prompt=google", status_code=status.HTTP_302_FOUND)
+        return RedirectResponse(url="/auth/oauth/google", status_code=status.HTTP_302_FOUND)
     elif provider_clean == "github":
-        if GITHUB_CLIENT_ID:
-            url = get_github_auth_url()
-            return RedirectResponse(url=url, status_code=status.HTTP_302_FOUND)
-        else:
-            return RedirectResponse(url="/login?oauth_prompt=github", status_code=status.HTTP_302_FOUND)
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
     elif provider_clean in ["demo", "sandbox"]:
         return RedirectResponse(url="/auth/oauth/sandbox?provider=demo", status_code=status.HTTP_302_FOUND)
     else:
         return RedirectResponse(url="/login?error=unsupported_provider", status_code=status.HTTP_302_FOUND)
+

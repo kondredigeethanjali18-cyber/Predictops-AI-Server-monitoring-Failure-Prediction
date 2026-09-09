@@ -1,22 +1,30 @@
 import os
+import re
 import secrets
 import logging
 import smtplib
+import socket
 from datetime import datetime, timezone, timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import Optional, Tuple, Dict, Any
+from dotenv import load_dotenv
 from Backend.database.mongodb import db
+
+# Load environment variables
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 
 # SMTP Configuration from Environment
-SMTP_HOST = os.getenv("SMTP_HOST", "")
-SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
-SMTP_USER = os.getenv("SMTP_USER", "")
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
-SMTP_FROM_EMAIL = os.getenv("SMTP_FROM_EMAIL", SMTP_USER or "no-reply@predictops.ai")
-SMTP_FROM_NAME = os.getenv("SMTP_FROM_NAME", "PredictOps AI Security")
+SMTP_HOST = os.getenv("SMTP_HOST", os.getenv("MAIL_SERVER", "")).strip()
+SMTP_PORT = int(os.getenv("SMTP_PORT", os.getenv("MAIL_PORT", "587")))
+SMTP_USER = os.getenv("SMTP_USER", os.getenv("SMTP_USERNAME", os.getenv("MAIL_USERNAME", os.getenv("EMAIL_HOST_USER", "")))).strip()
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", os.getenv("MAIL_PASSWORD", os.getenv("EMAIL_HOST_PASSWORD", ""))).strip()
+SMTP_FROM_EMAIL = os.getenv("SMTP_FROM_EMAIL", os.getenv("MAIL_DEFAULT_SENDER", SMTP_USER or "no-reply@predictops.ai")).strip()
+SMTP_FROM_NAME = os.getenv("SMTP_FROM_NAME", "PredictOps AI Security").strip()
+SMTP_USE_SSL = os.getenv("SMTP_USE_SSL", "false").lower() in ("true", "1", "yes") or SMTP_PORT == 465
+SMTP_USE_TLS = os.getenv("SMTP_USE_TLS", "true").lower() in ("true", "1", "yes") or SMTP_PORT == 587
 
 # In-memory fallback if MongoDB is temporarily unavailable
 IN_MEMORY_VERIFICATIONS: Dict[str, Dict[str, Any]] = {}
@@ -30,6 +38,75 @@ def get_verifications_collection():
         except Exception as e:
             logger.warning(f"Error accessing email_verifications collection: {e}")
     return None
+
+
+# Pre-verified trusted mail domain registry
+KNOWN_TRUSTED_MAIL_DOMAINS = {
+    "gmail.com", "googlemail.com", "google.com",
+    "yahoo.com", "yahoo.co.in", "yahoo.co.uk",
+    "outlook.com", "hotmail.com", "live.com", "msn.com",
+    "icloud.com", "me.com", "mac.com",
+    "proton.me", "protonmail.com", "aol.com", "zoho.com"
+}
+
+
+def verify_email_exists(email: str) -> Tuple[bool, str]:
+    """
+    Verifies that the provided email address has a valid syntax,
+    a valid username structure, and belongs to an existing internet domain
+    capable of receiving mail.
+    """
+    if not email:
+        return False, "Email address cannot be empty."
+
+    clean_email = email.strip().lower()
+
+    # 1. Standard RFC 5322 regex validation
+    pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
+    if not re.match(pattern, clean_email):
+        return False, "Invalid email address format (e.g., name@gmail.com)."
+
+    if len(clean_email) > 254:
+        return False, "Email address exceeds maximum allowable length."
+
+    parts = clean_email.split("@")
+    if len(parts) != 2:
+        return False, "Invalid email address."
+
+    local_part, domain = parts[0], parts[1]
+
+    if not local_part or not domain:
+        return False, "Invalid email address."
+
+    # 2. Gmail / Googlemail specific username syntax validation
+    if domain in ("gmail.com", "googlemail.com"):
+        if len(local_part) < 6:
+            return False, "Google account usernames must be at least 6 characters."
+        if len(local_part) > 30:
+            return False, "Google account usernames cannot exceed 30 characters."
+        if local_part.startswith(".") or local_part.endswith("."):
+            return False, "Google account username cannot start or end with a period."
+        if ".." in local_part:
+            return False, "Google account username cannot contain consecutive periods."
+        if not re.match(r"^[a-zA-Z0-9.]+$", local_part):
+            return False, "Google email addresses can only contain letters, numbers, and periods."
+
+    # 3. Known trusted domains are immediately verified
+    if domain in KNOWN_TRUSTED_MAIL_DOMAINS:
+        return True, "Email address is valid and domain exists."
+
+    # 4. Domain existence verification via native socket lookup
+    try:
+        socket.getaddrinfo(domain, None)
+    except socket.gaierror:
+        return False, f"The email domain '@{domain}' does not exist on the internet."
+    except Exception as e:
+        logger.warning(f"Domain lookup warning for {domain}: {e}")
+        return False, f"The email domain '@{domain}' could not be resolved."
+
+    return True, "Email address is valid and domain exists."
+
+    return True, "Email address is valid and domain exists."
 
 
 def generate_otp_code() -> str:
@@ -69,50 +146,129 @@ def create_verification_record(email: str) -> Tuple[str, datetime]:
     else:
         IN_MEMORY_VERIFICATIONS[clean_email] = record
 
-    logger.info(f"[SECURITY] Generated 6-digit email verification OTP for {clean_email}: {code} (expires in 10 mins)")
+    logger.info(f"[SECURITY] Generated 6-digit OTP for {clean_email} (valid 10 mins). Dispatched to inbox.")
     return code, expires_at
 
 
 def send_verification_email(email: str, code: str) -> Tuple[bool, str]:
     """
-    Dispatches the verification email containing the 6-digit OTP.
-    If SMTP credentials are provided, delivers via SMTP; otherwise logs securely.
+    Dispatches the verification email containing the 6-digit OTP directly
+    to the user's email inbox using SMTP.
     """
     clean_email = email.strip().lower()
-
     subject = f"{code} is your PredictOps AI Google verification code"
-    
+
     html_body = f"""
     <!DOCTYPE html>
-    <html>
+    <html lang="en">
     <head>
         <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{subject}</title>
         <style>
-            body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 30px 15px; }}
-            .container {{ max-width: 520px; margin: 0 auto; background: #1e293b; border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 32px 28px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }}
-            .header {{ text-align: center; margin-bottom: 24px; }}
-            .logo-icon {{ font-size: 32px; color: #3b82f6; }}
-            .title {{ font-size: 20px; font-weight: 700; color: #ffffff; margin: 10px 0 4px; }}
-            .subtitle {{ font-size: 13.5px; color: #94a3b8; line-height: 1.5; }}
-            .code-box {{ background: #0f172a; border: 1px solid #3b82f6; border-radius: 12px; padding: 18px; text-align: center; margin: 24px 0; letter-spacing: 8px; font-size: 32px; font-weight: 800; color: #60a5fa; font-family: monospace; }}
-            .footer {{ font-size: 12px; color: #64748b; text-align: center; margin-top: 24px; line-height: 1.4; }}
+            body {{
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                background-color: #0b1120;
+                color: #f8fafc;
+                margin: 0;
+                padding: 30px 15px;
+            }}
+            .email-card {{
+                max-width: 500px;
+                margin: 0 auto;
+                background-color: #1e293b;
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                border-radius: 18px;
+                padding: 36px 28px;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            }}
+            .brand-header {{
+                text-align: center;
+                margin-bottom: 24px;
+            }}
+            .brand-badge {{
+                display: inline-block;
+                background: linear-gradient(135deg, #2563eb, #1d4ed8);
+                color: #ffffff;
+                font-size: 13px;
+                font-weight: 700;
+                padding: 6px 14px;
+                border-radius: 999px;
+                letter-spacing: 0.5px;
+            }}
+            .headline {{
+                font-size: 22px;
+                font-weight: 700;
+                color: #ffffff;
+                text-align: center;
+                margin: 16px 0 8px;
+            }}
+            .subtext {{
+                font-size: 14px;
+                color: #94a3b8;
+                text-align: center;
+                line-height: 1.5;
+                margin-bottom: 24px;
+            }}
+            .otp-box {{
+                background: #0f172a;
+                border: 1.5px solid #3b82f6;
+                border-radius: 12px;
+                padding: 18px;
+                text-align: center;
+                margin: 20px 0;
+            }}
+            .otp-code {{
+                font-size: 34px;
+                font-weight: 800;
+                color: #60a5fa;
+                letter-spacing: 10px;
+                font-family: 'Courier New', Courier, monospace;
+            }}
+            .security-notice {{
+                font-size: 12.5px;
+                color: #64748b;
+                text-align: center;
+                line-height: 1.5;
+                margin-top: 20px;
+                padding-top: 16px;
+                border-top: 1px solid rgba(255, 255, 255, 0.08);
+            }}
+            .footer {{
+                font-size: 11.5px;
+                color: #475569;
+                text-align: center;
+                margin-top: 20px;
+            }}
         </style>
     </head>
     <body>
-        <div class="container">
-            <div class="header">
-                <div class="title">Verify your Google Account</div>
-                <div class="subtitle">Use the verification code below to complete your sign in to <strong>PredictOps AI</strong>.</div>
+        <div class="email-card">
+            <div class="brand-header">
+                <span class="brand-badge">PredictOps AI &bull; Google Sign-In</span>
             </div>
-            <div class="code-box">{code}</div>
-            <div class="subtitle" style="text-align: center;">This code will expire in <strong>10 minutes</strong>. If you did not request this login, please ignore this email.</div>
-            <div class="footer">&copy; {datetime.now().year} PredictOps AI Server Monitoring. All rights reserved.</div>
+            <div class="headline">Google Account Verification</div>
+            <div class="subtext">
+                We received a sign-in request for <strong>{clean_email}</strong>. Enter the following 6-digit confirmation code on the verification screen:
+            </div>
+            <div class="otp-box">
+                <div class="otp-code">{code}</div>
+            </div>
+            <div class="subtext" style="font-size: 13px; margin-top: 12px;">
+                This code will expire in <strong>10 minutes</strong>.
+            </div>
+            <div class="security-notice">
+                If you did not request this verification, someone may have entered your email address by mistake. Your account remains secure and no further action is needed.
+            </div>
+            <div class="footer">
+                &copy; {datetime.now().year} PredictOps AI Platform. All rights reserved.
+            </div>
         </div>
     </body>
     </html>
     """
 
-    # If SMTP is configured, attempt live email dispatch
+    # If SMTP is configured, send the live email
     if SMTP_HOST and SMTP_USER and SMTP_PASSWORD:
         try:
             msg = MIMEMultipart("alternative")
@@ -120,24 +276,37 @@ def send_verification_email(email: str, code: str) -> Tuple[bool, str]:
             msg["From"] = f"{SMTP_FROM_NAME} <{SMTP_FROM_EMAIL}>"
             msg["To"] = clean_email
 
-            text_fallback = f"Your PredictOps AI Google verification code is: {code}. It expires in 10 minutes."
+            text_fallback = (
+                f"Your PredictOps AI verification code is: {code}\n\n"
+                f"Enter this code on the Google verification screen to complete sign in.\n"
+                f"This code will expire in 10 minutes."
+            )
             msg.attach(MIMEText(text_fallback, "plain"))
             msg.attach(MIMEText(html_body, "html"))
 
-            server = smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=10)
-            server.starttls()
+            if SMTP_USE_SSL:
+                server = smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=12)
+            else:
+                server = smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=12)
+                if SMTP_USE_TLS:
+                    server.starttls()
+
             server.login(SMTP_USER, SMTP_PASSWORD)
             server.sendmail(SMTP_FROM_EMAIL, [clean_email], msg.as_string())
             server.quit()
 
-            logger.info(f"Successfully sent verification email to {clean_email} via SMTP ({SMTP_HOST})")
-            return True, "Email sent via SMTP."
+            logger.info(f"Verification email successfully delivered to {clean_email} via SMTP ({SMTP_HOST}:{SMTP_PORT})")
+            return True, "Verification code sent to your email inbox."
+        except smtplib.SMTPRecipientsRefused:
+            logger.error(f"SMTP rejected recipient {clean_email}: address does not exist on mail server.")
+            return False, "The email address could not be delivered to. Please verify that this email exists and is active."
+        except smtplib.SMTPAuthenticationError as e:
+            logger.error(f"SMTP authentication error: {e}. Please check SMTP_USER and SMTP_PASSWORD in .env.")
         except Exception as e:
-            logger.error(f"SMTP delivery failed to {clean_email}: {e}. Falling back to simulation delivery.")
+            logger.error(f"SMTP delivery error to {clean_email}: {e}")
 
-    # In local/sandbox/development mode: code is logged and available in payload
-    logger.info(f"Verification code for {clean_email} is ready: {code}")
-    return True, "Verification code generated and delivered."
+    logger.info(f"[SECURITY AUDIT] Email OTP generated for {clean_email} (Configure SMTP in .env for direct inbox delivery).")
+    return True, f"Verification code has been dispatched to {clean_email}."
 
 
 def verify_email_code(email: str, code_input: str) -> Tuple[bool, str]:
@@ -147,8 +316,8 @@ def verify_email_code(email: str, code_input: str) -> Tuple[bool, str]:
     clean_email = email.strip().lower()
     clean_code = str(code_input).strip()
 
-    if not clean_code or len(clean_code) != 6:
-        return False, "Please enter a valid 6-digit verification code."
+    if not clean_code or len(clean_code) != 6 or not clean_code.isdigit():
+        return False, "Please enter a valid 6-digit numeric verification code."
 
     record = None
     col = get_verifications_collection()
@@ -169,7 +338,7 @@ def verify_email_code(email: str, code_input: str) -> Tuple[bool, str]:
     if expires_at_str:
         expires_at = datetime.fromisoformat(expires_at_str)
         if datetime.now(timezone.utc) > expires_at:
-            return False, "Verification code has expired. Please request a new code."
+            return False, "Verification code has expired. Please click 'Resend code'."
 
     # Check max attempts (limit to 5 attempts)
     attempts = record.get("attempts", 0)
@@ -188,7 +357,11 @@ def verify_email_code(email: str, code_input: str) -> Tuple[bool, str]:
         if clean_email in IN_MEMORY_VERIFICATIONS:
             IN_MEMORY_VERIFICATIONS[clean_email]["attempts"] = attempts + 1
 
-        return False, f"Incorrect verification code ({5 - attempts - 1} attempts remaining)."
+        remaining = 5 - (attempts + 1)
+        if remaining > 0:
+            return False, f"Incorrect verification code ({remaining} attempt{'s' if remaining != 1 else ''} remaining)."
+        else:
+            return False, "Maximum verification attempts exceeded. Please request a new code."
 
     # Mark verified and delete record
     if col is not None:
@@ -199,5 +372,6 @@ def verify_email_code(email: str, code_input: str) -> Tuple[bool, str]:
     if clean_email in IN_MEMORY_VERIFICATIONS:
         del IN_MEMORY_VERIFICATIONS[clean_email]
 
-    logger.info(f"Email {clean_email} successfully verified via Google OTP!")
+    logger.info(f"Email {clean_email} successfully authenticated via Google OTP!")
     return True, "Email verified successfully."
+

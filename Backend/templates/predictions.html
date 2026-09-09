@@ -3,17 +3,76 @@
 {% block content %}
 
 <div class="page-header-row">
-    <div class="dashboard-header">
+    <div class="dashboard-header" style="margin-bottom: 0;">
         <h1>Predictions</h1>
-        <p>Latest AI health predictions with resource and throughput context.</p>
+        <p>Telemetry inference feed with multi-criteria date and risk filtering</p>
     </div>
 
-    <div class="page-actions">
-        <select id="predictionFilter">
-            <option value="all">All Predictions</option>
-            <option value="NORMAL">Normal</option>
-            <option value="ANOMALY">Anomaly</option>
-        </select>
+    <div class="page-actions" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        <button type="button" id="exportPredictionsBtn" class="action-btn" style="background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; padding: 9px 14px; border-radius: 8px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+            <i class="fas fa-file-export" style="color: #2563eb;"></i> Export CSV
+        </button>
+    </div>
+</div>
+
+<!-- Date & Risk Filter Toolbar -->
+<div class="prediction-filter-toolbar" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; margin: 18px 0 16px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+    
+    <!-- Top Row: Quick Presets & Status Selector -->
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <!-- Quick Date Range Pills -->
+        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;" id="datePresetGroup">
+            <span style="font-size: 11.5px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-right: 4px;"><i class="fas fa-calendar-days" style="color: #2563eb;"></i> Range:</span>
+            <button type="button" class="filter-pill active" data-range="all">All Time (<span id="countRangeAll">0</span>)</button>
+            <button type="button" class="filter-pill" data-range="today">Today (<span id="countRangeToday">0</span>)</button>
+            <button type="button" class="filter-pill" data-range="yesterday">Yesterday</button>
+            <button type="button" class="filter-pill" data-range="7days">Last 7 Days</button>
+            <button type="button" class="filter-pill" data-range="custom"><i class="fas fa-sliders"></i> Custom</button>
+        </div>
+
+        <!-- Status Filter & Search -->
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <div class="input-wrapper" style="position: relative; width: 200px;">
+                <i class="fas fa-search" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 13px;"></i>
+                <input type="text" id="predSearchBox" placeholder="Search server..." style="width: 100%; padding: 7px 10px 7px 30px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; outline: none; box-sizing: border-box;">
+            </div>
+
+            <select id="predictionFilter" style="padding: 7px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; font-weight: 600; color: #0f172a; background: #ffffff; outline: none;">
+                <option value="all">All Predictions</option>
+                <option value="NORMAL">Normal State</option>
+                <option value="ANOMALY">Anomaly Incidents</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Collapsible Custom Date Pickers Row -->
+    <div id="customDateRangeRow" style="display: none; flex-direction: column; gap: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <label for="predStartDate" style="font-size: 12px; font-weight: 700; color: #475569;">From:</label>
+                <input type="date" id="predStartDate" class="date-input" style="padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px; color: #0f172a; outline: none; transition: all 0.2s ease;">
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <label for="predEndDate" style="font-size: 12px; font-weight: 700; color: #475569;">To:</label>
+                <input type="date" id="predEndDate" class="date-input" style="padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12.5px; color: #0f172a; outline: none; transition: all 0.2s ease;">
+            </div>
+
+            <button type="button" id="btnApplyCustomDate" style="background: #2563eb; color: white; border: none; padding: 7px 14px; border-radius: 8px; font-size: 12.5px; font-weight: 700; cursor: pointer;">
+                Apply Filter
+            </button>
+
+            <button type="button" id="btnResetDateFilter" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 7px 12px; border-radius: 8px; font-size: 12.5px; font-weight: 600; cursor: pointer;">
+                Reset Dates
+            </button>
+
+            <span id="dateFilterSummary" style="font-size: 12px; color: #2563eb; font-weight: 600; margin-left: auto;"></span>
+        </div>
+
+        <div id="dateValidationMessage" class="date-validation-msg" role="alert">
+            <i class="fas fa-circle-exclamation"></i>
+            <span id="dateValidationText"></span>
+        </div>
     </div>
 </div>
 
@@ -22,14 +81,14 @@
         <thead>
             <tr>
                 <th style="width: 50px; text-align: center;">#</th>
-                <th>Server</th>
+                <th class="server-col-header" style="min-width: 140px;">Server</th>
                 <th>Prediction</th>
                 <th>Confidence</th>
                 <th>CPU</th>
                 <th>Memory</th>
                 <th>Disk</th>
-                <th>Network Throughput (MB/s)</th>
-                <th>Time (IST)</th>
+                <th>Network Throughput</th>
+                <th>Timestamp (IST)</th>
             </tr>
         </thead>
 

@@ -678,6 +678,72 @@ tr:last-child td {
 }
 
 /* ==========================================================================
+   Server Column Alignment & Static Icon Position
+   ========================================================================== */
+
+th.server-col-header,
+th.text-left {
+    text-align: left !important;
+    padding-left: 20px !important;
+}
+
+.server-cell {
+    text-align: left !important;
+    padding-left: 20px !important;
+}
+
+.server-cell-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    vertical-align: middle;
+    text-align: left;
+}
+
+.server-icon-box {
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.server-name-text {
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.2px;
+}
+
+/* Date validation feedback */
+.date-input-error {
+    border-color: #ef4444 !important;
+    background-color: #fef2f2 !important;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
+}
+
+.date-validation-msg {
+    display: none;
+    color: #dc2626;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 10px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.date-validation-msg.active {
+    display: flex;
+}
+
+/* ==========================================================================
    Badges & Pills
    ========================================================================== */
 

@@ -268,9 +268,9 @@ async function loadDashboard() {
                     .join("");
             } else {
                 alertsEl.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 8px; color: #16a34a; font-weight: 600; font-size: 13px; padding: 8px 0;">
-                        <i class="fas fa-circle-check" style="font-size: 18px;"></i>
-                        <span>All servers operating within safe anomaly thresholds.</span>
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; min-height: 180px; gap: 8px; color: #16a34a; font-weight: 600; font-size: 13px; text-align: center; padding: 16px;">
+                        <i class="fas fa-circle-check" style="font-size: 24px;"></i>
+                        <span>All servers operating within safe anomaly thresholds. Zero incidents detected.</span>
                     </div>
                 `;
             }
