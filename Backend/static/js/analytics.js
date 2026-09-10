@@ -14,6 +14,44 @@ let countdownTimer = null;
 let lastSyncDate = new Date();
 let isFetchingAnalytics = false;
 
+// Custom Chart.js Plugin for Dynamic Center Text on the Doughnut Chart
+const doughnutCenterTextPlugin = {
+    id: "doughnutCenterText",
+    beforeDraw: function(chart) {
+        if (chart.config.type !== "doughnut") return;
+        const { ctx } = chart;
+        ctx.save();
+
+        const dataset = chart.data.datasets[0];
+        const data = dataset ? dataset.data : [];
+        const healthy = data[0] || 0;
+        const warning = data[1] || 0;
+        const critical = data[2] || 0;
+        const total = healthy + warning + critical;
+        const score = total > 0 ? (((healthy + (warning * 0.5)) / total) * 100).toFixed(1) : "100.0";
+        const scoreNum = parseFloat(score);
+        const scoreColor = scoreNum >= 90 ? "#10b981" : scoreNum >= 75 ? "#f59e0b" : "#ef4444";
+
+        const centerX = (chart.chartArea.left + chart.chartArea.right) / 2;
+        const centerY = (chart.chartArea.top + chart.chartArea.bottom) / 2;
+
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        // Draw Score Number
+        ctx.font = "800 22px 'Segoe UI', system-ui, sans-serif";
+        ctx.fillStyle = scoreColor;
+        ctx.fillText(`${score}%`, centerX, centerY - 8);
+
+        // Draw Subtitle
+        ctx.font = "700 10px 'Segoe UI', system-ui, sans-serif";
+        ctx.fillStyle = "#64748b";
+        ctx.fillText("FLEET HEALTH", centerX, centerY + 12);
+
+        ctx.restore();
+    }
+};
+
 async function loadAnalytics() {
     if (isFetchingAnalytics) return;
     isFetchingAnalytics = true;
@@ -119,20 +157,38 @@ async function loadAnalytics() {
 
         renderUtilizationChart(utilLabels, utilCpu, utilMem);
 
-        // Chart 4: Network Throughput per Server
+        // Chart 4: Network Throughput per Server (Inbound RX & Outbound TX in MB/s)
         const tpLabels = sortedByServerName.map(s => s.server_name);
-        const tpValues = sortedByServerName.map(s => {
-            let tp = Number(s.network_throughput) || 0;
-            if (tp > 100000) tp = tp / (1024 * 1024);
-            return Math.round(tp * 100) / 100;
+        const rxValues = sortedByServerName.map(s => {
+            if (s.network_received_mb !== undefined && s.network_received_mb !== null) {
+                return Math.round(Number(s.network_received_mb) * 100) / 100;
+            }
+            const pred = latestPredByServer[s.server_name];
+            if (pred && pred.network_throughput) {
+                const total = Number(pred.network_throughput) > 100000 ? Number(pred.network_throughput) / (1024 * 1024) : Number(pred.network_throughput);
+                return Math.round((total * 0.6) * 100) / 100;
+            }
+            return 0;
         });
 
-        renderThroughputChart(tpLabels, tpValues);
+        const txValues = sortedByServerName.map(s => {
+            if (s.network_sent_mb !== undefined && s.network_sent_mb !== null) {
+                return Math.round(Number(s.network_sent_mb) * 100) / 100;
+            }
+            const pred = latestPredByServer[s.server_name];
+            if (pred && pred.network_throughput) {
+                const total = Number(pred.network_throughput) > 100000 ? Number(pred.network_throughput) / (1024 * 1024) : Number(pred.network_throughput);
+                return Math.round((total * 0.4) * 100) / 100;
+            }
+            return 0;
+        });
 
-        // Chart 5: Historical Anomaly Distribution (Dynamic Pie Chart with % Tooltips)
+        renderThroughputChart(tpLabels, rxValues, txValues);
+
+        // Chart 5: Historical Anomaly Distribution (Dynamic Pie Chart with Live % and Animation)
         renderHistoricalPieChart(normalCount, anomalyCount);
 
-        // Chart 6: Current Server Status Distribution (Dynamic Tri-State Doughnut/Pie Chart)
+        // Chart 6: Current Server Status Distribution (Dynamic Tri-State Donet Chart with Center Health Score)
         renderStatusDistributionChart(healthyCount, warningCount, criticalCount);
 
         // Update Synced IST Timestamp & Reset Countdown
@@ -155,7 +211,11 @@ function renderHistoricalPieChart(normalCount, anomalyCount) {
     const ctx = document.getElementById("predictionChart");
     if (!ctx) return;
 
-    const pieLabels = ["Normal Operations", "Anomaly Incidents"];
+    const total = normalCount + anomalyCount;
+    const normalPct = total > 0 ? ((normalCount / total) * 100).toFixed(1) : "100.0";
+    const anomalyPct = total > 0 ? ((anomalyCount / total) * 100).toFixed(1) : "0.0";
+
+    const pieLabels = [`Normal (${normalPct}%)`, `Anomaly (${anomalyPct}%)`];
     const pieData = [normalCount, anomalyCount];
     const pieColors = ["#10b981", "#ef4444"];
 
@@ -181,7 +241,7 @@ function renderHistoricalPieChart(normalCount, anomalyCount) {
                 responsive: true,
                 maintainAspectRatio: false,
                 animation: {
-                    duration: 600,
+                    duration: 500,
                     easing: "easeOutQuart"
                 },
                 plugins: {
@@ -193,36 +253,16 @@ function renderHistoricalPieChart(normalCount, anomalyCount) {
                             font: {
                                 size: 11.5,
                                 weight: "700"
-                            },
-                            generateLabels: (chart) => {
-                                const d = chart.data;
-                                if (d.labels.length && d.datasets.length) {
-                                    const dataset = d.datasets[0];
-                                    const total = dataset.data.reduce((a, b) => a + b, 0);
-                                    return d.labels.map((label, i) => {
-                                        const val = dataset.data[i] || 0;
-                                        const pct = total > 0 ? ((val / total) * 100).toFixed(1) : "0.0";
-                                        return {
-                                            text: `${label}: ${val} (${pct}%)`,
-                                            fillStyle: dataset.backgroundColor[i],
-                                            strokeStyle: "#ffffff",
-                                            lineWidth: 1,
-                                            hidden: isNaN(dataset.data[i]) || chart.getDatasetMeta(0).data[i]?.hidden,
-                                            index: i
-                                        };
-                                    });
-                                }
-                                return [];
                             }
                         }
                     },
                     tooltip: {
                         callbacks: {
                             label: function(context) {
-                                const label = context.label || '';
+                                const idx = context.dataIndex;
                                 const val = context.raw || 0;
-                                const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
                                 const pct = total > 0 ? ((val / total) * 100).toFixed(1) : "0.0";
+                                const label = idx === 0 ? "Normal Predictions" : "Anomaly Detections";
                                 return ` ${label}: ${val} (${pct}%)`;
                             }
                         }
@@ -237,7 +277,12 @@ function renderStatusDistributionChart(healthyCount, warningCount, criticalCount
     const ctx = document.getElementById("statusDistributionChart");
     if (!ctx) return;
 
-    const statusLabels = ["Healthy", "Warning", "Critical"];
+    const total = healthyCount + warningCount + criticalCount;
+    const hPct = total > 0 ? ((healthyCount / total) * 100).toFixed(1) : "100.0";
+    const wPct = total > 0 ? ((warningCount / total) * 100).toFixed(1) : "0.0";
+    const cPct = total > 0 ? ((criticalCount / total) * 100).toFixed(1) : "0.0";
+
+    const statusLabels = [`Healthy (${hPct}%)`, `Warning (${wPct}%)`, `Critical (${cPct}%)`];
     const statusData = [healthyCount, warningCount, criticalCount];
     const statusColors = ["#10b981", "#f59e0b", "#ef4444"];
 
@@ -259,12 +304,13 @@ function renderStatusDistributionChart(healthyCount, warningCount, criticalCount
                     hoverOffset: 8
                 }]
             },
+            plugins: [doughnutCenterTextPlugin],
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                cutout: "55%",
+                cutout: "62%",
                 animation: {
-                    duration: 600,
+                    duration: 500,
                     easing: "easeOutQuart"
                 },
                 plugins: {
@@ -276,37 +322,17 @@ function renderStatusDistributionChart(healthyCount, warningCount, criticalCount
                             font: {
                                 size: 11.5,
                                 weight: "700"
-                            },
-                            generateLabels: (chart) => {
-                                const d = chart.data;
-                                if (d.labels.length && d.datasets.length) {
-                                    const dataset = d.datasets[0];
-                                    const total = dataset.data.reduce((a, b) => a + b, 0);
-                                    return d.labels.map((label, i) => {
-                                        const val = dataset.data[i] || 0;
-                                        const pct = total > 0 ? ((val / total) * 100).toFixed(1) : "0.0";
-                                        return {
-                                            text: `${label}: ${val} (${pct}%)`,
-                                            fillStyle: dataset.backgroundColor[i],
-                                            strokeStyle: "#ffffff",
-                                            lineWidth: 1,
-                                            hidden: isNaN(dataset.data[i]) || chart.getDatasetMeta(0).data[i]?.hidden,
-                                            index: i
-                                        };
-                                    });
-                                }
-                                return [];
                             }
                         }
                     },
                     tooltip: {
                         callbacks: {
                             label: function(context) {
-                                const label = context.label || '';
+                                const idx = context.dataIndex;
                                 const val = context.raw || 0;
-                                const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
                                 const pct = total > 0 ? ((val / total) * 100).toFixed(1) : "0.0";
-                                return ` ${label}: ${val} Nodes (${pct}%)`;
+                                const labelNames = ["Healthy Nodes", "Warning / Elevated", "Critical / At Risk"];
+                                return ` ${labelNames[idx]}: ${val} Nodes (${pct}%)`;
                             }
                         }
                     }
@@ -420,7 +446,7 @@ function renderUtilizationChart(labels, cpuData, memData) {
                     {
                         label: "CPU Usage %",
                         data: cpuData,
-                        backgroundColor: "rgba(59, 130, 246, 0.8)",
+                        backgroundColor: "rgba(59, 130, 246, 0.85)",
                         borderColor: "rgb(59, 130, 246)",
                         borderWidth: 1,
                         borderRadius: 4
@@ -428,7 +454,7 @@ function renderUtilizationChart(labels, cpuData, memData) {
                     {
                         label: "Memory Usage %",
                         data: memData,
-                        backgroundColor: "rgba(168, 85, 247, 0.8)",
+                        backgroundColor: "rgba(168, 85, 247, 0.85)",
                         borderColor: "rgb(168, 85, 247)",
                         borderWidth: 1,
                         borderRadius: 4
@@ -450,13 +476,14 @@ function renderUtilizationChart(labels, cpuData, memData) {
     }
 }
 
-function renderThroughputChart(labels, data) {
+function renderThroughputChart(labels, rxData, txData) {
     const ctx = document.getElementById("throughputChart");
     if (!ctx) return;
 
     if (throughputChart) {
         throughputChart.data.labels = labels;
-        throughputChart.data.datasets[0].data = data;
+        throughputChart.data.datasets[0].data = rxData;
+        throughputChart.data.datasets[1].data = txData;
         throughputChart.update();
     } else {
         throughputChart = new Chart(ctx, {
@@ -465,10 +492,18 @@ function renderThroughputChart(labels, data) {
                 labels: labels,
                 datasets: [
                     {
-                        label: "Throughput (MB/s)",
-                        data: data,
-                        backgroundColor: "rgba(244, 63, 94, 0.8)",
-                        borderColor: "rgb(244, 63, 94)",
+                        label: "Inbound (RX MB/s)",
+                        data: rxData,
+                        backgroundColor: "rgba(59, 130, 246, 0.85)",
+                        borderColor: "rgb(37, 99, 235)",
+                        borderWidth: 1,
+                        borderRadius: 4
+                    },
+                    {
+                        label: "Outbound (TX MB/s)",
+                        data: txData,
+                        backgroundColor: "rgba(244, 63, 94, 0.85)",
+                        borderColor: "rgb(225, 29, 72)",
                         borderWidth: 1,
                         borderRadius: 4
                     }
@@ -478,9 +513,25 @@ function renderThroughputChart(labels, data) {
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {
+                    x: {
+                        grid: { display: false }
+                    },
                     y: {
                         beginAtZero: true,
                         title: { display: true, text: "Throughput (MB/s)" }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            afterBody: function(items) {
+                                const idx = items[0].dataIndex;
+                                const rx = Number(rxData[idx]) || 0;
+                                const tx = Number(txData[idx]) || 0;
+                                const tot = (rx + tx).toFixed(2);
+                                return `Total Bandwidth: ${tot} MB/s`;
+                            }
+                        }
                     }
                 }
             }
