@@ -129,6 +129,52 @@ try:
 except Exception as e:
     logger.error(f"Failed to include metrics_router: {e}")
 
+from fastapi.exceptions import RequestValidationError
+
+# Validation exception handler
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    logger.warning(f"Validation error at {request.url.path}: {exc.errors()}")
+    content_type = request.headers.get("content-type", "")
+    accept_header = request.headers.get("accept", "")
+    is_json = "application/json" in content_type or "application/json" in accept_header
+
+    # Extract clean human-friendly message
+    missing_fields = []
+    for err in exc.errors():
+        loc = err.get("loc", [])
+        if len(loc) > 1 and loc[0] == "body":
+            missing_fields.append(str(loc[1]))
+        elif loc:
+            missing_fields.append(str(loc[-1]))
+
+    if missing_fields:
+        detail_msg = f"Missing required fields: {', '.join(missing_fields)}"
+    else:
+        detail_msg = "Invalid request parameters"
+
+    if is_json:
+        return JSONResponse(
+            status_code=400,
+            content={"detail": detail_msg, "success": False, "errors": exc.errors()}
+        )
+
+    if "/login" in request.url.path or "/signup" in request.url.path:
+        mode = "signup" if "/signup" in request.url.path else "login"
+        return templates.TemplateResponse(
+            request=request,
+            name="login.html",
+            context={
+                "error": detail_msg,
+                "mode": mode
+            }
+        )
+
+    return JSONResponse(
+        status_code=400,
+        content={"detail": detail_msg, "success": False}
+    )
+
 # Global exception handler
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
