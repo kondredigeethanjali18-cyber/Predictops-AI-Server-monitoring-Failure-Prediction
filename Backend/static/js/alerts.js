@@ -319,7 +319,7 @@ function initAlerts() {
     }
 
     loadAlerts();
-    setInterval(loadAlerts, 8000);
+    setInterval(loadAlerts, 30000);
 }
 
 function openAlertDetail(itemIndex) {

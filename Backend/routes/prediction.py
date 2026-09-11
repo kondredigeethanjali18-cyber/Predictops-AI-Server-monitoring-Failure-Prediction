@@ -18,28 +18,33 @@ def clean_confidence(conf_val):
 @router.get("/all-predictions")
 def all_predictions():
     col = get_predictions_collection()
+
     if col is None:
         return []
 
     try:
         predictions = list(
-            col.find().sort(
-                "timestamp",
-                -1
-            )
+            col.find()
+            .sort("timestamp", -1)
+            .limit(300)
         )
-    except PyMongoError as exc:
-        raise HTTPException(status_code=503, detail="Unable to fetch predictions from database") from exc
+
+    except PyMongoError:
+        raise HTTPException(
+            status_code=503,
+            detail="Unable to fetch predictions from database"
+        )
 
     for p in predictions:
         p["_id"] = str(p["_id"])
+
         if "confidence" in p:
             p["confidence"] = clean_confidence(p["confidence"])
+
         if "timestamp" in p and hasattr(p["timestamp"], "isoformat"):
             p["timestamp"] = p["timestamp"].isoformat()
 
     return predictions
-
 
 @router.get("/latest-prediction")
 def latest_prediction():

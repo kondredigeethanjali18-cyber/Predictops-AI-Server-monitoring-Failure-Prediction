@@ -490,7 +490,7 @@ function initPredictions() {
     }
 
     loadPredictions();
-    setInterval(loadPredictions, 8000);
+    setInterval(loadPredictions, 30000);
 }
 
 if (document.readyState === "loading") {
