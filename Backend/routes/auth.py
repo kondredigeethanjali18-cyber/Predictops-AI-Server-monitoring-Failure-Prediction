@@ -221,17 +221,72 @@ def login_get(request: Request, success: Optional[str] = None, error: Optional[s
 
 
 @router.post("/login")
-def login_post(
+async def login_post(
     request: Request,
     response: Response,
-    username: str = Form(...),
-    password: str = Form(...)
+    username: Optional[str] = Form(None),
+    password: Optional[str] = Form(None)
 ):
-    u = username.strip()
+    content_type = request.headers.get("content-type", "")
+    accept_header = request.headers.get("accept", "")
+    is_json = "application/json" in content_type or "application/json" in accept_header
+
+    u = (username or "").strip()
+    p = password or ""
+
+    # If missing in Form data, check JSON body
+    if not u or not p:
+        try:
+            if "application/json" in content_type:
+                body_json = await request.json()
+                if isinstance(body_json, dict):
+                    if not u:
+                        u = (body_json.get("username") or "").strip()
+                    if not p:
+                        p = body_json.get("password") or ""
+        except Exception:
+            pass
+
+    if not u or not p:
+        if is_json:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": "Username and password are required.", "success": False}
+            )
+        return templates.TemplateResponse(
+            request=request,
+            name="login.html",
+            context={
+                "error": "Please enter both username and password.",
+                "mode": "login",
+                "username": u
+            }
+        )
+
     user_doc = find_user(u)
 
-    if user_doc and user_doc.get("password") == password:
+    if user_doc and user_doc.get("password") == p:
         token, max_age = create_session(u, remember_me=False, provider="local")
+
+        if is_json:
+            json_resp = JSONResponse(
+                content={
+                    "success": True,
+                    "message": "Login successful",
+                    "username": u,
+                    "token": token,
+                    "redirect_url": "/"
+                }
+            )
+            json_resp.set_cookie(
+                key="session_token",
+                value=token,
+                max_age=max_age,
+                httponly=True,
+                samesite="lax",
+                path="/"
+            )
+            return json_resp
 
         redirect = RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
         redirect.set_cookie(
@@ -243,6 +298,12 @@ def login_post(
             path="/"
         )
         return redirect
+
+    if is_json:
+        return JSONResponse(
+            status_code=401,
+            content={"detail": "Invalid username or password.", "success": False}
+        )
 
     return templates.TemplateResponse(
         request=request,
@@ -269,20 +330,61 @@ def signup_get(request: Request):
 
 
 @router.post("/signup")
-def signup_post(
+async def signup_post(
     request: Request,
     response: Response,
-    username: str = Form(...),
-    email: str = Form(...),
-    password: str = Form(...),
+    username: Optional[str] = Form(None),
+    email: Optional[str] = Form(None),
+    password: Optional[str] = Form(None),
     confirm_password: Optional[str] = Form(None)
 ):
-    u = username.strip()
-    e = email.strip()
+    content_type = request.headers.get("content-type", "")
+    accept_header = request.headers.get("accept", "")
+    is_json = "application/json" in content_type or "application/json" in accept_header
+
+    u = (username or "").strip()
+    e = (email or "").strip()
+    p = password or ""
+    cp = confirm_password or ""
+
+    if not u or not e or not p:
+        try:
+            if "application/json" in content_type:
+                body_json = await request.json()
+                if isinstance(body_json, dict):
+                    if not u:
+                        u = (body_json.get("username") or "").strip()
+                    if not e:
+                        e = (body_json.get("email") or "").strip()
+                    if not p:
+                        p = body_json.get("password") or ""
+                    if not cp:
+                        cp = body_json.get("confirm_password") or ""
+        except Exception:
+            pass
+
+    if not u or not e or not p:
+        if is_json:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": "Username, email, and password are required.", "success": False}
+            )
+        return templates.TemplateResponse(
+            request=request,
+            name="login.html",
+            context={
+                "error": "All fields (username, email, password) are required.",
+                "mode": "signup",
+                "username": u,
+                "email": e
+            }
+        )
 
     # Validate username
     valid_u, u_err = validate_username(u)
     if not valid_u:
+        if is_json:
+            return JSONResponse(status_code=400, content={"detail": u_err, "success": False})
         return templates.TemplateResponse(
             request=request,
             name="login.html",
@@ -292,6 +394,8 @@ def signup_post(
     # Validate email
     valid_e, e_err = validate_email(e)
     if not valid_e:
+        if is_json:
+            return JSONResponse(status_code=400, content={"detail": e_err, "success": False})
         return templates.TemplateResponse(
             request=request,
             name="login.html",
@@ -300,6 +404,8 @@ def signup_post(
 
     # Check if username exists
     if find_user(u) is not None:
+        if is_json:
+            return JSONResponse(status_code=400, content={"detail": f"Username '{u}' is already registered.", "success": False})
         return templates.TemplateResponse(
             request=request,
             name="login.html",
@@ -312,7 +418,9 @@ def signup_post(
         )
 
     # Check confirm password if supplied
-    if confirm_password is not None and password != confirm_password:
+    if cp and p != cp:
+        if is_json:
+            return JSONResponse(status_code=400, content={"detail": "Passwords do not match.", "success": False})
         return templates.TemplateResponse(
             request=request,
             name="login.html",
@@ -320,8 +428,10 @@ def signup_post(
         )
 
     # Validate password requirements
-    valid_p, p_err = validate_password(password)
+    valid_p, p_err = validate_password(p)
     if not valid_p:
+        if is_json:
+            return JSONResponse(status_code=400, content={"detail": p_err, "success": False})
         return templates.TemplateResponse(
             request=request,
             name="login.html",
@@ -329,7 +439,17 @@ def signup_post(
         )
 
     # Create the user in database with email
-    create_user(u, password=password, auth_type="local", email=e)
+    create_user(u, password=p, auth_type="local", email=e)
+
+    if is_json:
+        return JSONResponse(
+            status_code=201,
+            content={
+                "success": True,
+                "message": f"Account created successfully for '{u}'! Please sign in with your credentials.",
+                "username": u
+            }
+        )
 
     # Redirect to Login Page with Success message as requested
     return templates.TemplateResponse(
@@ -494,22 +614,32 @@ async def google_verify_code(request: Request, response: Response):
 
 
 @router.post("/auth/oauth/prompt-submit")
-def oauth_prompt_submit(
+async def oauth_prompt_submit(
     request: Request,
-    provider: str = Form(...),
-    account_input: str = Form(...)
+    provider: Optional[str] = Form(None),
+    account_input: Optional[str] = Form(None)
 ):
     """
     Handles user's submitted Google or GitHub account identity when clicking OAuth buttons.
     """
-    p = provider.lower().strip()
-    raw_acc = account_input.strip()
+    try:
+        content_type = request.headers.get("content-type", "")
+        if (not provider or not account_input) and "application/json" in content_type:
+            data = await request.json()
+            if isinstance(data, dict):
+                provider = provider or data.get("provider")
+                account_input = account_input or data.get("account_input")
+    except Exception:
+        pass
+
+    p = (provider or "").lower().strip()
+    raw_acc = (account_input or "").strip()
 
     if not raw_acc:
         return templates.TemplateResponse(
             request=request,
             name="login.html",
-            context={"error": f"Please enter your {p.capitalize()} account.", "mode": "login"}
+            context={"error": f"Please enter your {p.capitalize() if p else 'account'} details.", "mode": "login"}
         )
 
     # Extract clean username from email or handle
