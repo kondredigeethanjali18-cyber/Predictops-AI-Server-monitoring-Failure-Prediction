@@ -184,6 +184,9 @@ async def global_exception_handler(request: Request, exc: Exception):
         content={"detail": "An unexpected error occurred"}
     )
 
+# Telemetry state memory for smooth realistic metrics drift
+SERVER_TELEMETRY_STATE = {}
+
 def generate_telemetry_batch():
     """Generates a complete telemetry batch for all 22 servers and records predictions."""
     import random
@@ -191,6 +194,8 @@ def generate_telemetry_batch():
     from Backend.services.server_registry import SERVERS
     from Backend.database.mongodb import get_metrics_collection
     from Backend.services.prediction_service import predict_metric
+
+    global SERVER_TELEMETRY_STATE
 
     col = get_metrics_collection()
     # Dynamic active anomaly incident servers in this cycle
@@ -200,6 +205,8 @@ def generate_telemetry_batch():
         sname = server["server_name"]
         is_incident = sname in active_incident_names
 
+        curr = SERVER_TELEMETRY_STATE.get(sname, {})
+
         if is_incident:
             # Active Anomaly Telemetry
             cpu_usage = round(random.uniform(91.5, 98.4), 1)
@@ -207,13 +214,29 @@ def generate_telemetry_batch():
             disk_usage = round(random.uniform(85.0, 94.0), 1)
             latency = round(random.uniform(380.0, 680.0), 1)
             active_procs = random.randint(344, 356)
+            net_sent = round(random.uniform(120.0, 220.0), 2)
+            net_recv = round(random.uniform(120.0, 220.0), 2)
         else:
-            # Healthy Baseline Telemetry
-            cpu_usage = round(random.uniform(22.0, 64.0), 1)
-            memory_percent = round(random.uniform(28.0, 68.0), 1)
-            disk_usage = round(random.uniform(25.0, 65.0), 1)
-            latency = round(random.uniform(35.0, 85.0), 1)
+            # Healthy Baseline Telemetry with smooth realistic walk
+            prev_cpu = curr.get("cpu", random.uniform(25.0, 48.0))
+            prev_mem = curr.get("mem", random.uniform(30.0, 52.0))
+            prev_disk = curr.get("disk", random.uniform(28.0, 45.0))
+            prev_lat = curr.get("lat", random.uniform(40.0, 75.0))
+
+            cpu_usage = round(min(64.0, max(18.0, prev_cpu + random.uniform(-2.2, 2.2))), 1)
+            memory_percent = round(min(66.0, max(22.0, prev_mem + random.uniform(-1.8, 1.8))), 1)
+            disk_usage = round(min(60.0, max(20.0, prev_disk + random.uniform(-0.4, 0.6))), 1)
+            latency = round(min(90.0, max(28.0, prev_lat + random.uniform(-3.5, 3.5))), 1)
             active_procs = random.randint(335, 345)
+            net_sent = round(random.uniform(35.0, 95.0), 2)
+            net_recv = round(random.uniform(35.0, 95.0), 2)
+
+        SERVER_TELEMETRY_STATE[sname] = {
+            "cpu": cpu_usage,
+            "mem": memory_percent,
+            "disk": disk_usage,
+            "lat": latency
+        }
 
         now_utc = datetime.now(timezone.utc)
         metrics = {
@@ -224,8 +247,8 @@ def generate_telemetry_batch():
             "memory_usage_percent": memory_percent,
             "memory_used_mb": round((memory_percent / 100.0) * 16000.0, 2),
             "disk_usage_percent": disk_usage,
-            "network_sent_mb": round(random.uniform(70, 160), 2),
-            "network_received_mb": round(random.uniform(70, 160), 2),
+            "network_sent_mb": net_sent,
+            "network_received_mb": net_recv,
             "request_latency_ms": latency,
             "active_processes": active_procs
         }

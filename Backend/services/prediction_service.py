@@ -160,66 +160,94 @@ def predict_metric(metric):
 
     X = pd.DataFrame([features])
 
-    prediction = int(model.predict(X)[0])
-    confidence = round(float(max(model.predict_proba(X)[0])) * 100, 2)
+    model_pred = int(model.predict(X)[0])
+    model_proba = model.predict_proba(X)[0]
+    prob_normal = float(model_proba[0]) * 100
+    prob_anom = float(model_proba[1]) * 100
 
     cpu = float(metric.get("cpu_usage_percent", 0))
     mem = float(metric.get("memory_usage_percent", 0))
     disk = float(metric.get("disk_usage_percent", 0))
     latency = float(metric.get("request_latency_ms", 0))
+    error_cnt = int(metric.get("error_count", 0))
     cpu_change = float(features.get("cpu_change", 0))
     mem_change = float(features.get("memory_change", 0))
 
-    # Multi-factor validation: Ensure high utilization, latency surges, and sudden spikes are accurately classified as ANOMALY
-    is_stressed = (
-        prediction == 1
-        or (cpu >= 80.0 and mem >= 70.0)
-        or cpu >= 85.0
-        or mem >= 82.0
-        or disk >= 85.0
-        or latency >= 250.0
-        or abs(cpu_change) >= 15.0
-        or abs(mem_change) >= 15.0
+    # Definitive multi-factor stress checks
+    has_critical_resource = (
+        (cpu >= 85.0)
+        or (mem >= 85.0)
+        or (disk >= 85.0)
+        or (cpu >= 80.0 and mem >= 75.0)
+        or (latency >= 250.0)
+        or (error_cnt >= 5)
     )
 
-    if is_stressed:
+    has_critical_surge = (
+        (cpu >= 75.0 and cpu_change >= 15.0)
+        or (mem >= 75.0 and mem_change >= 15.0)
+        or (cpu_change >= 25.0 and cpu >= 70.0)
+        or (mem_change >= 25.0 and mem >= 70.0)
+    )
+
+    is_baseline_healthy = (
+        cpu < 75.0
+        and mem < 75.0
+        and disk < 80.0
+        and latency < 200.0
+        and error_cnt < 3
+        and not has_critical_surge
+    )
+
+    # Anomaly decision:
+    # 1. If baseline metrics are all strictly healthy, it is 100% NORMAL.
+    # 2. If genuine critical resource stress or critical surge is present, it is ANOMALY.
+    # 3. If borderline (75-84% CPU/RAM) and ML model predicts anomaly with high probability, it is ANOMALY.
+    if is_baseline_healthy:
+        prediction = 0
+        confidence = max(round(prob_normal, 2), 92.5)
+    elif has_critical_resource or has_critical_surge:
         prediction = 1
-        prob_anom = float(model.predict_proba(X)[0][1]) * 100
-        raw_conf = float(max(model.predict_proba(X)[0])) * 100
-        confidence = max(round(prob_anom, 2), round(raw_conf, 2), 88.5)
+        confidence = max(round(prob_anom, 2), 89.5)
+    elif model_pred == 1 and prob_anom >= 55.0 and (cpu >= 70.0 or mem >= 70.0 or latency >= 180.0):
+        prediction = 1
+        confidence = max(round(prob_anom, 2), 75.0)
+    else:
+        prediction = 0
+        confidence = max(round(prob_normal, 2), 85.0)
 
     causes = []
 
-    if cpu >= 85 and mem >= 75:
-        causes.append("Critical Resource Saturation (CPU + Memory Stress)")
-    elif cpu >= 85:
-        causes.append(f"High CPU Load ({cpu}%)")
-    elif cpu >= 75:
-        causes.append(f"Elevated CPU Usage ({cpu}%)")
+    if prediction == 1:
+        if cpu >= 85 and mem >= 75:
+            causes.append("Critical Resource Saturation (CPU + Memory Stress)")
+        elif cpu >= 85:
+            causes.append(f"High CPU Load ({cpu}%)")
+        elif cpu >= 75:
+            causes.append(f"Elevated CPU Usage ({cpu}%)")
 
-    if mem >= 85:
-        causes.append(f"High Memory Usage ({mem}%)")
-    elif mem >= 75 and "Critical Resource Saturation (CPU + Memory Stress)" not in causes:
-        causes.append(f"Elevated Memory Pressure ({mem}%)")
+        if mem >= 85:
+            causes.append(f"High Memory Usage ({mem}%)")
+        elif mem >= 75 and "Critical Resource Saturation (CPU + Memory Stress)" not in causes:
+            causes.append(f"Elevated Memory Pressure ({mem}%)")
 
-    if disk >= 85:
-        causes.append(f"Critical Disk Utilization ({disk}%)")
-    elif disk >= 75:
-        causes.append(f"High Disk Usage ({disk}%)")
+        if disk >= 85:
+            causes.append(f"Critical Disk Utilization ({disk}%)")
+        elif disk >= 75:
+            causes.append(f"High Disk Usage ({disk}%)")
 
-    if latency >= 250:
-        causes.append(f"High Request Latency ({latency}ms)")
+        if latency >= 250:
+            causes.append(f"High Request Latency ({latency}ms)")
 
-    if abs(cpu_change) >= 15:
-        causes.append(f"Rapid CPU Spike (+{round(cpu_change, 1)}%)")
-    if abs(mem_change) >= 15:
-        causes.append(f"Sudden Memory Surge (+{round(mem_change, 1)}%)")
+        if cpu >= 75 and cpu_change >= 15:
+            causes.append(f"Rapid CPU Spike (+{round(cpu_change, 1)}%)")
+        if mem >= 75 and mem_change >= 15:
+            causes.append(f"Sudden Memory Surge (+{round(mem_change, 1)}%)")
 
-    if not causes:
-        if prediction == 1:
-            causes.append("Behavioral Telemetry Anomaly (Resource Fluctuation)")
-        else:
-            causes.append("Optimal Performance (Within Baseline)")
+        if not causes:
+            causes.append("Behavioral Telemetry Anomaly (Elevated Variance)")
+    else:
+        causes.append("Optimal Performance (Within Baseline)")
 
     result = {
         "server_name": metric["server_name"],
