@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pymongo.errors import PyMongoError
 from Backend.database.mongodb import get_predictions_collection
+from Backend.services.cache_service import cached_response
 
 router = APIRouter()
 
@@ -16,6 +17,7 @@ def clean_confidence(conf_val):
 
 
 @router.get("/all-predictions")
+@cached_response(ttl=4, key_prefix="predictions:all")
 def all_predictions():
     col = get_predictions_collection()
     if col is None:
@@ -42,6 +44,7 @@ def all_predictions():
 
 
 @router.get("/latest-prediction")
+@cached_response(ttl=3, key_prefix="predictions:latest")
 def latest_prediction():
     col = get_predictions_collection()
     if col is None:

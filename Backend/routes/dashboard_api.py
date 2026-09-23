@@ -1,10 +1,12 @@
 from fastapi import APIRouter
 from Backend.database.mongodb import get_predictions_collection
+from Backend.services.cache_service import cached_response
 
 router = APIRouter()
 
 
 @router.get("/dashboard-summary")
+@cached_response(ttl=4, key_prefix="dashboard:summary")
 def dashboard_summary():
     """Returns dynamic real-time summary metrics for the landing page."""
     col = get_predictions_collection()

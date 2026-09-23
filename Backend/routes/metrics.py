@@ -1,10 +1,12 @@
 from fastapi import APIRouter
 from Backend.database.mongodb import get_metrics_collection
+from Backend.services.cache_service import cached_response
 
 router = APIRouter()
 
 
 @router.get("/latest-metrics")
+@cached_response(ttl=3, key_prefix="metrics:latest")
 def latest_metrics():
     col = get_metrics_collection()
     if col is None:
@@ -24,6 +26,7 @@ def latest_metrics():
 
 
 @router.get("/all-servers")
+@cached_response(ttl=4, key_prefix="metrics:all_servers")
 def all_servers():
     col = get_metrics_collection()
     if col is None:

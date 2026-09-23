@@ -62,10 +62,25 @@ services:
       MONGO_DB: ${MONGO_DB:-predictops}
       LOCAL_MONGO_URI: mongodb://mongodb:27017
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       PYTHONUNBUFFERED: 1
     volumes:
       - .:/app
     command: python -m uvicorn Backend.main:app --host 0.0.0.0 --port 8000
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: predictops-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     restart: unless-stopped
 
   consumer:
@@ -117,3 +132,5 @@ volumes:
     name: predictops_mongodb_data
   kafka_data:
     name: predictops_kafka_data
+  redis_data:
+    name: predictops_redis_data

@@ -1,10 +1,12 @@
 from fastapi import APIRouter
 from Backend.database.mongodb import get_predictions_collection, get_metrics_collection
+from Backend.services.cache_service import cached_response
 
 router = APIRouter()
 
 
 @router.get("/ai-insights")
+@cached_response(ttl=4, key_prefix="insights:summary")
 def ai_insights():
     p_col = get_predictions_collection()
     m_col = get_metrics_collection()

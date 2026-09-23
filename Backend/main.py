@@ -264,6 +264,16 @@ def generate_telemetry_batch():
         except Exception as pred_err:
             logger.error(f"Prediction error for {sname}: {pred_err}")
 
+    # Invalidate telemetry and summary caches upon new batch completion
+    try:
+        from Backend.services.cache_service import CacheService
+        CacheService.invalidate_prefix("metrics:")
+        CacheService.invalidate_prefix("predictions:")
+        CacheService.invalidate_prefix("dashboard:")
+        CacheService.invalidate_prefix("insights:")
+    except Exception as c_err:
+        logger.debug(f"Cache invalidation error: {c_err}")
+
 
 async def auto_telemetry_generator():
     """Continuously generates live telemetry for all 22 servers in the background."""
@@ -376,6 +386,11 @@ def analytics(request: Request, user: str = Depends(get_current_user_page)):
 @app.get("/trends")
 def trends():
     return RedirectResponse(url="/analytics", status_code=302)
+
+@app.get("/cache/stats")
+def cache_stats():
+    from Backend.services.cache_service import CacheService
+    return CacheService.get_stats()
 
 @app.get("/favicon.ico")
 def favicon() -> RedirectResponse:
