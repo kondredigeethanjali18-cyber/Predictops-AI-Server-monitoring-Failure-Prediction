@@ -318,6 +318,34 @@ def validate_password(password: str, username: Optional[str] = None) -> tuple[bo
     return True, ""
 
 
+USER_FULL_NAMES = {
+    "vamsi": "K Vamsi Krishna",
+    "geethanjali": "Geethanjali Kondredi"
+}
+
+def get_user_display_name(username: str, doc_name: Optional[str] = None) -> str:
+    if doc_name and str(doc_name).strip():
+        return str(doc_name).strip()
+    u_lower = (username or "").strip().lower()
+    if u_lower in USER_FULL_NAMES:
+        return USER_FULL_NAMES[u_lower]
+    return username.capitalize() if username else "User"
+
+def get_user_first_name(username: str, full_name: Optional[str] = None) -> str:
+    fn = full_name or get_user_display_name(username)
+    parts = fn.split()
+    if len(parts) >= 2 and len(parts[0]) <= 2:
+        return f"{parts[0]} {parts[1]}"
+    return parts[0] if parts else (username.capitalize() if username else "User")
+
+def get_role_designation(role: str) -> str:
+    norm = normalize_role(role)
+    if norm == "admin":
+        return "Admin"
+    elif norm == "devops":
+        return "DevOps Engineer"
+    return "Viewer"
+
 # =========================================================================
 # UserSession Helper & RBAC Dependencies
 # =========================================================================
@@ -333,6 +361,9 @@ class UserSession(dict):
         role: str = "viewer",
         user_id: Optional[str] = None,
         email: Optional[str] = None,
+        first_name: Optional[str] = None,
+        full_name: Optional[str] = None,
+        designation: Optional[str] = None,
         is_active: bool = True,
         provider: str = "local",
         **kwargs
@@ -341,10 +372,16 @@ class UserSession(dict):
         perms = get_role_permissions(clean_role)
         badge = get_role_badge_label(clean_role)
         display_name = get_role_display_name(clean_role)
+        resolved_full_name = full_name or kwargs.get("name") or get_user_display_name(username)
+        resolved_first_name = first_name or get_user_first_name(username, resolved_full_name)
+        resolved_designation = designation or get_role_designation(clean_role)
 
         super().__init__(
             id=user_id or username,
             username=username,
+            first_name=resolved_first_name,
+            full_name=resolved_full_name,
+            designation=resolved_designation,
             email=email or f"{username}@predictops.local",
             role=clean_role,
             role_badge=badge,
@@ -356,6 +393,9 @@ class UserSession(dict):
         )
         self.id = user_id or username
         self.username = username
+        self.first_name = resolved_first_name
+        self.full_name = resolved_full_name
+        self.designation = resolved_designation
         self.email = email or f"{username}@predictops.local"
         self.role = clean_role
         self.role_badge = badge
@@ -556,6 +596,9 @@ def get_auth_me(current_user: UserSession = Depends(get_current_user_api)):
     return {
         "id": current_user.id,
         "username": current_user.username,
+        "first_name": current_user.first_name,
+        "full_name": current_user.full_name,
+        "designation": current_user.designation,
         "email": current_user.email,
         "role": current_user.role,
         "role_badge": current_user.role_badge,

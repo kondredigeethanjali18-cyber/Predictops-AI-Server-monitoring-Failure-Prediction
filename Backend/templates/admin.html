@@ -5,16 +5,16 @@
 {% block content %}
 <div class="dashboard-header page-header-row">
     <div>
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px;">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px; flex-wrap: wrap;">
             <h1 style="margin: 0;"><i class="fas fa-shield-halved" style="color: #3b82f6;"></i> Admin Operations & Security Console</h1>
-            <span class="role-badge role-admin" style="font-size: 13px; padding: 4px 10px;">
+            <span class="role-badge role-admin" style="font-size: 12px; padding: 4px 10px;">
                 <i class="fas fa-crown"></i> SUPERADMIN
             </span>
         </div>
         <p>Enterprise Role-Based Access Control, Chaos Anomaly Simulator, Cache Management & Security Audit Trail</p>
     </div>
 
-    <div class="page-actions" style="display: flex; align-items: center; gap: 12px;">
+    <div class="page-actions" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
         <button id="btnFlushCache" class="btn-action-warning" onclick="flushSystemCache()">
             <i class="fas fa-broom"></i> Flush System Cache
         </button>
@@ -24,8 +24,8 @@
     </div>
 </div>
 
-<!-- Quick Status Cards -->
-<div class="cards" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 24px;">
+<!-- Quick Status KPI Cards -->
+<div class="admin-kpi-grid">
     <div class="card">
         <div class="card-header-row">
             <h3>Registered Users</h3>
@@ -41,7 +41,7 @@
             <div class="card-icon" style="color: #16a34a; background: transparent;"><i class="fas fa-user-shield"></i></div>
         </div>
         <div class="metric" style="color: #16a34a;">3 Roles</div>
-        <div class="card-subtext">Admin &bull; Engineer &bull; Viewer</div>
+        <div class="card-subtext">Admin &bull; DevOps &bull; Viewer</div>
     </div>
 
     <div class="card">
@@ -64,7 +64,7 @@
 </div>
 
 <!-- Main Admin Grid: Left (User Management & Chaos Simulator) / Right (Audit Log & Cache) -->
-<div style="display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 24px; margin-bottom: 30px;">
+<div class="admin-main-grid">
 
     <!-- Left Column: User Management & Chaos Injection -->
     <div style="display: flex; flex-direction: column; gap: 24px;">
@@ -74,26 +74,30 @@
             <div class="admin-card-header">
                 <div>
                     <h2><i class="fas fa-user-gear" style="color: #2563eb;"></i> User Management & Role Control</h2>
-                    <p style="margin: 0; font-size: 13px; color: #64748b;">Manage user permissions and elevate/restrict roles in real time.</p>
+                    <p style="margin: 0; font-size: 13px; color: #64748b;">Manage user permissions and elevate or restrict roles in real time.</p>
                 </div>
-                <span class="badge-role-note"><i class="fas fa-shield-check"></i> Live Sync</span>
+                <a href="/admin/users" class="btn-pill" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-arrow-up-right-from-square"></i> Full Manager
+                </a>
             </div>
 
             <div class="admin-card-body" style="padding: 0;">
-                <div class="table-section" style="border: none; box-shadow: none; margin: 0;">
-                    <table style="width: 100%;">
+                <div class="table-section" style="border: none; box-shadow: none; margin: 0; overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse;">
                         <thead>
-                            <tr>
-                                <th>Username</th>
-                                <th>Email</th>
-                                <th>Current Role</th>
-                                <th>Auth Type</th>
-                                <th style="text-align: center;">Change Role</th>
+                            <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                                <th style="text-align: left; padding: 12px 16px; width: 22%;">User</th>
+                                <th style="text-align: left; padding: 12px 16px; width: 26%;">Email</th>
+                                <th style="text-align: left; padding: 12px 16px; width: 18%;">Current Role</th>
+                                <th style="text-align: center; padding: 12px 16px; width: 12%;">Auth Type</th>
+                                <th style="text-align: center; padding: 12px 16px; width: 22%;">Change Role</th>
                             </tr>
                         </thead>
                         <tbody id="userTableBody">
                             <tr>
-                                <td colspan="5" style="text-align: center; color: #94a3b8; padding: 24px;">Loading user accounts...</td>
+                                <td colspan="5" style="text-align: center; color: #94a3b8; padding: 24px;">
+                                    <i class="fas fa-spinner fa-spin" style="margin-right: 6px;"></i> Loading user accounts...
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -115,8 +119,8 @@
                 <form id="chaosInjectorForm" onsubmit="injectChaosSpike(event)">
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
                         <div class="form-group" style="margin: 0;">
-                            <label style="font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase;">Target Server</label>
-                            <select id="chaosServerSelect" style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: 600; background: white; color: #0f172a;" required>
+                            <label style="font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; display: block; margin-bottom: 6px;">Target Server</label>
+                            <select id="chaosServerSelect" style="width: 100%; height: 40px; box-sizing: border-box; padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: 600; background: white; color: #0f172a; outline: none;" required>
                                 <option value="US-east-01">US-east-01 (API Gateway)</option>
                                 <option value="AUTH-server-01">AUTH-server-01 (Auth Service)</option>
                                 <option value="EU-gateway-01">EU-gateway-01 (EU Gateway)</option>
@@ -131,8 +135,8 @@
                         </div>
 
                         <div class="form-group" style="margin: 0;">
-                            <label style="font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase;">Anomaly Type</label>
-                            <select id="chaosMetricType" style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: 600; background: white; color: #0f172a;" required>
+                            <label style="font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; display: block; margin-bottom: 6px;">Anomaly Type</label>
+                            <select id="chaosMetricType" style="width: 100%; height: 40px; box-sizing: border-box; padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: 600; background: white; color: #0f172a; outline: none;" required>
                                 <option value="cpu">CPU Overload (98.5%)</option>
                                 <option value="memory">Memory Leak (96.4%)</option>
                                 <option value="disk">Disk Saturation (94.8%)</option>
@@ -142,11 +146,11 @@
                         </div>
                     </div>
 
-                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px;">
-                        <span style="font-size: 12.5px; color: #64748b;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+                        <span style="font-size: 12.5px; color: #64748b; display: inline-flex; align-items: center; gap: 6px;">
                             <i class="fas fa-circle-info" style="color: #3b82f6;"></i> Injected anomalies trigger instant ML inference and generate alerts.
                         </span>
-                        <button type="submit" class="btn-action-primary" style="background: linear-gradient(135deg, #f59e0b, #d97706); border: none; padding: 10px 20px; color: white; font-weight: 700; border-radius: 8px; cursor: pointer;">
+                        <button type="submit" class="btn-action-primary" style="background: linear-gradient(135deg, #f59e0b, #d97706); border: none; height: 40px; padding: 0 20px; color: white; font-weight: 700; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
                             <i class="fas fa-play"></i> Inject Spike Now
                         </button>
                     </div>
@@ -173,9 +177,11 @@
                 </button>
             </div>
 
-            <div class="admin-card-body" style="padding: 0; flex: 1; max-height: 620px; overflow-y: auto;">
+            <div class="admin-card-body" style="padding: 0; flex: 1; max-height: 560px; overflow-y: auto;">
                 <div id="auditLogStream" style="display: flex; flex-direction: column;">
-                    <div style="text-align: center; color: #94a3b8; padding: 30px;">Loading audit events...</div>
+                    <div style="text-align: center; color: #94a3b8; padding: 30px;">
+                        <i class="fas fa-spinner fa-spin" style="margin-right: 6px;"></i> Loading audit events...
+                    </div>
                 </div>
             </div>
         </div>
@@ -188,6 +194,30 @@
 <div id="adminToast" class="admin-toast" style="display: none;"></div>
 
 <style>
+    .admin-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+    @media (max-width: 1024px) {
+        .admin-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 600px) {
+        .admin-kpi-grid { grid-template-columns: 1fr; }
+    }
+
+    .admin-main-grid {
+        display: grid;
+        grid-template-columns: 1.15fr 0.85fr;
+        gap: 24px;
+        margin-bottom: 30px;
+        align-items: start;
+    }
+    @media (max-width: 1024px) {
+        .admin-main-grid { grid-template-columns: 1fr; }
+    }
+
     .admin-card {
         background: #ffffff;
         border-radius: 12px;
@@ -202,6 +232,7 @@
         justify-content: space-between;
         align-items: center;
         background: #fafafa;
+        gap: 12px;
     }
     .admin-card-header h2 {
         font-size: 16px;
@@ -220,13 +251,15 @@
         background: #2563eb;
         color: white;
         border: none;
-        padding: 8px 16px;
+        height: 38px;
+        padding: 0 16px;
         border-radius: 8px;
         font-weight: 600;
         font-size: 13px;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
+        justify-content: center;
         gap: 6px;
         transition: all 0.2s;
     }
@@ -238,13 +271,15 @@
         background: #ef4444;
         color: white;
         border: none;
-        padding: 8px 16px;
+        height: 38px;
+        padding: 0 16px;
         border-radius: 8px;
         font-weight: 600;
         font-size: 13px;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
+        justify-content: center;
         gap: 6px;
         transition: all 0.2s;
     }
@@ -270,11 +305,12 @@
 
     /* Role Select in Table */
     .role-select-box {
-        padding: 6px 10px;
+        height: 32px;
+        padding: 4px 8px;
         border-radius: 6px;
         border: 1px solid #cbd5e1;
         font-size: 12.5px;
-        font-weight: 700;
+        font-weight: 600;
         background: white;
         color: #0f172a;
         outline: none;
@@ -296,8 +332,8 @@
         border-bottom: none;
     }
     .audit-icon {
-        width: 32px;
-        height: 32px;
+        width: 34px;
+        height: 34px;
         border-radius: 8px;
         display: flex;
         align-items: center;
@@ -321,6 +357,7 @@
         justify-content: space-between;
         align-items: center;
         margin-bottom: 3px;
+        gap: 8px;
     }
     .audit-action-tag {
         font-weight: 800;
@@ -331,6 +368,7 @@
     .audit-time {
         font-size: 11px;
         color: #94a3b8;
+        white-space: nowrap;
     }
     .audit-desc {
         color: #334155;
@@ -404,30 +442,48 @@
 
             tbody.innerHTML = users.map(u => {
                 const isSelf = u.username === currentUsername;
-                const roleBadgeClass = u.role === 'admin' ? 'role-admin' : (u.role === 'engineer' ? 'role-engineer' : 'role-viewer');
-                const roleIcon = u.role === 'admin' ? 'fa-shield-halved' : (u.role === 'engineer' ? 'fa-screwdriver-wrench' : 'fa-eye');
+                let roleBadgeClass = 'role-viewer';
+                let roleIcon = 'fa-eye';
+                let roleLabel = 'VIEWER';
+
+                if (u.role === 'admin') {
+                    roleBadgeClass = 'role-admin';
+                    roleIcon = 'fa-shield-halved';
+                    roleLabel = 'ADMIN';
+                } else if (u.role === 'devops' || u.role === 'engineer') {
+                    roleBadgeClass = 'role-devops';
+                    roleIcon = 'fa-screwdriver-wrench';
+                    roleLabel = 'DEVOPS ENGINEER';
+                }
 
                 return `
-                    <tr>
-                        <td style="font-weight: 700; color: #0f172a;">
-                            <i class="fas fa-user-circle" style="color: #64748b; margin-right: 6px;"></i> ${u.username}
-                            ${isSelf ? '<span style="font-size: 11px; background: #e0f2fe; color: #0369a1; padding: 2px 6px; border-radius: 4px; margin-left: 4px;">You</span>' : ''}
+                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                        <td style="text-align: left; padding: 12px 16px; font-weight: 700; color: #0f172a;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <i class="fas fa-user-circle" style="color: #64748b; font-size: 16px;"></i>
+                                <span>${u.username}</span>
+                                ${isSelf ? '<span style="font-size: 11px; background: #e0f2fe; color: #0369a1; padding: 2px 6px; border-radius: 4px; font-weight: 700;">You</span>' : ''}
+                            </div>
                         </td>
-                        <td style="color: #475569; font-size: 13px;">${u.email || '-'}</td>
-                        <td>
-                            <span class="role-badge ${roleBadgeClass}">
-                                <i class="fas ${roleIcon}"></i> ${(u.role || 'viewer').toUpperCase()}
+                        <td style="text-align: left; padding: 12px 16px; color: #475569; font-size: 13px;">${u.email || '-'}</td>
+                        <td style="text-align: left; padding: 12px 16px;">
+                            <span class="role-badge ${roleBadgeClass}" style="font-size: 11px; padding: 3px 8px;">
+                                <i class="fas ${roleIcon}"></i> ${roleLabel}
                             </span>
                         </td>
-                        <td><span style="font-size: 12px; color: #64748b; text-transform: uppercase;">${u.auth_type || 'local'}</span></td>
-                        <td style="text-align: center;">
-                            <div style="display: inline-flex; align-items: center; gap: 8px;">
+                        <td style="text-align: center; padding: 12px 16px;">
+                            <span style="font-size: 11.5px; color: #64748b; text-transform: uppercase; background: #f1f5f9; padding: 3px 8px; border-radius: 4px; font-weight: 600;">
+                                ${u.auth_type || 'local'}
+                            </span>
+                        </td>
+                        <td style="text-align: center; padding: 12px 16px;">
+                            <div style="display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
                                 <select id="selectRole_${u.username}" class="role-select-box" ${isSelf ? 'disabled title="Cannot modify your own active admin role"' : ''}>
-                                    <option value="viewer" ${u.role === 'viewer' ? 'selected' : ''}>Viewer (Read-Only)</option>
-                                    <option value="engineer" ${u.role === 'engineer' ? 'selected' : ''}>DevOps Engineer</option>
-                                    <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Super Admin</option>
+                                    <option value="viewer" ${u.role === 'viewer' ? 'selected' : ''}>Viewer</option>
+                                    <option value="devops" ${u.role === 'devops' || u.role === 'engineer' ? 'selected' : ''}>DevOps</option>
+                                    <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin</option>
                                 </select>
-                                <button type="button" class="btn-action-primary" style="padding: 6px 12px; font-size: 12px;" onclick="updateUserRole('${u.username}')" ${isSelf ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}>
+                                <button type="button" class="btn-action-primary" style="height: 32px; padding: 0 10px; font-size: 12px;" onclick="updateUserRole('${u.username}')" ${isSelf ? 'disabled style="opacity: 0.5; cursor: not-allowed; height: 32px; padding: 0 10px; font-size: 12px;"' : ''}>
                                     Save
                                 </button>
                             </div>
@@ -446,10 +502,10 @@
         const newRole = select.value;
 
         try {
-            const resp = await fetch('/api/admin/users/update-role', {
-                method: 'POST',
+            const resp = await fetch(`/admin/users/${username}/role`, {
+                method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: username, role: newRole })
+                body: JSON.stringify({ role: newRole })
             });
             const resData = await resp.json();
             if (!resp.ok || !resData.success) {

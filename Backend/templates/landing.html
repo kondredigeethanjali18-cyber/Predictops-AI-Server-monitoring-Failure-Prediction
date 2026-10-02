@@ -32,15 +32,17 @@
             </div>
             {% if user %}
             {% set urole = role or (user.role if user and user.role is defined else 'viewer') %}
-            <span class="nav-user" style="color: #cbd5e1; display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600;">
-                <i class="fas fa-user-circle"></i> {{ user.username if user.username is defined else user }}
+            <span class="nav-user" style="color: #cbd5e1; display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; padding: 6px 14px; background: rgba(255, 255, 255, 0.08); border-radius: 9999px; border: 1px solid rgba(255, 255, 255, 0.12);">
+                <i class="fas fa-user-circle" style="color: #93c5fd;"></i>
+                <span class="nav-user-name" style="color: #ffffff; font-weight: 700;">{% if user.full_name is defined and user.full_name %}{{ user.full_name }}{% elif user.first_name is defined and user.first_name %}{{ user.first_name }}{% elif user.username is defined %}{{ user.username|capitalize }}{% else %}{{ user }}{% endif %}</span>
+                <span style="color: rgba(255, 255, 255, 0.35); font-weight: 400;">·</span>
                 <span class="role-badge role-{{ urole }}" style="padding: 2px 8px; font-size: 11px; border-radius: 4px;">
                     {% if urole == 'admin' %}
-                        <i class="fas fa-shield-halved"></i> ADMIN
+                        <i class="fas fa-shield-halved"></i> Admin
                     {% elif urole in ['devops', 'engineer'] %}
-                        <i class="fas fa-screwdriver-wrench"></i> DEVOPS ENGINEER
+                        <i class="fas fa-screwdriver-wrench"></i> DevOps Engineer
                     {% else %}
-                        <i class="fas fa-eye"></i> VIEWER
+                        <i class="fas fa-eye"></i> Viewer
                     {% endif %}
                 </span>
             </span>
